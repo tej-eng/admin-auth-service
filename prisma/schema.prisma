@@ -1,0 +1,222 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum ApprovalStatus {
+  PENDING
+  INTERVIEW
+  DOCUMENT_VERIFICATION
+  APPROVED
+  REJECTED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  PASSED
+  FAILED
+  RESCHEDULED
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DocumentType {
+  ID_PROOF
+  CERTIFICATE
+  EXPERIENCE_PROOF
+}
+
+enum RejectionStage {
+  PROFILE
+  INTERVIEW
+  DOCUMENT
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String?
+  mobile       String?   @unique
+  gender       Gender?
+  birthDate    DateTime?
+  birthTime    String?
+  occupation   String?
+  isActive     Boolean   @default(true)
+  isDeleted    Boolean   @default(false)
+  refreshToken String?   @db.Text
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([mobile])
+}
+
+model Astrologer {
+  id             String         @id @default(uuid())
+  profilePic     String
+  name           String
+  dateOfBirth    DateTime
+  gender         Gender
+  languages      String[]
+  skills         String[]
+  experience     Int
+  email          String         @unique
+  contactNo      String
+  about          String
+  approvalStatus ApprovalStatus @default(PENDING)
+  adminRemarks   String?
+
+  addresses        Address[]
+  experiences      ExperiencePlatform[]
+  interviews       Interview[]
+  documents        AstrologerDocument[]
+  rejectionHistory AstrologerRejectionHistory[]
+
+  approvedById String?
+  approvedBy   Admin?  @relation(fields: [approvedById], references: [id])
+  price       Int?     
+  rating      Float?   
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AstrologerApproved {
+  id         Int     @id @default(autoincrement())
+  name       String
+  profilePic String
+  experience Int
+  isActive   Boolean @default(true)
+
+  createdAt DateTime @default(now())
+}
+
+model Address {
+  id           Int        @id @default(autoincrement())
+  astrologerId String
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+
+  street  String
+  city    String
+  state   String
+  country String
+  pincode String
+}
+
+model ExperiencePlatform {
+  id           Int        @id @default(autoincrement())
+  astrologerId String
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+
+  platformName String
+  yearsWorked  Int
+}
+
+model Interview {
+  id           Int        @id @default(autoincrement())
+  astrologerId String
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+
+  roundNumber     Int
+  interviewerName String
+  scheduledAt     DateTime
+  status          InterviewStatus @default(SCHEDULED)
+  remarks         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AstrologerDocument {
+  id           Int        @id @default(autoincrement())
+  astrologerId String
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+
+  documentType DocumentType
+  documentUrl  String
+  status       DocumentStatus @default(PENDING)
+  verifiedBy   String?
+  verifiedAt   DateTime?
+  remarks      String?
+
+  createdAt DateTime @default(now())
+}
+
+model AstrologerRejectionHistory {
+  id           Int        @id @default(autoincrement())
+  astrologerId String
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+
+  stage      RejectionStage
+  reason     String
+  rejectedBy String
+
+  createdAt DateTime @default(now())
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  SUB_ADMIN
+  MANAGER
+  SUPPORT
+}
+
+model Admin {
+  id                  String       @id @default(uuid())
+  name                String
+  email               String       @unique
+  phoneNo             String       @unique
+  department          String?
+  roleId              String
+  password            String? // hashed password
+  isActive            Boolean      @default(true)
+  isDeleted           Boolean      @default(false)
+  refreshToken String?  @db.Text
+  approvedAstrologers Astrologer[]
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  role Role @relation(fields: [roleId], references: [id])
+}
+
+model Role {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  permissions RolePermission[]
+
+  admins    Admin[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  name        String           @unique
+  description String?
+  roles       RolePermission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model RolePermission {
+  id           String @id @default(uuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id])
+  permission Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+}

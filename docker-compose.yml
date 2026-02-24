@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+
+  app:
+    build: .
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mysql
+    env_file:
+      - .env
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: astrodb
+    ports:
+      - "3307:3306"
+
