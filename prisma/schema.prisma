@@ -272,3 +272,57 @@ model RechargePack {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+// Wallets that users can recharge or use
+model Wallet {
+  id        String   @id @default(uuid())
+  name      String
+  description String?
+  coins     Int      // number of coins in this wallet/recharge pack
+  price     Float    // real money equivalent
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+  userWallets  UserWallet[]
+
+  @@index([name])
+  @@index([isActive])
+}
+
+// Tracks each user's current balance
+model UserWallet {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  coins     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  transactions Transaction[]
+
+  @@index([userId])
+}
+
+// Records every credit/debit transaction
+model Transaction {
+  id            String    @id @default(uuid())
+  userWalletId  String
+  userWallet    UserWallet @relation(fields: [userWalletId], references: [id])
+  walletId      String?    // optional, if this came from a recharge pack
+  wallet        Wallet?    @relation(fields: [walletId], references: [id])
+  type          TransactionType
+  coins         Int
+  description   String?
+  createdAt     DateTime  @default(now())
+
+  @@index([userWalletId])
+  @@index([walletId])
+  @@index([type])
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}

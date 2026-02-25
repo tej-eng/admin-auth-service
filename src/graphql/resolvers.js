@@ -501,9 +501,40 @@ getRechargePacks: async (_, __, context) => {
       });
 
       return packs;
+},
+
+getWallets: async () => {
+      try {
+        const wallets = await prisma.wallet.findMany({
+          where: { isActive: true },
+          orderBy: { createdAt: "desc" }
+        });
+        return wallets;
+      } catch (error) {
+        console.error("getWallets error:", error);
+        throw new Error("Failed to fetch wallets");
+      }
     },
 
-  },
+    getUserWallet: async (_, { userId }) => {
+      try {
+        const userWallet = await prisma.userWallet.findUnique({
+          where: { userId },
+        });
+
+        if (!userWallet) {
+          throw new Error("User wallet not found");
+        }
+
+        return userWallet;
+      } catch (error) {
+        console.error("getUserWallet error:", error);
+        throw new Error("Failed to fetch user wallet");
+      }
+    },
+  
+
+},
 
   Mutation: {
     // ================= ADMIN LOGIN =================

@@ -296,6 +296,27 @@ input UpdateRechargePackInput {
 
 
 #-----------END OF RECHARGE PACKS-----------------#
+#-----------------------------START Wallet MANAGEMENT-----------------#
+type Wallet {
+  id: ID!
+  name: String!
+  description: String
+  coins: Int!
+  price: Float!
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type UserWallet {
+  id: ID!
+  userId: ID!
+  coins: Int!
+  createdAt: String!
+  updatedAt: String!
+}
+
+#-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
     getUsersDetails(page: Int, limit: Int): PaginatedUsers!
     getUsersListBySearch(searchInput: UserSearchInput!): UserList!
@@ -319,6 +340,9 @@ input UpdateRechargePackInput {
     getPermissions: [Permission!]!
     
     getRechargePacks: [RechargePack!]!
+
+    getWallets: [Wallet!]!
+    getUserWallet(userId: ID!): UserWallet
 
   }
     input UpdateAstrologerInput {
