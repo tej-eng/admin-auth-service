@@ -259,3 +259,16 @@ model RolePermission {
   @@index([roleId])                   
   @@index([permissionId])             
 }
+
+model RechargePack {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  price        Float
+  coins        Int
+  talktime     Int
+  validityDays Int
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

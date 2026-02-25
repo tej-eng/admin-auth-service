@@ -488,6 +488,21 @@ getAdmins: async (_, { page = 1, limit = 10 }, context) => {
   }
 },
 
+getRechargePacks: async (_, __, context) => {
+
+      if (!context.user) {
+        throw new Error("Unauthorized");
+      }
+
+      const packs = await prisma.rechargePack.findMany({
+        orderBy: {
+          createdAt: "desc"
+        }
+      });
+
+      return packs;
+    },
+
   },
 
   Mutation: {
@@ -1209,5 +1224,72 @@ approveAstrologer: async (_, { astrologerId }, context) => {
     throw new Error(error.message || "Failed to approve astrologer");
   }
 },
+
+createRechargePack: async (_, { input }, context) => {
+  try {
+    console.log("user data---------------------: ",context.user);
+    if (!context.user || context.user.role !== "ADMIN") {
+      throw new Error("Admin only");
+    }
+
+    const pack = await prisma.rechargePack.create({
+      data: {
+        name: input.name,
+        description: input.description,
+        price: input.price,
+        coins: input.coins,
+        talktime: input.talktime, 
+        validityDays: input.validityDays,
+        isActive: input.isActive ?? true,
+      },
+    });
+
+    return pack;
+
+  } catch (error) {
+    throw error;
+  }
+},
+
+
+
+updateRechargePack: async (_, { id, input }, context) => {
+  try {
+    if (!context.user || context.user.role !== "ADMIN") {
+      throw new Error("Admin only");
+    }
+
+    const pack = await prisma.rechargePack.update({
+      where: { id },
+      data: input,
+    });
+
+    return pack;
+
+  } catch (error) {
+    console.error("updateRechargePack error:", error);
+    throw error;
+  }
+},
+deleteRechargePack: async (_, { id }, context) => {
+  try {
+    if (!context.user || context.user.role !== "ADMIN") {
+      throw new Error("Admin only");
+    }
+
+    await prisma.rechargePack.delete({
+      where: { id },
+    });
+
+    return "Recharge pack deleted successfully";
+
+  } catch (error) {
+    console.error("deleteRechargePack error:", error);
+    throw error;
+  }
+}
+
+
   },
+
 };

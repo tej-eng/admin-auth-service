@@ -260,6 +260,42 @@ type UserList {
   currentPage: Int!
   totalPages: Int!
 }
+#-----------------------------START OF RECHARGE PACKS-------------#
+input RechargePackInput {
+  name: String!
+  description: String
+  price: Float!
+  coins: Int!
+  talktime: Int!
+  validityDays: Int!
+  isActive: Boolean
+}
+
+type RechargePack {
+  id: ID!
+  name: String!
+  description: String
+  price: Float!
+  coins: Int!
+  talktime: Int!
+  validityDays: Int!
+  isActive: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input UpdateRechargePackInput {
+  name: String
+  description: String
+  price: Float
+  coins: Int
+  talktime: Int
+  validityDays: Int
+  isActive: Boolean
+}
+
+
+#-----------END OF RECHARGE PACKS-----------------#
   type Query {
     getUsersDetails(page: Int, limit: Int): PaginatedUsers!
     getUsersListBySearch(searchInput: UserSearchInput!): UserList!
@@ -281,6 +317,8 @@ type UserList {
 
     getRoles: [Role!]!
     getPermissions: [Permission!]!
+    
+    getRechargePacks: [RechargePack!]!
 
   }
     input UpdateAstrologerInput {
@@ -401,6 +439,9 @@ input UpdateUserInput {
     ): Boolean
 
     approveAstrologer(astrologerId: ID!): Boolean
+    createRechargePack(input: RechargePackInput!): RechargePack!
+    updateRechargePack(id: ID!, input: UpdateRechargePackInput!): RechargePack!
+    deleteRechargePack(id: ID!): String!
   }
 `;
 

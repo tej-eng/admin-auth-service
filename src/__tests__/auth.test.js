@@ -1704,12 +1704,272 @@ test("getApprovedAstrologers - no user fails", async () => {
 });
 
  test("getPendingAstrologers - admin access", async () => {
+  console.log("Testing getPendingAstrologers with admin token:", adminToken);
     const res = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${adminToken}`)
       .send({ query: `query { getPendingAstrologers { data { id name } totalCount } }` });
     expect(res.body.errors).toBeUndefined();
   });
+
+const createRechargePackMutation = `
+  mutation CreateRechargePack($input: RechargePackInput!) {
+    createRechargePack(input: $input) {
+      id
+      name
+      description
+      price
+      coins
+      talktime
+      validityDays
+      isActive
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+test("createRechargePack - ADMIN success", async () => {
+  const res = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      query: createRechargePackMutation,
+      variables: {
+        input: {
+          name: "Basic Pack",
+          description: "Test Pack",
+          price: 100,
+          coins: 1000,
+          talktime: 60,
+          validityDays: 30,
+          isActive: true
+        }
+      }
+    });
+
+  console.log("Recharge pack response:", res.body);
+
+  expect(res.body.errors).toBeUndefined();
+  expect(res.body.data.createRechargePack).toBeDefined();
+  expect(res.body.data.createRechargePack.name).toBe("Basic Pack");
+  expect(res.body.data.createRechargePack.talktime).toBe(60);
+});
+
+const getRechargePacksQuery = `
+  query GetRechargePacks {
+    getRechargePacks {
+      id
+      name
+      description
+      price
+      coins
+      talktime
+      validityDays
+      isActive
+      createdAt
+      updatedAt
+    }
+  }
+`;
+
+test("getRechargePacks - ADMIN success", async () => {
+
+  // first create a pack (ensure data exists)
+  const createRes = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      query: `
+        mutation CreateRechargePack($input: RechargePackInput!) {
+          createRechargePack(input: $input) {
+            id
+            name
+          }
+        }
+      `,
+      variables: {
+        input: {
+          name: "Test Pack Get",
+          description: "Test pack for get",
+          price: 199,
+          coins: 100,
+          talktime: 60,
+          validityDays: 30,
+          isActive: true
+        }
+      }
+    });
+
+  expect(createRes.body.errors).toBeUndefined();
+
+  // now fetch packs
+  const res = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      query: getRechargePacksQuery
+    });
+
+  console.log("getRechargePacks response:", res.body);
+
+  expect(res.body.errors).toBeUndefined();
+
+  expect(res.body.data.getRechargePacks).toBeDefined();
+
+  expect(Array.isArray(res.body.data.getRechargePacks)).toBe(true);
+
+  expect(res.body.data.getRechargePacks.length).toBeGreaterThan(0);
+
+  expect(res.body.data.getRechargePacks[0]).toHaveProperty("id");
+  expect(res.body.data.getRechargePacks[0]).toHaveProperty("name");
+  expect(res.body.data.getRechargePacks[0]).toHaveProperty("talktime");
+
+});
+
+const updateRechargePackMutation = `
+  mutation UpdateRechargePack($id: ID!, $input: UpdateRechargePackInput!) {
+    updateRechargePack(id: $id, input: $input) {
+      id
+      name
+      description
+      price
+      coins
+      talktime
+      validityDays
+      isActive
+      updatedAt
+    }
+  }
+`;
+
+test("updateRechargePack - ADMIN success", async () => {
+
+  // first create a pack to update
+  const createRes = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      query: `
+        mutation CreateRechargePack($input: RechargePackInput!) {
+          createRechargePack(input: $input) {
+            id
+            name
+          }
+        }
+      `,
+      variables: {
+        input: {
+          name: "Pack To Update",
+          description: "Initial description",
+          price: 150,
+          coins: 50,
+          talktime: 30,
+          validityDays: 15,
+          isActive: true
+        }
+      }
+    });
+
+  expect(createRes.body.errors).toBeUndefined();
+
+  const packId = createRes.body.data.createRechargePack.id;
+
+  // now update the pack
+  const res = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      query: updateRechargePackMutation,
+      variables: {
+        id: packId,
+        input: {
+          name: "Updated Pack Name",
+          price: 200,
+          coins: 75,
+          talktime: 45,
+          validityDays: 30
+        }
+      }
+    });
+
+  console.log("updateRechargePack response:", res.body);
+
+  expect(res.body.errors).toBeUndefined();
+  expect(res.body.data.updateRechargePack).toBeDefined();
+  expect(res.body.data.updateRechargePack.name).toBe("Updated Pack Name");
+  expect(res.body.data.updateRechargePack.price).toBe(200);
+  expect(res.body.data.updateRechargePack.coins).toBe(75);
+});
+
+const deleteRechargePackMutation = `
+  mutation DeleteRechargePack($id: ID!) {
+    deleteRechargePack(id: $id)
+  }
+`;
+
+test("deleteRechargePack - ADMIN success", async () => {
+
+  // first create a pack to delete
+  const createRes = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      query: `
+        mutation CreateRechargePack($input: RechargePackInput!) {
+          createRechargePack(input: $input) {
+            id
+            name
+          }
+        }
+      `,
+      variables: {
+        input: {
+          name: "Pack To Delete",
+          description: "For deletion test",
+          price: 100,
+          coins: 25,
+          talktime: 20,
+          validityDays: 10,
+          isActive: true
+        }
+      }
+    });
+
+  expect(createRes.body.errors).toBeUndefined();
+
+  const packId = createRes.body.data.createRechargePack.id;
+
+  // now delete the pack
+  const res = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      query: deleteRechargePackMutation,
+      variables: { id: packId }
+    });
+
+  console.log("deleteRechargePack response:", res.body);
+
+  expect(res.body.errors).toBeUndefined();
+expect(res.body.data.deleteRechargePack).toBe("Recharge pack deleted successfully");
+  // verify it no longer exists
+  const getRes = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      query: `
+        query {
+          getRechargePacks {
+            id
+          }
+        }
+      `
+    });
+
+  const ids = getRes.body.data.getRechargePacks.map(p => p.id);
+  expect(ids).not.toContain(packId);
+});
 
   
 
