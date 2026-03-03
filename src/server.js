@@ -17,7 +17,14 @@ import { verifyAccessToken } from "./config/jwt.js";
 async function startServer() {
   const app = express();
 
-  app.use(cors());
+  // ✅ ONLY ONE CORS CONFIG
+  app.use(
+    cors({
+      origin: "http://localhost:3000",
+      credentials: true,
+    })
+  );
+
   app.use(express.json());
   app.use(cookieParser());
   app.use(rateLimiter);
@@ -41,12 +48,11 @@ async function startServer() {
           const token = authHeader.replace("Bearer ", "");
           try {
             user = verifyAccessToken(token);
-          } catch (err) {
+          } catch {
             user = null;
           }
         }
 
-        // fallback to auth middleware if needed
         if (!user) user = auth(req);
 
         return { req, res, user };

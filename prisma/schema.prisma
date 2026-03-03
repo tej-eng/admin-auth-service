@@ -60,25 +60,27 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  userWallets UserWallet[]
+
   @@index([mobile])
 }
 
 model Astrologer {
-  id             String         @id @default(uuid())
-  profilePic     String
-  name           String
-  dateOfBirth    DateTime
-  gender         Gender
-  languages      String[]
-  skills         String[]
-  experience     Int
-  email          String         @unique
-  contactNo      String
-  about          String
-  approvalStatus ApprovalStatus @default(PENDING)
-  adminRemarks   String?
-  price          Int?           @default(0)
-  rating         Float?         @default(0)
+  id               String                       @id @default(uuid())
+  profilePic       String
+  name             String
+  dateOfBirth      DateTime
+  gender           Gender
+  languages        String[]
+  skills           String[]
+  experience       Int
+  email            String                       @unique
+  contactNo        String
+  about            String
+  approvalStatus   ApprovalStatus               @default(PENDING)
+  adminRemarks     String?
+  price            Int?                         @default(0)
+  rating           Float?                       @default(0)
   addresses        Address[]
   experiences      ExperiencePlatform[]
   interviews       Interview[]
@@ -98,16 +100,16 @@ model Astrologer {
 }
 
 model AstrologerApproved {
-  id         Int     @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   name       String
   profilePic String
   experience Int
-  isActive   Boolean @default(true)
+  isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
 
-  @@index([name])           
-  @@index([experience])     
-  @@index([isActive])       
+  @@index([name])
+  @@index([experience])
+  @@index([isActive])
 }
 
 model Address {
@@ -121,9 +123,9 @@ model Address {
   country String
   pincode String
 
-  @@index([astrologerId])  
-  @@index([city])           
-  @@index([pincode])        
+  @@index([astrologerId])
+  @@index([city])
+  @@index([pincode])
 }
 
 model ExperiencePlatform {
@@ -134,14 +136,14 @@ model ExperiencePlatform {
   platformName String
   yearsWorked  Int
 
-  @@index([astrologerId])   
-  @@index([platformName])   
+  @@index([astrologerId])
+  @@index([platformName])
 }
 
 model Interview {
-  id             Int             @id @default(autoincrement())
-  astrologerId   String
-  astrologer     Astrologer      @relation(fields: [astrologerId], references: [id])
+  id           Int        @id @default(autoincrement())
+  astrologerId String
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
 
   roundNumber     Int
   interviewerName String
@@ -152,16 +154,16 @@ model Interview {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([astrologerId])                     
-  @@index([scheduledAt])                      
-  @@index([status])                           
-  @@unique([astrologerId, roundNumber])      
+  @@unique([astrologerId, roundNumber])
+  @@index([astrologerId])
+  @@index([scheduledAt])
+  @@index([status])
 }
 
 model AstrologerDocument {
-  id           Int          @id @default(autoincrement())
+  id           Int        @id @default(autoincrement())
   astrologerId String
-  astrologer   Astrologer   @relation(fields: [astrologerId], references: [id])
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
 
   documentType DocumentType
   documentUrl  String
@@ -172,9 +174,9 @@ model AstrologerDocument {
 
   createdAt DateTime @default(now())
 
-  @@index([astrologerId])                     
-  @@index([status])                           
-  @@unique([astrologerId, documentType])     
+  @@unique([astrologerId, documentType])
+  @@index([astrologerId])
+  @@index([status])
 }
 
 model AstrologerRejectionHistory {
@@ -188,8 +190,8 @@ model AstrologerRejectionHistory {
 
   createdAt DateTime @default(now())
 
-  @@index([astrologerId])  
-  @@index([stage])          
+  @@index([astrologerId])
+  @@index([stage])
 }
 
 enum AdminRole {
@@ -206,7 +208,7 @@ model Admin {
   phoneNo             String       @unique
   department          String?
   roleId              String
-  password            String?      // hashed password
+  password            String? // hashed password
   isActive            Boolean      @default(true)
   isDeleted           Boolean      @default(false)
   refreshToken        String?      @db.Text
@@ -216,9 +218,9 @@ model Admin {
 
   role Role @relation(fields: [roleId], references: [id])
 
-  @@index([roleId])       
-  @@index([isActive])     
-  @@index([isDeleted])  
+  @@index([roleId])
+  @@index([isActive])
+  @@index([isDeleted])
 }
 
 model Role {
@@ -227,12 +229,12 @@ model Role {
   description String?
   permissions RolePermission[]
 
-  admins      Admin[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  admins    Admin[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@index([name])        
-  @@index([createdAt])   
+  @@index([name])
+  @@index([createdAt])
 }
 
 model Permission {
@@ -243,8 +245,8 @@ model Permission {
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
-  @@index([name])       
-  @@index([createdAt])  
+  @@index([name])
+  @@index([createdAt])
 }
 
 model RolePermission {
@@ -255,9 +257,9 @@ model RolePermission {
   role       Role       @relation(fields: [roleId], references: [id])
   permission Permission @relation(fields: [permissionId], references: [id])
 
-  @@unique([roleId, permissionId])   
-  @@index([roleId])                   
-  @@index([permissionId])             
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
 }
 
 model RechargePack {
@@ -275,14 +277,14 @@ model RechargePack {
 
 // Wallets that users can recharge or use
 model Wallet {
-  id        String   @id @default(uuid())
-  name      String
+  id          String   @id @default(uuid())
+  name        String
   description String?
-  coins     Int      // number of coins in this wallet/recharge pack
-  price     Float    // real money equivalent
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  coins       Int
+  price       Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   transactions Transaction[]
   userWallets  UserWallet[]
@@ -293,29 +295,36 @@ model Wallet {
 
 // Tracks each user's current balance
 model UserWallet {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  coins     Int      @default(0)
+  id String @id @default(uuid())
+
+  userId   String
+  walletId String? // optional if linked to pack
+
+  user   User    @relation(fields: [userId], references: [id])
+  wallet Wallet? @relation(fields: [walletId], references: [id])
+
+  coins Int @default(0)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   transactions Transaction[]
 
   @@index([userId])
+  @@index([walletId])
 }
 
 // Records every credit/debit transaction
 model Transaction {
-  id            String    @id @default(uuid())
-  userWalletId  String
-  userWallet    UserWallet @relation(fields: [userWalletId], references: [id])
-  walletId      String?    // optional, if this came from a recharge pack
-  wallet        Wallet?    @relation(fields: [walletId], references: [id])
-  type          TransactionType
-  coins         Int
-  description   String?
-  createdAt     DateTime  @default(now())
+  id           String          @id @default(uuid())
+  userWalletId String
+  userWallet   UserWallet      @relation(fields: [userWalletId], references: [id])
+  walletId     String? // optional, if this came from a recharge pack
+  wallet       Wallet?         @relation(fields: [walletId], references: [id])
+  type         TransactionType
+  coins        Int
+  description  String?
+  createdAt    DateTime        @default(now())
 
   @@index([userWalletId])
   @@index([walletId])
