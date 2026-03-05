@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+
   const existing = await prisma.admin.findUnique({
     where: { email: "admin@dhwaniastro.com" },
   });
@@ -15,15 +16,15 @@ async function main() {
 
   const hashedPassword = await bcrypt.hash("123456", 10);
 
-  let role = await prisma.role.findFirst(); 
-
- if (!role) {
-  role = await prisma.role.create({
-    data: {
-      name: "SUPER_ADMIN",
-    },
+  let role = await prisma.role.findUnique({
+    where: { name: "SUPER_ADMIN" },
   });
-}
+
+  if (!role) {
+    role = await prisma.role.create({
+      data: { name: "SUPER_ADMIN" },
+    });
+  }
 
   await prisma.admin.create({
     data: {
@@ -36,7 +37,7 @@ async function main() {
     },
   });
 
-  console.log("Admin seeded successfully");
+  console.log("Super Admin created");
 }
 
 main()

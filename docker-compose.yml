@@ -1,29 +1,19 @@
 services:
 
-  app:
+ admin-auth:
     build: .
+    container_name: admin-auth-service
     ports:
-      - "4000:4000"
-      - "5555:5555"
-    depends_on:
-      - postgres
+      - "4001:4001"
     env_file:
       - .env
-    environment:
-      DATABASE_URL: postgresql://postgres:Ammy@postgres:5432/dhwaniastrov2_db
+    networks:
+      - dhwaniastro-net
 
-  postgres:
-    image: postgres:15
-    container_name: admin-auth-postgres
-    restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Ammy
-      POSTGRES_DB: dhwaniastrov2_db
-    ports:
-      - "5433:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+networks:
+  dhwaniastro-net:
+    external: true
 
-volumes:
-  pgdata:
+
+
+ 

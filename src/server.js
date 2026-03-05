@@ -60,7 +60,7 @@ async function startServer() {
     })
   );
 
-  const PORT = process.env.PORT || 4000;
+  const PORT = process.env.PORT || 4001;
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}/graphql`);
   });
