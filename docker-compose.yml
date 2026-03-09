@@ -5,9 +5,10 @@ services:
     restart: always
     environment:
       DATABASE_URL: postgresql://postgres:postgres@dhwaniastro-postgres:5432/astro
+      NODE_ENV: production
+      PORT: 8006
     ports:
       - "8006:8006"
-    mem_limit: 384m
     cpus: 0.7
     networks:
       - dhwaniastro-net
