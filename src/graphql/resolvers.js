@@ -532,6 +532,26 @@ getWallets: async () => {
         throw new Error("Failed to fetch user wallet");
       }
     },
+    getCoupons: async (_, __, context) => {
+  try {
+
+    if (!context.user || context.user.role !== "ADMIN") {
+      throw new Error("Admin only");
+    }
+
+    const coupons = await prisma.coupon.findMany({
+      orderBy: {
+        createdAt: "desc"
+      }
+    });
+
+    return coupons;
+
+  } catch (error) {
+    console.error("getCoupons error:", error);
+    throw error;
+  }
+},
   
 
 },
@@ -1318,8 +1338,79 @@ deleteRechargePack: async (_, { id }, context) => {
     console.error("deleteRechargePack error:", error);
     throw error;
   }
-}
+},
+createCoupon: async (_, { input }, context) => {
+  try {
 
+    if (!context.user || context.user.role !== "ADMIN") {
+      throw new Error("Admin only");
+    }
+
+    const coupon = await prisma.coupon.create({
+      data: {
+        code: input.code,
+        description: input.description,
+        type: input.type,
+        status: input.status ?? true,
+        visibility: input.visibility,
+        percentage: input.percentage,
+        maxDiscount: input.maxDiscount,
+        redeemLimit: input.redeemLimit,
+        startDate: new Date(input.startDate),
+        endDate: new Date(input.endDate)
+      }
+    });
+
+    return coupon;
+
+  } catch (error) {
+    console.error("createCoupon error:", error);
+    throw error;
+  }
+},
+updateCoupon: async (_, { id, input }, context) => {
+  try {
+
+    if (!context.user || context.user.role !== "ADMIN") {
+      throw new Error("Admin only");
+    }
+
+    const coupon = await prisma.coupon.update({
+      where: { id },
+      data: {
+        description: input.description,
+        percentage: input.percentage,
+        max_discount: input.maxDiscount,
+        redeem_limit: input.redeemLimit,
+        status: input.status
+      }
+    });
+
+    return coupon;
+
+  } catch (error) {
+    console.error("updateCoupon error:", error);
+    throw error;
+  }
+},
+deleteCoupon: async (_, { id }, context) => {
+  try {
+
+    if (!context.user || context.user.role !== "ADMIN") {
+      throw new Error("Admin only");
+    }
+
+    await prisma.coupon.delete({
+      where: { id }
+    });
+
+    return "Coupon deleted successfully";
+
+  } catch (error) {
+    console.error("deleteCoupon error:", error);
+    throw error;
+  }
+},
 
   },
 

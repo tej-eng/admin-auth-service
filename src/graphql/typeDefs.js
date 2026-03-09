@@ -317,6 +317,44 @@ type UserWallet {
 }
 
 #-----------------------------END Wallet MANAGEMENT-----------------#
+#-----------------------------START Coupon MANAGEMENT-----------------#
+type Coupon {
+  id: ID!
+  code: String!
+  description: String
+  type: String
+  status: Boolean
+  visibility: String
+  percentage: Float
+  max_discount: Float
+  redeem_limit: Int
+  start_date: DateTime
+  end_date: DateTime
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input CreateCouponInput {
+  code: String!
+  description: String
+  type: String!
+  status: Boolean
+  visibility: String!
+  percentage: Float
+  maxDiscount: Float
+  redeemLimit: Int
+  startDate: DateTime!
+  endDate: DateTime!
+}
+
+input UpdateCouponInput {
+  description: String
+  percentage: Float
+  maxDiscount: Float
+  redeemLimit: Int
+  status: Boolean
+}
+# ------------- END Coupon MANAGEMENT-----------------#
   type Query {
     getUsersDetails(page: Int, limit: Int): PaginatedUsers!
     getUsersListBySearch(searchInput: UserSearchInput!): UserList!
@@ -343,6 +381,7 @@ type UserWallet {
 
     getWallets: [Wallet!]!
     getUserWallet(userId: ID!): UserWallet
+    getCoupons: [Coupon!]!
 
   }
     input UpdateAstrologerInput {
@@ -466,6 +505,9 @@ input UpdateUserInput {
     createRechargePack(input: RechargePackInput!): RechargePack!
     updateRechargePack(id: ID!, input: UpdateRechargePackInput!): RechargePack!
     deleteRechargePack(id: ID!): String!
+    createCoupon(input: CreateCouponInput!): Coupon!
+    updateCoupon(id: ID!, input: UpdateCouponInput!): Coupon!
+    deleteCoupon(id: ID!): String!
   }
 `;
 

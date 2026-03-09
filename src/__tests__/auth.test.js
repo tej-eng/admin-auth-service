@@ -27,6 +27,7 @@ let adminRoleId;
 
 beforeAll(async () => {
   // Clean DB
+  console.log("DATABASE_URL:", process.env.DATABASE_URL);
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
       "Address",
@@ -46,6 +47,7 @@ beforeAll(async () => {
   await prisma.rolePermission.deleteMany();
   await prisma.role.deleteMany();
   await prisma.permission.deleteMany();
+   await prisma.coupon.deleteMany();
   // Express + Apollo
   app = express();
   app.use(express.json());
@@ -1970,8 +1972,118 @@ expect(res.body.data.deleteRechargePack).toBe("Recharge pack deleted successfull
   const ids = getRes.body.data.getRechargePacks.map(p => p.id);
   expect(ids).not.toContain(packId);
 });
+// ---------------- CREATE COUPON ----------------
 
-  
+// make sure this exists ABOVE the test
+const createCouponMutation = `
+  mutation CreateCoupon($input: CreateCouponInput!) {
+    createCoupon(input: $input) {
+      id
+      code
+      description
+      type
+      status
+      visibility
+      percentage
+      max_discount
+      redeem_limit
+      start_date
+      end_date
+    }
+  }
+`;
+
+test("createCoupon - ADMIN success", async () => {
+
+  const res = await request(app)
+    .post("/graphql")
+    .set("Authorization", `Bearer ${adminToken}`)
+    .send({
+      query: createCouponMutation,
+      variables: {
+        input: {
+          code: `WELCOME${Date.now()}`,   // ✅ unique code
+          description: "Test coupon",
+          type: "PERCENTAGE",
+          status: true,
+          visibility: "PUBLIC",
+          percentage: 50,
+          maxDiscount: 200,
+          redeemLimit: 100,
+          startDate: new Date().toISOString(),
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      }
+    });
+
+  console.log("createCoupon response:", res.body);
+
+  expect(res.body.errors).toBeUndefined();
+  expect(res.body.data.createCoupon).toBeDefined();
+  expect(res.body.data.createCoupon.percentage).toBe(50);
+
+});
+
+// //---------------- UPDATE COUPON ----------------
+// const updateCouponMutation = `
+// mutation UpdateCoupon($id: ID!, $input: UpdateCouponInput!) {
+//   updateCoupon(id: $id, input: $input) {
+//     id
+//     description
+//     percentage
+//     max_discount
+//     redeem_limit
+//     status
+//   }
+// }
+// `;
+// test("updateCoupon - ADMIN success", async () => {
+
+//   const createRes = await request(app)
+//     .post("/graphql")
+//     .set("Authorization", `Bearer ${adminToken}`)
+//     .send({
+//       query: createCouponMutation,
+//       variables: {
+//         input: {
+//           code: `UPDATE${Date.now()}`,
+//           description: "Coupon before update",
+//           type: "PERCENTAGE",
+//           status: true,
+//           visibility: "PUBLIC",
+//           percentage: 20,
+//           maxDiscount: 100,
+//           redeemLimit: 10,
+//           startDate: new Date().toISOString(),
+//           endDate: new Date(Date.now() + 86400000).toISOString()
+//         }
+//       }
+//     });
+
+//   const couponId = createRes.body.data.createCoupon.id;
+
+//   const res = await request(app)
+//     .post("/graphql")
+//     .set("Authorization", `Bearer ${adminToken}`)
+//     .send({
+//       query: updateCouponMutation,
+//       variables: {
+//         id: couponId,
+//         input: {
+//           description: "Updated coupon description",
+//           percentage: 30,
+//           maxDiscount: 150,
+//           redeemLimit: 20,
+//           status: true
+//         }
+//       }
+//     });
+
+//   expect(res.body.errors).toBeUndefined();
+//   expect(res.body.data.updateCoupon.percentage).toBe(30);
+// });
+
+
 
 });
 

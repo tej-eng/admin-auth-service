@@ -60,6 +60,11 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  wallet       UserWallet?
+  payments     Payment[]
+  paymentOrders PaymentOrder[]
+  sessions     Session[]
+
   @@index([mobile])
 }
 
@@ -87,7 +92,8 @@ model Astrologer {
 
   approvedById String?
   approvedBy   Admin?  @relation(fields: [approvedById], references: [id])
-
+  wallet         AstrologerWallet?
+  sessions       Session[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -271,58 +277,276 @@ model RechargePack {
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-}
 
-// Wallets that users can recharge or use
-model Wallet {
-  id        String   @id @default(uuid())
-  name      String
-  description String?
-  coins     Int      // number of coins in this wallet/recharge pack
-  price     Float    // real money equivalent
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  transactions Transaction[]
-  userWallets  UserWallet[]
-
-  @@index([name])
+  transactions WalletTransaction[]
+  payments     Payment[]
+  paymentOrders PaymentOrder[]
+  coupons       Coupon[]
   @@index([isActive])
+  @@index([price])
+  @@index([coins])
+  @@index([createdAt])
 }
 
-// Tracks each user's current balance
 model UserWallet {
-  id        String   @id @default(uuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  coins     Int      @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id])
 
-  transactions Transaction[]
+  balanceCoins Int      @default(0)
+  lockedCoins  Int      @default(0)
 
-  @@index([userId])
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  transactions WalletTransaction[]
 }
 
-// Records every credit/debit transaction
-model Transaction {
-  id            String    @id @default(uuid())
-  userWalletId  String
-  userWallet    UserWallet @relation(fields: [userWalletId], references: [id])
-  walletId      String?    // optional, if this came from a recharge pack
-  wallet        Wallet?    @relation(fields: [walletId], references: [id])
-  type          TransactionType
-  coins         Int
-  description   String?
-  createdAt     DateTime  @default(now())
+model AstrologerWallet {
+  id              String     @id @default(uuid())
+  astrologerId    String     @unique
+  astrologer      Astrologer @relation(fields: [astrologerId], references: [id])
+  balanceCoins    Int        @default(0)
+  totalEarned     Int        @default(0)
+  totalWithdrawn  Int        @default(0)
+   withdrawals     Withdrawal[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  transactions WalletTransaction[]
+
+  @@index([astrologerId])
+}
+
+model WalletTransaction {
+  id                String   @id @default(uuid())
+
+  userWalletId      String?
+  userWallet        UserWallet? @relation(fields: [userWalletId], references: [id])
+
+  astrologerWalletId String?
+  astrologerWallet   AstrologerWallet? @relation(fields: [astrologerWalletId], references: [id])
+
+  rechargePackId    String?
+  rechargePack      RechargePack? @relation(fields: [rechargePackId], references: [id])
+
+  sessionId         String?
+  session           Session? @relation(fields: [sessionId], references: [id])
+
+  //  ADD THIS (CRITICAL)
+  paymentId         String?
+  payment           Payment? @relation(fields: [paymentId], references: [id])
+
+  type              TransactionType
+  coins             Int
+  amount            Float?
+  description       String?
+
+  createdAt         DateTime @default(now())
 
   @@index([userWalletId])
-  @@index([walletId])
-  @@index([type])
+  @@index([astrologerWalletId])
+  @@index([sessionId])
+  @@index([paymentId])
+  @@index([createdAt])
+
+  //  PREVENT duplicate credit from same payment
+  @@unique([paymentId, type])
 }
 
 enum TransactionType {
   CREDIT
   DEBIT
+}
+
+model Withdrawal {
+  id                String @id @default(uuid())
+
+  astrologerWalletId String
+  astrologerWallet  AstrologerWallet @relation(fields: [astrologerWalletId], references: [id])
+
+  amount            Float
+  coins             Int
+
+  status            WithdrawalStatus
+
+  requestedAt       DateTime @default(now())
+  processedAt       DateTime?
+
+  transactionRef    String?
+
+  @@index([astrologerWalletId])
+  @@index([status])
+}
+
+enum WithdrawalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Session {
+  id            String   @id @default(uuid())
+
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+
+  astrologerId  String
+  astrologer    Astrologer @relation(fields: [astrologerId], references: [id])
+
+  type          SessionType
+  status        SessionStatus
+
+  ratePerMin    Int
+  durationSec   Int      @default(0)
+
+  coinsDeducted Int      @default(0)
+  coinsEarned   Int      @default(0)
+  commission    Int      @default(0)
+
+  startedAt     DateTime?
+  endedAt       DateTime?
+
+  createdAt     DateTime @default(now())
+  transactions  WalletTransaction[]
+  @@index([userId])
+  @@index([astrologerId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum SessionType {
+  CHAT
+  CALL
+}
+
+enum SessionStatus {
+  REQUESTED
+  ACCEPTED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
+
+model Payment {
+  id                String   @id @default(uuid())
+
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+
+  rechargePackId    String
+  rechargePack      RechargePack @relation(fields: [rechargePackId], references: [id])
+
+  paymentOrderId    String   @unique
+  paymentOrder      PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+
+  amount            Float
+  coins             Int
+
+  provider          PaymentProvider
+
+  razorpayOrderId   String
+  razorpayPaymentId String   @unique
+
+  status            PaymentStatus
+
+  createdAt         DateTime @default(now())
+
+  // ADD THIS
+  walletTransactions WalletTransaction[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([razorpayOrderId])
+}
+
+enum PaymentProvider {
+  RAZORPAY
+  STRIPE
+  CASHFREE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+enum PaymentOrderStatus {
+  CREATED
+  PAID
+  FAILED
+}
+
+model PaymentOrder {
+  id              String   @id @default(uuid())
+
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+
+  rechargePackId  String
+  rechargePack    RechargePack @relation(fields: [rechargePackId], references: [id])
+
+  razorpayOrderId String   @unique
+
+  amount          Float
+  coins           Int
+
+  status          PaymentOrderStatus @default(CREATED)
+
+  payment         Payment?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId])
+  @@index([razorpayOrderId])
+  @@index([status])
+}
+model CommissionConfig {
+  id            String  @id @default(uuid())
+
+  chatPercent   Float
+  callPercent   Float
+
+  createdAt     DateTime @default(now())
+
+  // only one config active
+  @@unique([createdAt])
+}
+
+enum CouponType {
+  PERCENTAGE
+  FLAT
+}
+
+enum CouponVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+model Coupon {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  description   String?
+
+  type          CouponType
+  visibility    CouponVisibility
+  status        Boolean  @default(true)
+
+  percentage    Float?
+  flatAmount    Float?
+  maxDiscount   Float?
+
+  minOrderAmount Float?
+  redeemLimit   Int?
+  usedCount     Int      @default(0)
+
+  startDate     DateTime
+  endDate       DateTime
+
+  rechargePacks RechargePack[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
