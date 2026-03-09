@@ -9,7 +9,7 @@ COPY . .
 
 RUN npx prisma generate
 
-EXPOSE 4000
+EXPOSE 8006
 
 CMD ["node", "src/server.js"]
 
