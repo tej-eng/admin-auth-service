@@ -1,5 +1,4 @@
-// src/server.js
-import "dotenv/config"; // loads .env automatically
+import "dotenv/config"; 
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -54,7 +53,7 @@ async function startServer() {
     })
   );
 
-  const PORT = process.env.PORT || 4000;
+  const PORT = process.env.PORT ||8006;
   app.listen(PORT, () => {
     console.log(`Server running at http://localhost:${PORT}/graphql`);
   });

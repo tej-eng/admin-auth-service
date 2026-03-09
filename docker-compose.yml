@@ -1,21 +1,17 @@
-version: '3.8'
-
 services:
-
-  app:
+  user-auth-service:
     build: .
-    ports:
-      - "4000:4000"
-    depends_on:
-      - mysql
-    env_file:
-      - .env
-
-  mysql:
-    image: mysql:8
+    container_name: user-auth-service
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: astrodb
+      DATABASE_URL: postgresql://postgres:postgres@dhwaniastro-postgres:5432/astro
     ports:
-      - "3307:3306"
+      - "8006:8006"
+    mem_limit: 384m
+    cpus: 0.7
+    networks:
+      - dhwaniastro-net
 
+networks:
+  dhwaniastro-net:
+    external: true
