@@ -1,10 +1,11 @@
 services:
-
- admin-auth:
+  admin-auth:
     build: .
     container_name: admin-auth-service
     ports:
       - "4001:4001"
+      - "5556:5555"
+      
     env_file:
       - .env
     networks:
@@ -13,7 +14,3 @@ services:
 networks:
   dhwaniastro-net:
     external: true
-
-
-
- 

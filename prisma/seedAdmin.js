@@ -4,40 +4,86 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  console.log("Seeding started...");
 
-  const existing = await prisma.admin.findUnique({
-    where: { email: "admin@dhwaniastro.com" },
-  });
-
-  if (existing) {
-    console.log("Admin already exists");
-    return;
-  }
-
-  const hashedPassword = await bcrypt.hash("123456", 10);
-
-  let role = await prisma.role.findUnique({
-    where: { name: "SUPER_ADMIN" },
-  });
-
-  if (!role) {
-    role = await prisma.role.create({
-      data: { name: "SUPER_ADMIN" },
-    });
-  }
-
-  await prisma.admin.create({
-    data: {
-      name: "Super Admin",
-      email: "admin@dhwaniastro.com",
-      phoneNo: "9999999999",
-      password: hashedPassword,
-      roleId: role.id,
-      isActive: true,
+  // ================= ROLE =================
+  const role = await prisma.role.upsert({
+    where: { slug: "super-admin" },
+    update: {},
+    create: {
+      name: "SUPER_ADMIN",
+      slug: "super-admin",
     },
   });
 
-  console.log("Super Admin created");
+  // ================= DEPARTMENT =================
+  const department = await prisma.department.upsert({
+    where: { slug: "admin-department" },
+    update: {},
+    create: {
+      name: "Admin Department",
+      slug: "admin-department",
+    },
+  });
+
+  // ================= MODULES =================
+  const modulesData = [
+    { name: "Roles", slug: "roles", section: "admin" },
+    { name: "Permissions", slug: "permissions", section: "admin" },
+    { name: "Modules", slug: "modules", section: "admin" },
+    { name: "Departments", slug: "departments", section: "admin" },
+    { name: "Staff", slug: "staff", section: "admin" },
+  ];
+
+  for (const mod of modulesData) {
+    await prisma.module.upsert({
+      where: { slug: mod.slug },
+      update: {},
+      create: mod,
+    });
+  }
+
+  // ================= PERMISSIONS =================
+  const actions = ["create", "read", "update", "delete"];
+  const modules = await prisma.module.findMany();
+
+  for (const mod of modules) {
+    for (const action of actions) {
+      const name = `${mod.slug}.${action}`;
+
+      await prisma.permission.upsert({
+        where: { name },
+        update: {},
+        create: {
+          name,
+          modules: {
+            create: {
+              module: { connect: { id: mod.id } },
+            },
+          },
+        },
+      });
+    }
+  }
+
+  // ================= SUPER ADMIN =================
+  const hashedPassword = await bcrypt.hash("123456", 10);
+
+  await prisma.staff.upsert({
+    where: { email: "admin@dhwaniastro.com" },
+    update: {
+      password: hashedPassword,
+    },
+    create: {
+      name: "Super Admin",
+      email: "admin@dhwaniastro.com",
+      password: hashedPassword,
+      roleId: role.id,
+      departmentId: department.id,
+    },
+  });
+
+  console.log("Seed Done");
 }
 
 main()

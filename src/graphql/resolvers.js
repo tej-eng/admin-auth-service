@@ -1,9 +1,18 @@
 // src/graphql/resolvers.js
 import { PrismaClient } from "@prisma/client";
-import { adminLoginService } from "../services/auth.service.js";
-import { createAdminService, addAstrologerService } from "../services/adminService.js";
-import { DateTimeResolver } from 'graphql-scalars';
+import bcrypt from "bcryptjs";
+// import { adminLoginService } from "../services/auth.service.js";
+import {
+  createAdminService,
+  addAstrologerService,
+  adminLoginService,
+} from "../services/adminService.js";
+import { DateTimeResolver } from "graphql-scalars";
 import { connectMongo } from "../config/mongo.js";
+
+import GraphQLUpload from "graphql-upload/GraphQLUpload.mjs";
+import { generateSlug } from "../utils/slugify.js";
+import { generateAccessToken, generateRefreshToken } from "../config/jwt.js";
 
 const prisma = new PrismaClient();
 
@@ -13,8 +22,8 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
     const collection = db.collection("adminGraphQLLogs");
 
     await collection.insertOne({
-      type,              // SUCCESS / ERROR
-      operation,         // getUsersDetails / createRole etc
+      type, // SUCCESS / ERROR
+      operation, // getUsersDetails / createRole etc
       userId,
       details,
       timestamp: new Date(),
@@ -24,12 +33,47 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
   }
 }
 
+async function checkPermission(staff, requiredPermission) {
+  if (!staff) throw new Error("Unauthorized");
+
+  // 🔥 SUPER ADMIN BYPASS
+  const fullStaff = await prisma.staff.findUnique({
+    where: { id: staff.id },
+    include: { role: true },
+  });
+
+  if (fullStaff.role?.slug === "super-admin") {
+    return true;
+  }
+
+  // 🔥 Normal RBAC flow
+  const rolePerms = await prisma.rolePermission.findMany({
+    where: { roleId: staff.roleId },
+    include: { permission: true },
+  });
+
+  const staffPerms = await prisma.staffPermission.findMany({
+    where: { staffId: staff.id },
+    include: { permission: true },
+  });
+
+  const allPermissions = [
+    ...rolePerms.map((r) => r.permission.name),
+    ...staffPerms.map((s) => s.permission.name),
+  ];
+
+  if (!allPermissions.includes(requiredPermission)) {
+    throw new Error("Unauthorized: Missing permission");
+  }
+}
+
 export const resolvers = {
+  Upload: GraphQLUpload,
   Query: {
     // ================= GET USERS (ADMIN ONLY) =================
     getUsersDetails: async (_, { page = 1, limit = 10 }, context) => {
       try {
-        if (!context.user || context.user.role !== "ADMIN") {
+        if (!context.user || context.user.role.name !== "ADMIN") {
           throw new Error("Admin only");
         }
 
@@ -50,12 +94,10 @@ export const resolvers = {
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),
         };
-
       } catch (error) {
         throw error;
       }
     },
-
 
     getUsersListBySearch: async (_, { searchInput }, context) => {
       try {
@@ -63,11 +105,7 @@ export const resolvers = {
           throw new Error("Admin only");
         }
 
-        const {
-          query,
-          page = 1,
-          limit = 10
-        } = searchInput;
+        const { query, page = 1, limit = 10 } = searchInput;
 
         const safePage = Math.max(page, 1);
         const safeLimit = Math.min(limit, 50);
@@ -76,11 +114,11 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { mobile: { contains: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { mobile: { contains: query } },
+              ],
+            }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -99,65 +137,6 @@ export const resolvers = {
           currentPage: safePage,
           totalPages: Math.ceil(totalCount / safeLimit),
         };
-
-      } catch (error) {
-        throw error;
-      }
-    },
-
-
-    getRoles: async (_, __, context) => {
-      try {
-        if (!context.user || context.user.role !== "SUPER_ADMIN") {
-          throw new Error("Only SUPER_ADMIN can view roles");
-        }
-
-        const roles = await prisma.role.findMany({
-          include: {
-            permissions: {
-              include: {
-                permission: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
-
-        return roles.map((role) => ({
-          id: role.id,
-          name: role.name,
-          description: role.description,
-          permissions: role.permissions.map((rp) => rp.permission),
-        }));
-
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    getPermissions: async (_, __, context) => {
-      try {
-        if (!context.user || !["ADMIN", "SUPER_ADMIN"].includes(context.user.role)) {
-          throw new Error("Not authorized to view permissions");
-        }
-
-        const permissions = await prisma.permission.findMany({
-          include: {
-            roles: {
-              include: {
-                role: true,
-              },
-            },
-          },
-          orderBy: {
-            createdAt: "desc",
-          },
-        });
-
-        return permissions;
-
       } catch (error) {
         throw error;
       }
@@ -172,7 +151,7 @@ export const resolvers = {
           sortField,
           sortOrder,
           limit = 10,
-          page = 1
+          page = 1,
         } = searchInput;
 
         const safeLimit = Math.min(limit, 50);
@@ -199,12 +178,12 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { skills: { has: query } },
-              { languages: { has: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { skills: { has: query } },
+                { languages: { has: query } },
+              ],
+            }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -225,7 +204,6 @@ export const resolvers = {
         };
 
         return response;
-
       } catch (error) {
         throw error;
       }
@@ -244,7 +222,7 @@ export const resolvers = {
 
         const whereCondition = {
           approvalStatus: {
-            in: ["PENDING", "INTERVIEW", "DOCUMENT_VERIFICATION"]
+            in: ["PENDING", "INTERVIEW", "DOCUMENT_VERIFICATION"],
           },
         };
 
@@ -273,13 +251,16 @@ export const resolvers = {
         };
 
         return response;
-
       } catch (error) {
         throw error;
       }
     },
 
-    getAstrologerInterviews: async (_, { astrologerId, page = 1, limit = 10 }, context) => {
+    getAstrologerInterviews: async (
+      _,
+      { astrologerId, page = 1, limit = 10 },
+      context,
+    ) => {
       try {
         if (!context.user || context.user.role !== "ADMIN") {
           throw new Error("Admin only");
@@ -309,13 +290,16 @@ export const resolvers = {
         };
 
         return response;
-
       } catch (error) {
         throw error;
       }
     },
 
-    getAstrologerDocuments: async (_, { astrologerId, page = 1, limit = 10 }, context) => {
+    getAstrologerDocuments: async (
+      _,
+      { astrologerId, page = 1, limit = 10 },
+      context,
+    ) => {
       try {
         if (!context.user || context.user.role !== "ADMIN") {
           throw new Error("Admin only");
@@ -345,7 +329,6 @@ export const resolvers = {
         };
 
         return response;
-
       } catch (error) {
         throw error;
       }
@@ -372,7 +355,6 @@ export const resolvers = {
         });
 
         return astrologers;
-
       } catch (error) {
         throw error;
       }
@@ -415,7 +397,6 @@ export const resolvers = {
         };
 
         return response;
-
       } catch (error) {
         throw error;
       }
@@ -475,7 +456,6 @@ export const resolvers = {
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),
         };
-
       } catch (error) {
         console.error("getAdmins error", {
           message: error.message,
@@ -489,15 +469,14 @@ export const resolvers = {
     },
 
     getRechargePacks: async (_, __, context) => {
-
-      if (!context.user) {
-        throw new Error("Unauthorized");
-      }
+      // if (!context.user) {
+      //   throw new Error("Unauthorized");
+      // }
 
       const packs = await prisma.rechargePack.findMany({
         orderBy: {
-          createdAt: "desc"
-        }
+          createdAt: "desc",
+        },
       });
 
       return packs;
@@ -507,7 +486,7 @@ export const resolvers = {
       try {
         const wallets = await prisma.wallet.findMany({
           where: { isActive: true },
-          orderBy: { createdAt: "desc" }
+          orderBy: { createdAt: "desc" },
         });
         return wallets;
       } catch (error) {
@@ -533,30 +512,281 @@ export const resolvers = {
       }
     },
 
+    // Modules Query
+    getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
+      const skip = (page - 1) * limit;
 
+      const [modules, totalCount] = await Promise.all([
+        prisma.module.findMany({
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.module.count(),
+      ]);
+
+      return {
+        data: modules,
+        totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
+
+    // ROLES QUERY
+    getRoles: async (_, { page = 1, limit = 10 }, context) => {
+      try {
+        const skip = (page - 1) * limit;
+
+        const [roles, totalCount] = await Promise.all([
+          prisma.role.findMany({
+            skip,
+            take: limit,
+            orderBy: { createdAt: "desc" },
+          }),
+          prisma.role.count(),
+        ]);
+
+        return {
+          data: roles,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        console.error("getRoles error:", error);
+
+        throw new Error(error.message);
+      }
+    },
+
+    // Permission Query
+    getPermissions: async (_, { page = 1, limit = 10 }) => {
+      const skip = (page - 1) * limit;
+
+      const [permissions, totalCount] = await Promise.all([
+        prisma.permission.findMany({
+          skip,
+          take: limit,
+          include: {
+            modules: {
+              include: {
+                module: true,
+              },
+            },
+          },
+        }),
+        prisma.permission.count(),
+      ]);
+
+      const formatted = permissions.map((p) => ({
+        ...p,
+        modules: p.modules.map((m) => m.module),
+      }));
+
+      return {
+        data: formatted,
+        totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
+
+    // Department Query
+    getDepartments: async (_, { page = 1, limit = 10 }) => {
+      const skip = (page - 1) * limit;
+
+      const [departments, totalCount] = await Promise.all([
+        prisma.department.findMany({
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.department.count(),
+      ]);
+
+      return {
+        data: departments,
+        totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
+
+    // Staff query
+    getStaff: async (_, { page = 1, limit = 10 }) => {
+      const skip = (page - 1) * limit;
+
+      const [staff, totalCount] = await Promise.all([
+        prisma.staff.findMany({
+          skip,
+          take: limit,
+
+          include: {
+            department: true,
+            role: true,
+            permissions: {
+              include: { permission: true },
+            },
+          },
+        }),
+
+        prisma.staff.count(),
+      ]);
+
+      const formatted = staff.map((s) => ({
+        ...s,
+        permissions: s.permissions.map((p) => p.permission),
+      }));
+
+      return {
+        data: formatted,
+        totalCount,
+        currentPage: page,
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
+
+    // Get my access
+    getMyAccess: async (_, __, context) => {
+      const user = context.user;
+      if (!user) throw new Error("Unauthorized");
+
+      const fullUser = await prisma.staff.findUnique({
+        where: { id: user.id },
+        include: { role: true },
+      });
+
+      // 🔥 SUPER ADMIN BYPASS (CRITICAL FIX)
+      if (fullUser.role?.slug === "super-admin") {
+        const modules = await prisma.module.findMany({
+          where: { isDeleted: false, isActive: true },
+        });
+
+        return modules.map((mod) => ({
+          id: mod.id,
+          name: mod.name,
+          slug: mod.slug,
+          permissions: [
+            `${mod.slug}.create`,
+            `${mod.slug}.read`,
+            `${mod.slug}.update`,
+            `${mod.slug}.delete`,
+          ],
+        }));
+      }
+
+      // ================= NORMAL FLOW =================
+
+      const rolePermissions = await prisma.rolePermission.findMany({
+        where: {
+          roleId: user.roleId,
+          permission: { isDeleted: false },
+        },
+        include: {
+          permission: {
+            include: {
+              modules: {
+                where: {
+                  module: { isDeleted: false, isActive: true },
+                },
+                include: { module: true },
+              },
+            },
+          },
+        },
+      });
+
+      const staffPermissions = await prisma.staffPermission.findMany({
+        where: {
+          staffId: user.id,
+          permission: { isDeleted: false },
+        },
+        include: {
+          permission: {
+            include: {
+              modules: {
+                where: {
+                  module: { isDeleted: false, isActive: true },
+                },
+                include: { module: true },
+              },
+            },
+          },
+        },
+      });
+
+      const allPermissions = [
+        ...rolePermissions.map((r) => r.permission),
+        ...staffPermissions.map((s) => s.permission),
+      ];
+
+      const moduleMap = {};
+
+      allPermissions.forEach((perm) => {
+        perm.modules.forEach((mp) => {
+          const mod = mp.module;
+
+          if (!moduleMap[mod.id]) {
+            moduleMap[mod.id] = {
+              id: mod.id,
+              name: mod.name,
+              slug: mod.slug,
+              permissions: new Set(),
+            };
+          }
+
+          moduleMap[mod.id].permissions.add(perm.name);
+        });
+      });
+
+      return Object.values(moduleMap).map((mod) => ({
+        ...mod,
+        permissions: Array.from(mod.permissions),
+      }));
+    },
+    getModulesBySection: async (_, { section }) => {
+      return prisma.module.findMany({
+        where: {
+          section: section.toLowerCase(),
+          isActive: true,
+        },
+        orderBy: { createdAt: "asc" },
+      });
+    },
   },
+
+  // *******************************************************************************************************************************
 
   Mutation: {
     // ================= ADMIN LOGIN =================
-    loginAdmin: async (_, { email, password }, { res }) => {
-      const result = await adminLoginService(email, password);
-
-      // Set HttpOnly cookies
-      res.cookie("token", result.accessToken, {
-       httpOnly: true,
-  secure: false,        // IMPORTANT for localhost
-  sameSite: "lax",      // keep lax for localhost
-  maxAge: 15 * 60 * 1000,
+    loginStaff: async (_, { email, password }, { res }) => {
+      const staff = await prisma.staff.findUnique({
+        where: { email },
+        include: { role: true },
       });
 
-      res.cookie("refreshToken", result.refreshToken, {
-        httpOnly: true,
-        secure: false,        // IMPORTANT for localhost
-        sameSite: "lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
+      if (!staff) throw new Error("Invalid credentials");
+      // console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhh", permissions);
+      const isMatch = await bcrypt.compare(password, staff.password);
 
-      return result;
+      if (!isMatch) throw new Error("Invalid credentials");
+
+      const accessToken = generateAccessToken(staff);
+      const refreshToken = generateRefreshToken(staff);
+      console.log("INPUT:", password);
+      console.log("DB:", staff.password);
+      // res.cookie("token", accessToken, {
+      //   httpOnly: true,
+      //   sameSite: "lax",
+      //   secure: false,
+      // });
+
+      return {
+        accessToken,
+        refreshToken,
+        user: staff,
+      };
     },
 
     logoutAdmin: async (_, __, context) => {
@@ -566,303 +796,297 @@ export const resolvers = {
         }
 
         return "Admin logged out successfully";
-
       } catch (error) {
         throw new Error(error.message || "Logout failed");
       }
     },
 
-    createPermission: async (_, { name, description }, context) => {
-      try {
-        if (!context.user || context.user.role !== "SUPER_ADMIN") {
-          throw new Error("Only SUPER_ADMIN can create permissions");
-        }
+    // createPermission: async (_, { name, description }, context) => {
+    //   try {
+    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
+    //       throw new Error("Only SUPER_ADMIN can create permissions");
+    //     }
 
-        const normalizedName = name.trim().toUpperCase();
+    //     const normalizedName = name.trim().toUpperCase();
 
-        const existing = await prisma.permission.findUnique({
-          where: { name: normalizedName },
-        });
+    //     const existing = await prisma.permission.findUnique({
+    //       where: { name: normalizedName },
+    //     });
 
-        if (existing) {
-          throw new Error("Permission already exists");
-        }
+    //     if (existing) {
+    //       throw new Error("Permission already exists");
+    //     }
 
-        return await prisma.permission.create({
-          data: {
-            name: normalizedName,
-            description,
-          },
-        });
+    //     return await prisma.permission.create({
+    //       data: {
+    //         name: normalizedName,
+    //         description,
+    //       },
+    //     });
+    //   } catch (error) {
+    //     throw new Error(error.message || "Failed to create permission");
+    //   }
+    // },
 
-      } catch (error) {
-        throw new Error(error.message || "Failed to create permission");
-      }
-    },
+    // updatePermission: async (
+    //   _,
+    //   { permissionId, name, description },
+    //   context,
+    // ) => {
+    //   try {
+    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
+    //       throw new Error("Only SUPER_ADMIN can update permissions");
+    //     }
 
+    //     const existingPermission = await prisma.permission.findUnique({
+    //       where: { id: permissionId },
+    //     });
 
-    updatePermission: async (
-      _,
-      { permissionId, name, description },
-      context
-    ) => {
-      try {
-        if (!context.user || context.user.role !== "SUPER_ADMIN") {
-          throw new Error("Only SUPER_ADMIN can update permissions");
-        }
+    //     if (!existingPermission) {
+    //       throw new Error("Permission not found");
+    //     }
 
-        const existingPermission = await prisma.permission.findUnique({
-          where: { id: permissionId },
-        });
+    //     let normalizedName;
 
-        if (!existingPermission) {
-          throw new Error("Permission not found");
-        }
+    //     if (name) {
+    //       normalizedName = name.trim().toUpperCase();
 
-        let normalizedName;
+    //       const duplicate = await prisma.permission.findUnique({
+    //         where: { name: normalizedName },
+    //       });
 
-        if (name) {
-          normalizedName = name.trim().toUpperCase();
+    //       if (duplicate && duplicate.id !== permissionId) {
+    //         throw new Error("Permission name already exists");
+    //       }
+    //     }
 
-          const duplicate = await prisma.permission.findUnique({
-            where: { name: normalizedName },
-          });
+    //     const updatedPermission = await prisma.permission.update({
+    //       where: { id: permissionId },
+    //       data: {
+    //         ...(normalizedName && { name: normalizedName }),
+    //         ...(description !== undefined && { description }),
+    //       },
+    //     });
 
-          if (duplicate && duplicate.id !== permissionId) {
-            throw new Error("Permission name already exists");
-          }
-        }
+    //     return updatedPermission;
+    //   } catch (error) {
+    //     throw new Error(error.message || "Failed to update permission");
+    //   }
+    // },
 
-        const updatedPermission = await prisma.permission.update({
-          where: { id: permissionId },
-          data: {
-            ...(normalizedName && { name: normalizedName }),
-            ...(description !== undefined && { description }),
-          },
-        });
+    // deletePermission: async (_, { permissionId }, context) => {
+    //   try {
+    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
+    //       throw new Error("Only SUPER_ADMIN can delete permissions");
+    //     }
 
-        return updatedPermission;
+    //     const existingPermission = await prisma.permission.findUnique({
+    //       where: { id: permissionId },
+    //       include: {
+    //         roles: true,
+    //       },
+    //     });
 
-      } catch (error) {
-        throw new Error(error.message || "Failed to update permission");
-      }
-    },
+    //     if (!existingPermission) {
+    //       throw new Error("Permission not found");
+    //     }
 
+    //     if (existingPermission.roles.length > 0) {
+    //       throw new Error("Cannot delete permission assigned to roles");
+    //     }
 
-    deletePermission: async (_, { permissionId }, context) => {
-      try {
-        if (!context.user || context.user.role !== "SUPER_ADMIN") {
-          throw new Error("Only SUPER_ADMIN can delete permissions");
-        }
+    //     await prisma.permission.delete({
+    //       where: { id: permissionId },
+    //     });
 
-        const existingPermission = await prisma.permission.findUnique({
-          where: { id: permissionId },
-          include: {
-            roles: true,
-          },
-        });
+    //     return "Permission deleted successfully";
+    //   } catch (error) {
+    //     throw new Error(error.message || "Failed to delete permission");
+    //   }
+    // },
 
-        if (!existingPermission) {
-          throw new Error("Permission not found");
-        }
+    // Roles *****************************************
 
-        if (existingPermission.roles.length > 0) {
-          throw new Error("Cannot delete permission assigned to roles");
-        }
+    // createRole: async (
+    //   _,
+    //   { name, description, permissionIds = [] },
+    //   context,
+    // ) => {
+    //   try {
+    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
+    //       throw new Error("Only SUPER_ADMIN can create roles");
+    //     }
 
-        await prisma.permission.delete({
-          where: { id: permissionId },
-        });
+    //     const normalizedName = name.trim().toUpperCase();
 
-        return "Permission deleted successfully";
+    //     const existingRole = await prisma.role.findUnique({
+    //       where: { name: normalizedName },
+    //     });
 
-      } catch (error) {
-        throw new Error(error.message || "Failed to delete permission");
-      }
-    },
+    //     if (existingRole) {
+    //       throw new Error("Role already exists");
+    //     }
 
-    createRole: async (_, { name, description, permissionIds = [] }, context) => {
-      try {
-        if (!context.user || context.user.role !== "SUPER_ADMIN") {
-          throw new Error("Only SUPER_ADMIN can create roles");
-        }
+    //     if (permissionIds.length > 0) {
+    //       const permissions = await prisma.permission.findMany({
+    //         where: { id: { in: permissionIds } },
+    //       });
 
-        const normalizedName = name.trim().toUpperCase();
+    //       if (permissions.length !== permissionIds.length) {
+    //         throw new Error("One or more permission IDs are invalid");
+    //       }
+    //     }
 
-        const existingRole = await prisma.role.findUnique({
-          where: { name: normalizedName },
-        });
+    //     const role = await prisma.role.create({
+    //       data: {
+    //         name: normalizedName,
+    //         description,
+    //         ...(permissionIds.length > 0 && {
+    //           permissions: {
+    //             create: permissionIds.map((permissionId) => ({
+    //               permission: {
+    //                 connect: { id: permissionId },
+    //               },
+    //             })),
+    //           },
+    //         }),
+    //       },
+    //       include: {
+    //         permissions: {
+    //           include: {
+    //             permission: true,
+    //           },
+    //         },
+    //       },
+    //     });
 
-        if (existingRole) {
-          throw new Error("Role already exists");
-        }
+    //     return {
+    //       id: role.id,
+    //       name: role.name,
+    //       description: role.description,
+    //       permissions: role.permissions.map((rp) => rp.permission),
+    //     };
+    //   } catch (error) {
+    //     throw new Error(error.message || "Failed to create role");
+    //   }
+    // },
 
-        if (permissionIds.length > 0) {
-          const permissions = await prisma.permission.findMany({
-            where: { id: { in: permissionIds } },
-          });
+    // updateRole: async (
+    //   _,
+    //   { roleId, name, description, permissionIds },
+    //   context,
+    // ) => {
+    //   try {
+    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
+    //       throw new Error("Only SUPER_ADMIN can update roles");
+    //     }
 
-          if (permissions.length !== permissionIds.length) {
-            throw new Error("One or more permission IDs are invalid");
-          }
-        }
+    //     const existingRole = await prisma.role.findUnique({
+    //       where: { id: roleId },
+    //       include: { permissions: true },
+    //     });
 
-        const role = await prisma.role.create({
-          data: {
-            name: normalizedName,
-            description,
-            ...(permissionIds.length > 0 && {
-              permissions: {
-                create: permissionIds.map((permissionId) => ({
-                  permission: {
-                    connect: { id: permissionId },
-                  },
-                })),
-              },
-            }),
-          },
-          include: {
-            permissions: {
-              include: {
-                permission: true,
-              },
-            },
-          },
-        });
+    //     if (!existingRole) {
+    //       throw new Error("Role not found");
+    //     }
 
-        return {
-          id: role.id,
-          name: role.name,
-          description: role.description,
-          permissions: role.permissions.map((rp) => rp.permission),
-        };
+    //     let normalizedName;
+    //     if (name) {
+    //       normalizedName = name.trim().toUpperCase();
 
-      } catch (error) {
-        throw new Error(error.message || "Failed to create role");
-      }
-    },
+    //       const duplicate = await prisma.role.findUnique({
+    //         where: { name: normalizedName },
+    //       });
 
+    //       if (duplicate && duplicate.id !== roleId) {
+    //         throw new Error("Role name already exists");
+    //       }
+    //     }
 
-    updateRole: async (
-      _,
-      { roleId, name, description, permissionIds },
-      context
-    ) => {
-      try {
-        if (!context.user || context.user.role !== "SUPER_ADMIN") {
-          throw new Error("Only SUPER_ADMIN can update roles");
-        }
+    //     if (permissionIds) {
+    //       if (permissionIds.length > 0) {
+    //         const permissions = await prisma.permission.findMany({
+    //           where: { id: { in: permissionIds } },
+    //         });
 
-        const existingRole = await prisma.role.findUnique({
-          where: { id: roleId },
-          include: { permissions: true },
-        });
+    //         if (permissions.length !== permissionIds.length) {
+    //           throw new Error("One or more permission IDs are invalid");
+    //         }
+    //       }
+    //     }
 
-        if (!existingRole) {
-          throw new Error("Role not found");
-        }
+    //     const updatedRole = await prisma.role.update({
+    //       where: { id: roleId },
+    //       data: {
+    //         ...(normalizedName && { name: normalizedName }),
+    //         ...(description !== undefined && { description }),
+    //         ...(permissionIds && {
+    //           permissions: {
+    //             deleteMany: {},
+    //             ...(permissionIds.length > 0 && {
+    //               create: permissionIds.map((permissionId) => ({
+    //                 permission: {
+    //                   connect: { id: permissionId },
+    //                 },
+    //               })),
+    //             }),
+    //           },
+    //         }),
+    //       },
+    //       include: {
+    //         permissions: {
+    //           include: {
+    //             permission: true,
+    //           },
+    //         },
+    //       },
+    //     });
 
-        let normalizedName;
-        if (name) {
-          normalizedName = name.trim().toUpperCase();
+    //     return {
+    //       id: updatedRole.id,
+    //       name: updatedRole.name,
+    //       description: updatedRole.description,
+    //       permissions: updatedRole.permissions.map((rp) => rp.permission),
+    //     };
+    //   } catch (error) {
+    //     throw new Error(error.message || "Failed to update role");
+    //   }
+    // },
 
-          const duplicate = await prisma.role.findUnique({
-            where: { name: normalizedName },
-          });
+    // deleteRole: async (_, { roleId }, context) => {
+    //   try {
+    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
+    //       throw new Error("Only SUPER_ADMIN can delete roles");
+    //     }
 
-          if (duplicate && duplicate.id !== roleId) {
-            throw new Error("Role name already exists");
-          }
-        }
+    //     const existingRole = await prisma.role.findUnique({
+    //       where: { id: roleId },
+    //       include: {
+    //         admins: true,
+    //       },
+    //     });
 
-        if (permissionIds) {
-          if (permissionIds.length > 0) {
-            const permissions = await prisma.permission.findMany({
-              where: { id: { in: permissionIds } },
-            });
+    //     if (!existingRole) {
+    //       throw new Error("Role not found");
+    //     }
 
-            if (permissions.length !== permissionIds.length) {
-              throw new Error("One or more permission IDs are invalid");
-            }
-          }
-        }
+    //     if (existingRole.admins.length > 0) {
+    //       throw new Error("Cannot delete role assigned to admins");
+    //     }
 
-        const updatedRole = await prisma.role.update({
-          where: { id: roleId },
-          data: {
-            ...(normalizedName && { name: normalizedName }),
-            ...(description !== undefined && { description }),
-            ...(permissionIds && {
-              permissions: {
-                deleteMany: {},
-                ...(permissionIds.length > 0 && {
-                  create: permissionIds.map((permissionId) => ({
-                    permission: {
-                      connect: { id: permissionId },
-                    },
-                  })),
-                }),
-              },
-            }),
-          },
-          include: {
-            permissions: {
-              include: {
-                permission: true,
-              },
-            },
-          },
-        });
+    //     await prisma.rolePermission.deleteMany({
+    //       where: { roleId },
+    //     });
 
-        return {
-          id: updatedRole.id,
-          name: updatedRole.name,
-          description: updatedRole.description,
-          permissions: updatedRole.permissions.map((rp) => rp.permission),
-        };
+    //     await prisma.role.delete({
+    //       where: { id: roleId },
+    //     });
 
-      } catch (error) {
-        throw new Error(error.message || "Failed to update role");
-      }
-    },
-
-
-    deleteRole: async (_, { roleId }, context) => {
-      try {
-        if (!context.user || context.user.role !== "SUPER_ADMIN") {
-          throw new Error("Only SUPER_ADMIN can delete roles");
-        }
-
-        const existingRole = await prisma.role.findUnique({
-          where: { id: roleId },
-          include: {
-            admins: true,
-          },
-        });
-
-        if (!existingRole) {
-          throw new Error("Role not found");
-        }
-
-        if (existingRole.admins.length > 0) {
-          throw new Error("Cannot delete role assigned to admins");
-        }
-
-        await prisma.rolePermission.deleteMany({
-          where: { roleId },
-        });
-
-        await prisma.role.delete({
-          where: { id: roleId },
-        });
-
-        return "Role deleted successfully";
-
-      } catch (error) {
-        throw new Error(error.message || "Failed to delete role");
-      }
-    },
-
+    //     return "Role deleted successfully";
+    //   } catch (error) {
+    //     throw new Error(error.message || "Failed to delete role");
+    //   }
+    // },
 
     assignPermissionsToRole: async (_, { roleId, permissionIds }, context) => {
       try {
@@ -904,12 +1128,12 @@ export const resolvers = {
           description: updatedRole.description,
           permissions: updatedRole.permissions.map((rp) => rp.permission),
         };
-
       } catch (error) {
-        throw new Error(error.message || "Failed to assign permissions to role");
+        throw new Error(
+          error.message || "Failed to assign permissions to role",
+        );
       }
     },
-
 
     // ================= CREATE ADMIN =================
     createAdmin: async (_, args, context) => {
@@ -918,12 +1142,10 @@ export const resolvers = {
           throw new Error("Only SUPER_ADMIN can create admins");
 
         return await createAdminService(args);
-
       } catch (error) {
         throw new Error(error.message || "Failed to create admin");
       }
     },
-
 
     // ================= UPDATE ADMIN =================
     updateAdmin: async (_, { adminId, name, email, roleId }, context) => {
@@ -976,12 +1198,10 @@ export const resolvers = {
         });
 
         return updatedAdmin;
-
       } catch (error) {
         throw new Error(error.message || "Failed to update admin");
       }
     },
-
 
     // ================= DELETE ADMIN =================
     deleteAdmin: async (_, { adminId }, context) => {
@@ -1008,30 +1228,121 @@ export const resolvers = {
         });
 
         return "Admin deleted successfully";
-
       } catch (error) {
         throw new Error(error.message || "Failed to delete admin");
       }
     },
 
     // ================= ADD ASTROLOGER =================
-    addAstrologer: async (_, args, context) => {
-      try {
-        if (!context.user || !["SUPER_ADMIN", "MANAGER"].includes(context.user.role))
-          throw new Error("Not authorized");
+    addAstrologer: async (_, { data }, context) => {
+      // if (
+      //   !context.user ||
+      //   !["SUPER_ADMIN", "MANAGER"].includes(context.user.role)
+      // ) {
+      //   throw new Error("Not authorized");
+      // }
 
-        return await addAstrologerService(args);
+      console.log("documents received:", data.documents);
+      console.log("aadhaar:", data.documents?.aadhaar);
+      console.log("pan:", data.documents?.panCard);
+      console.log("passbook:", data.documents?.passbook);
+      console.log("profile:", data.documents?.profilePic);
 
-      } catch (error) {
-        throw new Error(error.message || "Failed to add astrologer");
-      }
+      const astrologer = await prisma.astrologer.create({
+        data: {
+          name: data.astroname,
+          displayName: data.displayName,
+
+          gender: data.gender,
+
+          email: data.email,
+
+          contactNo: String(data.phoneNumber),
+
+          password: data.password,
+
+          experience: Number(data.experience),
+
+          aboutEnglish: data.aboutEnglish,
+
+          languages: data.languages,
+
+          skills: data.expertise,
+
+          problems: data.problems,
+
+          tags: data.tags,
+
+          vtags: data.vtags,
+
+          callChatCharges: Number(data.charges.callChatCharges),
+          callChatOfferCharges: Number(data.charges.callChatOfferCharges),
+          callChatCommission: Number(data.charges.callChatCommission),
+          videocall_charges: Number(data.charges.videocall_charges),
+          audiocall_charges: Number(data.charges.audiocall_charges),
+          audiovideocall_offer_charges: Number(
+            data.charges.audiovideocall_offer_charges,
+          ),
+
+          addresses: {
+            create: {
+              street: data.address.street,
+              city: data.address.city,
+              state: data.address.state,
+              country: data.address.country,
+              pincode: data.address.pincode,
+            },
+          },
+
+          documents: {
+            create: [
+              ...(data.documents?.aadhaar
+                ? [{ type: "AADHAAR", fileUrl: data.documents?.aadhaar }]
+                : []),
+
+              ...(data.documents?.panCard
+                ? [{ type: "PAN", fileUrl: data.documents?.panCard }]
+                : []),
+
+              ...(data.documents?.passbook
+                ? [{ type: "PASSBOOK", fileUrl: data.documents?.passbook }]
+                : []),
+
+              ...(data.documents?.profilePic
+                ? [{ type: "PROFILE", fileUrl: data.documents?.profilePic }]
+                : []),
+            ],
+          },
+
+          bankDetails: {
+            create: {
+              accountHolderName: data.bankDetails.accountHolderName,
+              accountNumber: data.bankDetails.accountNumber,
+              bankName: data.bankDetails.bankName,
+              ifscCode: data.bankDetails.ifscCode,
+              panCardNumber: data.bankDetails.panCardNumber,
+              branchName: data.bankDetails.branchName,
+            },
+          },
+
+          /* -----------------------------
+         Admin relation
+      --------------------------------*/
+
+          // adminId: context.user.id,
+        },
+      });
+      console.log("ertyuio", data.documents);
+      return astrologer;
     },
-
 
     // ================= UPDATE ASTROLOGER =================
     updateAstrologer: async (_, { astrologerId, data }, context) => {
       try {
-        if (!context.user || !["SUPER_ADMIN", "MANAGER"].includes(context.user.role))
+        if (
+          !context.user ||
+          !["SUPER_ADMIN", "MANAGER"].includes(context.user.role)
+        )
           throw new Error("Not authorized");
 
         const existing = await prisma.astrologer.findUnique({
@@ -1044,17 +1355,18 @@ export const resolvers = {
           where: { id: astrologerId },
           data,
         });
-
       } catch (error) {
         throw new Error(error.message || "Failed to update astrologer");
       }
     },
 
-
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
       try {
-        if (!context.user || !["SUPER_ADMIN", "MANAGER"].includes(context.user.role))
+        if (
+          !context.user ||
+          !["SUPER_ADMIN", "MANAGER"].includes(context.user.role)
+        )
           throw new Error("Not authorized");
 
         const existing = await prisma.astrologer.findUnique({
@@ -1068,12 +1380,10 @@ export const resolvers = {
         });
 
         return true;
-
       } catch (error) {
         throw new Error(error.message || "Failed to delete astrologer");
       }
     },
-
 
     // ================= UPDATE USER =================
     updateUser: async (_, { userId, data }, context) => {
@@ -1109,11 +1419,11 @@ export const resolvers = {
         });
 
         return updatedUser;
-
       } catch (error) {
         throw new Error(error.message || "Failed to update user");
       }
     },
+
     updateUser: async (_, { userId, data }, context) => {
       try {
         if (!context.user || context.user.role !== "ADMIN") {
@@ -1136,12 +1446,10 @@ export const resolvers = {
         });
 
         return updatedUser;
-
       } catch (error) {
         throw new Error(error.message || "Failed to update user");
       }
     },
-
 
     deleteUser: async (_, { userId }, context) => {
       try {
@@ -1166,12 +1474,10 @@ export const resolvers = {
         });
 
         return "User deleted successfully";
-
       } catch (error) {
         throw new Error(error.message || "Failed to delete user");
       }
     },
-
 
     // ================= VERIFY DOCUMENT =================
     verifyDocument: async (_, { documentId, status, remarks }, context) => {
@@ -1188,12 +1494,10 @@ export const resolvers = {
             verifiedAt: new Date(),
           },
         });
-
       } catch (error) {
         throw new Error(error.message || "Failed to verify document");
       }
     },
-
 
     // ================= SCHEDULE INTERVIEW =================
     scheduleInterview: async (_, args, context) => {
@@ -1214,12 +1518,10 @@ export const resolvers = {
             scheduledAt: new Date(args.scheduledAt),
           },
         });
-
       } catch (error) {
         throw new Error(error.message || "Failed to schedule interview");
       }
     },
-
 
     // ================= REJECT ASTROLOGER =================
     rejectAstrologer: async (_, { astrologerId, stage, reason }, context) => {
@@ -1242,12 +1544,10 @@ export const resolvers = {
         });
 
         return true;
-
       } catch (error) {
         throw new Error(error.message || "Failed to reject astrologer");
       }
     },
-
 
     // ================= APPROVE ASTROLOGER =================
     approveAstrologer: async (_, { astrologerId }, context) => {
@@ -1261,39 +1561,37 @@ export const resolvers = {
         });
 
         return true;
-
       } catch (error) {
         throw new Error(error.message || "Failed to approve astrologer");
       }
     },
 
+    // Recharge packages ===============================
+
     createRechargePack: async (_, { input }, context) => {
       try {
         console.log("user data---------------------: ", context.user);
-        if (!context.user || context.user.role !== "ADMIN") {
-          throw new Error("Admin only");
-        }
+        // if (!context.user || context.user.role !== "ADMIN") {
+        //   throw new Error("Admin only");
+        // }
 
         const pack = await prisma.rechargePack.create({
           data: {
             name: input.name,
             description: input.description,
             price: input.price,
-            coins: input.coins,
+
             talktime: input.talktime,
-            validityDays: input.validityDays,
+
             isActive: input.isActive ?? true,
           },
         });
 
         return pack;
-
       } catch (error) {
         throw error;
       }
     },
-
-
 
     updateRechargePack: async (_, { id, input }, context) => {
       try {
@@ -1307,12 +1605,12 @@ export const resolvers = {
         });
 
         return pack;
-
       } catch (error) {
         console.error("updateRechargePack error:", error);
         throw error;
       }
     },
+
     deleteRechargePack: async (_, { id }, context) => {
       try {
         if (!context.user || context.user.role !== "ADMIN") {
@@ -1324,14 +1622,472 @@ export const resolvers = {
         });
 
         return "Recharge pack deleted successfully";
-
       } catch (error) {
         console.error("deleteRechargePack error:", error);
         throw error;
       }
+    },
+
+    // ===============Coupons ++++++++++++++++++++++
+
+    createCoupon: async (_, { input }) => {
+      try {
+        const coupon = await prisma.coupon.create({
+          data: {
+            code: input.code,
+            description: input.description,
+            applicable: input.applicable,
+            type: input.type,
+            status: input.status === "active",
+            visibility: input.visibility,
+            percentage: input.percentage,
+            max_discount: input.max_discount,
+            redeem_limit: input.redeem_limit,
+            start_date: new Date(input.start_date),
+            end_date: new Date(input.end_date),
+          },
+        });
+
+        return coupon;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    // ****************************** Modules ********************
+
+    createModule: async (_, { name, slug, description, section }, context) => {
+      try {
+        // await checkPermission(context.user, "modules.create");
+
+        const normalizedName = name.trim();
+        const normalizedSlug = slug.trim().toLowerCase();
+
+        const existingModule = await prisma.module.findFirst({
+          where: {
+            OR: [{ name: normalizedName }, { slug: normalizedSlug }],
+          },
+        });
+
+        if (existingModule) {
+          throw new Error("Module with same name or slug already exists");
+        }
+
+        const module = await prisma.module.create({
+          data: {
+            name: normalizedName,
+            slug: normalizedSlug,
+            description,
+            section: section.toLowerCase(),
+          },
+        });
+
+        return module;
+      } catch (error) {
+        throw new Error(error.message || "Failed to create module");
+      }
+    },
+
+    updateModule: async (
+      _,
+      { id, name, slug, description, isActive },
+      context,
+    ) => {
+      try {
+        await checkPermission(context.user, "modules.edit");
+
+        const moduleExists = await prisma.module.findUnique({
+          where: { id },
+        });
+
+        if (!moduleExists) {
+          throw new Error("Module not found");
+        }
+
+        const updatedModule = await prisma.module.update({
+          where: { id },
+          data: {
+            ...(name && { name }),
+            ...(slug && { slug }),
+            ...(description !== undefined && { description }),
+            ...(isActive !== undefined && { isActive }),
+          },
+        });
+
+        return updatedModule;
+      } catch (error) {
+        throw new Error(error.message || "Failed to update module");
+      }
+    },
+
+    deleteModule: async (_, { id }, context) => {
+      await checkPermission(context.user, "modules.delete");
+
+      await prisma.modulePermission.deleteMany({
+        where: { moduleId: id },
+      });
+
+      await prisma.module.delete({
+        where: { id },
+      });
+
+      return true;
+    },
+
+    // Roles +++++++++++++++++++++++++++++++
+
+    createRole: async (_, { name, slug, description }, context) => {
+      try {
+        await checkPermission(context.user, "roles.create");
+        const normalizedName = name.trim();
+        const normalizedSlug = slug.trim().toLowerCase();
+
+        const existingRole = await prisma.role.findFirst({
+          where: {
+            OR: [{ name: normalizedName }, { slug: normalizedSlug }],
+          },
+        });
+
+        if (existingRole) {
+          throw new Error("Role with same name or slug already exists");
+        }
+
+        const role = await prisma.role.create({
+          data: {
+            name: normalizedName,
+            slug: normalizedSlug,
+            description,
+          },
+        });
+
+        return role;
+      } catch (error) {
+        throw new Error(error.message || "Failed to create role");
+      }
+    },
+
+    updateRole: async (_, { roleId, name, slug, description }, context) => {
+      try {
+        await checkPermission(context.user, "roles.edit");
+        const roleExists = await prisma.role.findUnique({
+          where: { id: roleId },
+        });
+
+        if (!roleExists) {
+          throw new Error("Role not found");
+        }
+
+        const updatedRole = await prisma.role.update({
+          where: { id: roleId },
+          data: {
+            ...(name && { name }),
+            ...(slug && { slug: slug.trim().toLowerCase() }),
+            ...(description !== undefined && { description }),
+          },
+        });
+
+        return updatedRole;
+      } catch (error) {
+        throw new Error(error.message || "Failed to update role");
+      }
+    },
+    deleteRole: async (_, { roleId }, context) => {
+      try {
+        await checkPermission(context.user, "roles.delete");
+        const role = await prisma.role.findUnique({
+          where: { id: roleId },
+        });
+
+        if (!role) {
+          throw new Error("Role not found");
+        }
+
+        await prisma.role.delete({
+          where: { id: roleId },
+        });
+
+        return "Role deleted successfully";
+      } catch (error) {
+        throw new Error(error.message || "Failed to delete role");
+      }
+    },
+
+    // Permission
+    createPermission: async (_, { name, moduleIds }, context) => {
+      await checkPermission(context.user, "permissions.create");
+      const permission = await prisma.permission.create({
+        data: {
+          name,
+          modules: {
+            create: moduleIds.map((id) => ({
+              module: { connect: { id } },
+            })),
+          },
+        },
+        include: {
+          modules: { include: { module: true } },
+        },
+      });
+
+      return {
+        ...permission,
+        modules: permission.modules.map((m) => m.module),
+      };
+    },
+    updatePermission: async (_, { permissionId, name, moduleIds }, context) => {
+      await checkPermission(context.user, "permissions.edit");
+      if (moduleIds) {
+        await prisma.modulePermission.deleteMany({
+          where: { permissionId },
+        });
+      }
+
+      const permission = await prisma.permission.update({
+        where: { id: permissionId },
+        data: {
+          ...(name && { name }),
+          ...(moduleIds && {
+            modules: {
+              create: moduleIds.map((id) => ({
+                module: { connect: { id } },
+              })),
+            },
+          }),
+        },
+        include: {
+          modules: { include: { module: true } },
+        },
+      });
+
+      return {
+        ...permission,
+        modules: permission.modules.map((m) => m.module),
+      };
+    },
+    deletePermission: async (_, { permissionId }, context) => {
+      await checkPermission(context.user, "permissions.delete");
+      await prisma.modulePermission.deleteMany({
+        where: { permissionId },
+      });
+
+      await prisma.permission.delete({
+        where: { id: permissionId },
+      });
+
+      return true;
+    },
+
+    // Department
+    createDepartment: async (_, { name, description }, context) => {
+      await checkPermission(context.user, "departments.create");
+      const slug = generateSlug(name);
+
+      const department = await prisma.department.create({
+        data: {
+          name,
+          slug,
+          description,
+        },
+      });
+
+      return department;
+    },
+    updateDepartment: async (
+      _,
+      { departmentId, name, description, isActive },
+      context,
+    ) => {
+      await checkPermission(context.user, "departments.edit");
+      let slug;
+
+      if (name) {
+        slug = generateSlug(name);
+      }
+
+      const department = await prisma.department.update({
+        where: { id: departmentId },
+        data: {
+          ...(name && { name }),
+          ...(slug && { slug }),
+          ...(description !== undefined && { description }),
+          ...(isActive !== undefined && { isActive }),
+        },
+      });
+
+      return department;
+    },
+
+    deleteDepartment: async (_, { departmentId }, context) => {
+      await checkPermission(context.user, "departments.delete");
+      const staffCount = await prisma.staff.count({
+        where: { departmentId },
+      });
+
+      if (staffCount > 0) {
+        throw new Error("Cannot delete department. Staff are assigned to it.");
+      }
+
+      await prisma.department.delete({
+        where: { id: departmentId },
+      });
+
+      return true;
+    },
+
+    // Stafff
+   createStaff: async (
+  _,
+  { name, email, password, departmentId, roleId, permissionIds },
+  context
+) => {
+  try {
+    await checkPermission(context.user, "staff.create");
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const existingStaff = await prisma.staff.findUnique({
+      where: { email: normalizedEmail },
+    });
+
+    if (existingStaff) {
+      throw new Error("Staff with this email already exists");
     }
 
+    const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
+    const staff = await prisma.staff.create({
+      data: {
+        name,
+        email: normalizedEmail,
+        password: hashedPassword,
+
+        department: { connect: { id: departmentId } },
+        role: { connect: { id: roleId } },
+
+        permissions: {
+          create:
+            permissionIds?.map((id) => ({
+              permission: { connect: { id } },
+            })) || [],
+        },
+      },
+
+      include: {
+        department: true,
+        role: true,
+        permissions: { include: { permission: true } },
+      },
+    });
+
+    return {
+      ...staff,
+      permissions: staff.permissions.map((p) => p.permission),
+    };
+  } catch (error) {
+    throw new Error(error.message || "Failed to create staff");
+  }
+},
+
+    updateStaff: async (
+      _,
+      { staffId, name, email, password, departmentId, roleId, permissionIds },
+      context,
+    ) => {
+      try {
+        await checkPermission(context.user, "staff.edit");
+        const staffExists = await prisma.staff.findUnique({
+          where: { id: staffId },
+        });
+
+        if (!staffExists) {
+          throw new Error("Staff not found");
+        }
+
+        if (email && email !== staffExists.email) {
+          const emailExists = await prisma.staff.findUnique({
+            where: { email },
+          });
+
+          if (emailExists) {
+            throw new Error("Email already in use");
+          }
+        }
+
+        let hashedPassword;
+
+        if (password) {
+          hashedPassword = await bcrypt.hash(password, 10);
+        }
+
+        if (permissionIds) {
+          await prisma.staffPermission.deleteMany({
+            where: { staffId },
+          });
+        }
+
+        const staff = await prisma.staff.update({
+          where: { id: staffId },
+
+          data: {
+            ...(name && { name }),
+            ...(email && { email }),
+            ...(hashedPassword && { password: hashedPassword }),
+
+            ...(departmentId && {
+              department: { connect: { id: departmentId } },
+            }),
+
+            ...(roleId && {
+              role: { connect: { id: roleId } },
+            }),
+
+            ...(permissionIds && {
+              permissions: {
+                create: permissionIds.map((id) => ({
+                  permission: { connect: { id } },
+                })),
+              },
+            }),
+          },
+
+          include: {
+            department: true,
+            role: true,
+            permissions: { include: { permission: true } },
+          },
+        });
+
+        return {
+          ...staff,
+          permissions: staff.permissions.map((p) => p.permission),
+        };
+      } catch (error) {
+        throw new Error(error.message || "Failed to update staff");
+      }
+    },
+    deleteStaff: async (_, { staffId }, context) => {
+      try {
+        await checkPermission(context.user, "staff.delete");
+        const staff = await prisma.staff.findUnique({
+          where: { id: staffId },
+        });
+
+        if (!staff) {
+          throw new Error("Staff not found");
+        }
+
+        await prisma.staffPermission.deleteMany({
+          where: { staffId },
+        });
+
+        await prisma.staff.delete({
+          where: { id: staffId },
+        });
+
+        return true;
+      } catch (error) {
+        throw new Error(error.message || "Failed to delete staff");
+      }
+    },
   },
-
 };

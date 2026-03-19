@@ -31,7 +31,9 @@ export const adminLoginService = async (email, password) => {
     });
 
     if (!admin || !admin.isActive) {
-      await logEvent("LOGIN_FAILED", email, { reason: "Admin not found or inactive" });
+      await logEvent("LOGIN_FAILED", email, {
+        reason: "Admin not found or inactive",
+      });
       throw new Error("Admin not found or inactive");
     }
 
@@ -61,7 +63,11 @@ export const adminLoginService = async (email, password) => {
 };
 
 // ================== CREATE ROLE ==================
-export const createRoleService = async (name, description, permissionIds = []) => {
+export const createRoleService = async (
+  name,
+  description,
+  permissionIds = [],
+) => {
   try {
     const role = await prisma.role.create({
       data: {
@@ -115,7 +121,9 @@ export const createAdminService = async ({
     return admin;
   } catch (error) {
     if (error.code === "P2002") {
-      await logEvent("ADMIN_CREATION_FAILED", email, { reason: "Email already exists" });
+      await logEvent("ADMIN_CREATION_FAILED", email, {
+        reason: "Email already exists",
+      });
       throw new Error("Email already exists");
     }
 
