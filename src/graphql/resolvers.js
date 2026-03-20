@@ -114,11 +114,11 @@ export const resolvers = {
 
         const where = query
           ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { mobile: { contains: query } },
-              ],
-            }
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { mobile: { contains: query } },
+            ],
+          }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -178,12 +178,12 @@ export const resolvers = {
 
         const where = query
           ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { skills: { has: query } },
-                { languages: { has: query } },
-              ],
-            }
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { skills: { has: query } },
+              { languages: { has: query } },
+            ],
+          }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -745,6 +745,7 @@ export const resolvers = {
         permissions: Array.from(mod.permissions),
       }));
     },
+
     getModulesBySection: async (_, { section }) => {
       return prisma.module.findMany({
         where: {
@@ -800,293 +801,6 @@ export const resolvers = {
         throw new Error(error.message || "Logout failed");
       }
     },
-
-    // createPermission: async (_, { name, description }, context) => {
-    //   try {
-    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
-    //       throw new Error("Only SUPER_ADMIN can create permissions");
-    //     }
-
-    //     const normalizedName = name.trim().toUpperCase();
-
-    //     const existing = await prisma.permission.findUnique({
-    //       where: { name: normalizedName },
-    //     });
-
-    //     if (existing) {
-    //       throw new Error("Permission already exists");
-    //     }
-
-    //     return await prisma.permission.create({
-    //       data: {
-    //         name: normalizedName,
-    //         description,
-    //       },
-    //     });
-    //   } catch (error) {
-    //     throw new Error(error.message || "Failed to create permission");
-    //   }
-    // },
-
-    // updatePermission: async (
-    //   _,
-    //   { permissionId, name, description },
-    //   context,
-    // ) => {
-    //   try {
-    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
-    //       throw new Error("Only SUPER_ADMIN can update permissions");
-    //     }
-
-    //     const existingPermission = await prisma.permission.findUnique({
-    //       where: { id: permissionId },
-    //     });
-
-    //     if (!existingPermission) {
-    //       throw new Error("Permission not found");
-    //     }
-
-    //     let normalizedName;
-
-    //     if (name) {
-    //       normalizedName = name.trim().toUpperCase();
-
-    //       const duplicate = await prisma.permission.findUnique({
-    //         where: { name: normalizedName },
-    //       });
-
-    //       if (duplicate && duplicate.id !== permissionId) {
-    //         throw new Error("Permission name already exists");
-    //       }
-    //     }
-
-    //     const updatedPermission = await prisma.permission.update({
-    //       where: { id: permissionId },
-    //       data: {
-    //         ...(normalizedName && { name: normalizedName }),
-    //         ...(description !== undefined && { description }),
-    //       },
-    //     });
-
-    //     return updatedPermission;
-    //   } catch (error) {
-    //     throw new Error(error.message || "Failed to update permission");
-    //   }
-    // },
-
-    // deletePermission: async (_, { permissionId }, context) => {
-    //   try {
-    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
-    //       throw new Error("Only SUPER_ADMIN can delete permissions");
-    //     }
-
-    //     const existingPermission = await prisma.permission.findUnique({
-    //       where: { id: permissionId },
-    //       include: {
-    //         roles: true,
-    //       },
-    //     });
-
-    //     if (!existingPermission) {
-    //       throw new Error("Permission not found");
-    //     }
-
-    //     if (existingPermission.roles.length > 0) {
-    //       throw new Error("Cannot delete permission assigned to roles");
-    //     }
-
-    //     await prisma.permission.delete({
-    //       where: { id: permissionId },
-    //     });
-
-    //     return "Permission deleted successfully";
-    //   } catch (error) {
-    //     throw new Error(error.message || "Failed to delete permission");
-    //   }
-    // },
-
-    // Roles *****************************************
-
-    // createRole: async (
-    //   _,
-    //   { name, description, permissionIds = [] },
-    //   context,
-    // ) => {
-    //   try {
-    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
-    //       throw new Error("Only SUPER_ADMIN can create roles");
-    //     }
-
-    //     const normalizedName = name.trim().toUpperCase();
-
-    //     const existingRole = await prisma.role.findUnique({
-    //       where: { name: normalizedName },
-    //     });
-
-    //     if (existingRole) {
-    //       throw new Error("Role already exists");
-    //     }
-
-    //     if (permissionIds.length > 0) {
-    //       const permissions = await prisma.permission.findMany({
-    //         where: { id: { in: permissionIds } },
-    //       });
-
-    //       if (permissions.length !== permissionIds.length) {
-    //         throw new Error("One or more permission IDs are invalid");
-    //       }
-    //     }
-
-    //     const role = await prisma.role.create({
-    //       data: {
-    //         name: normalizedName,
-    //         description,
-    //         ...(permissionIds.length > 0 && {
-    //           permissions: {
-    //             create: permissionIds.map((permissionId) => ({
-    //               permission: {
-    //                 connect: { id: permissionId },
-    //               },
-    //             })),
-    //           },
-    //         }),
-    //       },
-    //       include: {
-    //         permissions: {
-    //           include: {
-    //             permission: true,
-    //           },
-    //         },
-    //       },
-    //     });
-
-    //     return {
-    //       id: role.id,
-    //       name: role.name,
-    //       description: role.description,
-    //       permissions: role.permissions.map((rp) => rp.permission),
-    //     };
-    //   } catch (error) {
-    //     throw new Error(error.message || "Failed to create role");
-    //   }
-    // },
-
-    // updateRole: async (
-    //   _,
-    //   { roleId, name, description, permissionIds },
-    //   context,
-    // ) => {
-    //   try {
-    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
-    //       throw new Error("Only SUPER_ADMIN can update roles");
-    //     }
-
-    //     const existingRole = await prisma.role.findUnique({
-    //       where: { id: roleId },
-    //       include: { permissions: true },
-    //     });
-
-    //     if (!existingRole) {
-    //       throw new Error("Role not found");
-    //     }
-
-    //     let normalizedName;
-    //     if (name) {
-    //       normalizedName = name.trim().toUpperCase();
-
-    //       const duplicate = await prisma.role.findUnique({
-    //         where: { name: normalizedName },
-    //       });
-
-    //       if (duplicate && duplicate.id !== roleId) {
-    //         throw new Error("Role name already exists");
-    //       }
-    //     }
-
-    //     if (permissionIds) {
-    //       if (permissionIds.length > 0) {
-    //         const permissions = await prisma.permission.findMany({
-    //           where: { id: { in: permissionIds } },
-    //         });
-
-    //         if (permissions.length !== permissionIds.length) {
-    //           throw new Error("One or more permission IDs are invalid");
-    //         }
-    //       }
-    //     }
-
-    //     const updatedRole = await prisma.role.update({
-    //       where: { id: roleId },
-    //       data: {
-    //         ...(normalizedName && { name: normalizedName }),
-    //         ...(description !== undefined && { description }),
-    //         ...(permissionIds && {
-    //           permissions: {
-    //             deleteMany: {},
-    //             ...(permissionIds.length > 0 && {
-    //               create: permissionIds.map((permissionId) => ({
-    //                 permission: {
-    //                   connect: { id: permissionId },
-    //                 },
-    //               })),
-    //             }),
-    //           },
-    //         }),
-    //       },
-    //       include: {
-    //         permissions: {
-    //           include: {
-    //             permission: true,
-    //           },
-    //         },
-    //       },
-    //     });
-
-    //     return {
-    //       id: updatedRole.id,
-    //       name: updatedRole.name,
-    //       description: updatedRole.description,
-    //       permissions: updatedRole.permissions.map((rp) => rp.permission),
-    //     };
-    //   } catch (error) {
-    //     throw new Error(error.message || "Failed to update role");
-    //   }
-    // },
-
-    // deleteRole: async (_, { roleId }, context) => {
-    //   try {
-    //     if (!context.user || context.user.role !== "SUPER_ADMIN") {
-    //       throw new Error("Only SUPER_ADMIN can delete roles");
-    //     }
-
-    //     const existingRole = await prisma.role.findUnique({
-    //       where: { id: roleId },
-    //       include: {
-    //         admins: true,
-    //       },
-    //     });
-
-    //     if (!existingRole) {
-    //       throw new Error("Role not found");
-    //     }
-
-    //     if (existingRole.admins.length > 0) {
-    //       throw new Error("Cannot delete role assigned to admins");
-    //     }
-
-    //     await prisma.rolePermission.deleteMany({
-    //       where: { roleId },
-    //     });
-
-    //     await prisma.role.delete({
-    //       where: { id: roleId },
-    //     });
-
-    //     return "Role deleted successfully";
-    //   } catch (error) {
-    //     throw new Error(error.message || "Failed to delete role");
-    //   }
-    // },
 
     assignPermissionsToRole: async (_, { roleId, permissionIds }, context) => {
       try {
@@ -1791,6 +1505,7 @@ export const resolvers = {
         throw new Error(error.message || "Failed to update role");
       }
     },
+
     deleteRole: async (_, { roleId }, context) => {
       try {
         await checkPermission(context.user, "roles.delete");
@@ -1806,9 +1521,16 @@ export const resolvers = {
           where: { id: roleId },
         });
 
-        return "Role deleted successfully";
+        return {
+          success: true,
+          message: "Role deleted successfully",
+        };
       } catch (error) {
-        throw new Error(error.message || "Failed to delete role");
+        return {
+          success: false,
+          message: "Failed to delete role",
+          error: "This role is assigned to staff. Delete or reassign first.",
+        };
       }
     },
 
@@ -1935,58 +1657,58 @@ export const resolvers = {
     },
 
     // Stafff
-   createStaff: async (
-  _,
-  { name, email, password, departmentId, roleId, permissionIds },
-  context
-) => {
-  try {
-    await checkPermission(context.user, "staff.create");
+    createStaff: async (
+      _,
+      { name, email, password, departmentId, roleId, permissionIds },
+      context,
+    ) => {
+      try {
+        await checkPermission(context.user, "staff.create");
 
-    const normalizedEmail = email.toLowerCase().trim();
+        const normalizedEmail = email.toLowerCase().trim();
 
-    const existingStaff = await prisma.staff.findUnique({
-      where: { email: normalizedEmail },
-    });
+        const existingStaff = await prisma.staff.findUnique({
+          where: { email: normalizedEmail },
+        });
 
-    if (existingStaff) {
-      throw new Error("Staff with this email already exists");
-    }
+        if (existingStaff) {
+          throw new Error("Staff with this email already exists");
+        }
 
-    const hashedPassword = await bcrypt.hash(password.trim(), 10);
+        const hashedPassword = await bcrypt.hash(password.trim(), 10);
 
-    const staff = await prisma.staff.create({
-      data: {
-        name,
-        email: normalizedEmail,
-        password: hashedPassword,
+        const staff = await prisma.staff.create({
+          data: {
+            name,
+            email: normalizedEmail,
+            password: hashedPassword,
 
-        department: { connect: { id: departmentId } },
-        role: { connect: { id: roleId } },
+            department: { connect: { id: departmentId } },
+            role: { connect: { id: roleId } },
 
-        permissions: {
-          create:
-            permissionIds?.map((id) => ({
-              permission: { connect: { id } },
-            })) || [],
-        },
-      },
+            permissions: {
+              create:
+                permissionIds?.map((id) => ({
+                  permission: { connect: { id } },
+                })) || [],
+            },
+          },
 
-      include: {
-        department: true,
-        role: true,
-        permissions: { include: { permission: true } },
-      },
-    });
+          include: {
+            department: true,
+            role: true,
+            permissions: { include: { permission: true } },
+          },
+        });
 
-    return {
-      ...staff,
-      permissions: staff.permissions.map((p) => p.permission),
-    };
-  } catch (error) {
-    throw new Error(error.message || "Failed to create staff");
-  }
-},
+        return {
+          ...staff,
+          permissions: staff.permissions.map((p) => p.permission),
+        };
+      } catch (error) {
+        throw new Error(error.message || "Failed to create staff");
+      }
+    },
 
     updateStaff: async (
       _,

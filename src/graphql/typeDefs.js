@@ -493,6 +493,12 @@ const typeDefs = gql`
     permissions: [String!]!
   }
 
+  type DeleteResponse {
+    success: Boolean!
+    message: String!
+    error: String!
+  }
+
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
     getModulesPaginated(page: Int, limit: Int): ModulePagination!
@@ -527,7 +533,6 @@ const typeDefs = gql`
     getRoles(page: Int = 1, limit: Int = 10): RolePagination!
 
     getPermissions(page: Int = 1, limit: Int = 10): PermissionPagination!
-
 
     getDepartments(page: Int = 1, limit: Int = 10): DepartmentPagination!
 
@@ -591,7 +596,7 @@ const typeDefs = gql`
       permissionIds: [String!]
     ): Role
 
-    deleteRole(roleId: ID!): Boolean!
+    deleteRole(roleId: ID!): DeleteResponse!
 
     assignPermissionsToRole(roleId: ID!, permissionIds: [ID!]!): Role!
 
