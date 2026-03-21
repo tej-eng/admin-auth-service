@@ -437,6 +437,7 @@ const typeDefs = gql`
   type Permission {
     id: ID!
     name: String!
+    type: String!
     description: String
     modules: [Module!]
     createdAt: DateTime
@@ -571,7 +572,11 @@ const typeDefs = gql`
     updateUser(userId: String!, data: UpdateUserInput!): User!
     deleteUser(userId: String!): Boolean!
 
-    createPermission(name: String!, moduleIds: [ID!]!): Permission!
+    createPermission(
+      name: String!
+      moduleIds: [ID!]!
+      type: String!
+    ): Permission!
 
     updatePermission(
       permissionId: ID!
@@ -593,7 +598,7 @@ const typeDefs = gql`
       name: String
       slug: String
       description: String
-      permissionIds: [String!]
+      isActive: Boolean
     ): Role
 
     deleteRole(roleId: ID!): DeleteResponse!

@@ -50,13 +50,21 @@ model Permission {
   id          String   @id @default(uuid())
   name        String   @unique
   description String?
+
+  // ✅ NEW FIELD
+  type        PermissionType @default(SYSTEM)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   roles            RolePermission[]
   modules          ModulePermission[]
   staffPermissions StaffPermission[]
-  isDeleted        Boolean            @default(false)
+
+  isDeleted        Boolean @default(false)
+
+  @@index([name])
+  @@index([type])
 }
 
 model ModulePermission {
@@ -363,7 +371,15 @@ enum PaymentOrderStatus {
   FAILED
 }
 
+
+
 // ammmmyyyyyyyyyyyyyyyyyy
+
+// permission type 
+enum PermissionType {
+  SYSTEM
+  CUSTOM
+}
 
 model Coupon {
   id           String   @id @default(uuid())

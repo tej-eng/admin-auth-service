@@ -56,6 +56,7 @@ async function main() {
         update: {},
         create: {
           name,
+          type: "SYSTEM",
           modules: {
             create: {
               module: { connect: { id: mod.id } },
@@ -66,7 +67,19 @@ async function main() {
     }
   }
 
-  // ================= SUPER ADMIN =================
+  // ================= 🔥 FETCH AFTER CREATION =================
+  const allPermissions = await prisma.permission.findMany();
+
+  // ================= 🔥 ASSIGN TO SUPER ADMIN =================
+  await prisma.rolePermission.createMany({
+    data: allPermissions.map((perm) => ({
+      roleId: role.id,
+      permissionId: perm.id,
+    })),
+    skipDuplicates: true,
+  });
+
+  // ================= SUPER ADMIN USER =================
   const hashedPassword = await bcrypt.hash("123456", 10);
 
   await prisma.staff.upsert({
@@ -83,7 +96,7 @@ async function main() {
     },
   });
 
-  console.log("Seed Done");
+  console.log("Seed Done ✅");
 }
 
 main()

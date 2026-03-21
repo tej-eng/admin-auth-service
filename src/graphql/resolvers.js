@@ -67,6 +67,30 @@ async function checkPermission(staff, requiredPermission) {
   }
 }
 
+
+// generate auto permission 
+const generateCRUDPermissions = async (module) => {
+  const actions = ["create", "read", "update", "delete"];
+
+  for (const action of actions) {
+    const name = `${module.slug}.${action}`;
+
+    await prisma.permission.upsert({
+      where: { name },
+      update: {},
+      create: {
+        name,
+        type: "SYSTEM", // ✅ important
+        modules: {
+          create: {
+            module: { connect: { id: module.id } },
+          },
+        },
+      },
+    });
+  }
+};
+
 export const resolvers = {
   Upload: GraphQLUpload,
   Query: {
@@ -561,11 +585,19 @@ export const resolvers = {
     },
 
     // Permission Query
-    getPermissions: async (_, { page = 1, limit = 10 }) => {
+    getPermissions: async (_, { page = 1, limit = 100, type }, context) => {
+      await checkPermission(context.user, "permissions.read");
+
       const skip = (page - 1) * limit;
+
+      const where = {
+        isDeleted: false,
+        ...(type && { type }), // 🔥 key line
+      };
 
       const [permissions, totalCount] = await Promise.all([
         prisma.permission.findMany({
+          where,
           skip,
           take: limit,
           include: {
@@ -576,7 +608,7 @@ export const resolvers = {
             },
           },
         }),
-        prisma.permission.count(),
+        prisma.permission.count({ where }),
       ]);
 
       const formatted = permissions.map((p) => ({
@@ -1396,6 +1428,8 @@ export const resolvers = {
           },
         });
 
+        await generateCRUDPermissions(module);
+
         return module;
       } catch (error) {
         throw new Error(error.message || "Failed to create module");
@@ -1480,30 +1514,18 @@ export const resolvers = {
       }
     },
 
-    updateRole: async (_, { roleId, name, slug, description }, context) => {
-      try {
-        await checkPermission(context.user, "roles.edit");
-        const roleExists = await prisma.role.findUnique({
-          where: { id: roleId },
-        });
+    updateRole: async (_, { roleId, name, slug, description, isActive }, context) => {
+      await checkPermission(context.user, "roles.edit");
 
-        if (!roleExists) {
-          throw new Error("Role not found");
-        }
-
-        const updatedRole = await prisma.role.update({
-          where: { id: roleId },
-          data: {
-            ...(name && { name }),
-            ...(slug && { slug: slug.trim().toLowerCase() }),
-            ...(description !== undefined && { description }),
-          },
-        });
-
-        return updatedRole;
-      } catch (error) {
-        throw new Error(error.message || "Failed to update role");
-      }
+      return prisma.role.update({
+        where: { id: roleId },
+        data: {
+          ...(name && { name }),
+          ...(slug && { slug: slug.trim().toLowerCase() }),
+          ...(description !== undefined && { description }),
+          ...(isActive !== undefined && { isActive }), // 👈 ADD THIS
+        },
+      });
     },
 
     deleteRole: async (_, { roleId }, context) => {
@@ -1537,9 +1559,16 @@ export const resolvers = {
     // Permission
     createPermission: async (_, { name, moduleIds }, context) => {
       await checkPermission(context.user, "permissions.create");
+
+
+      if (name.includes(".")) {
+        throw new Error("System permissions cannot be created manually");
+      }
+
       const permission = await prisma.permission.create({
         data: {
           name,
+          type,
           modules: {
             create: moduleIds.map((id) => ({
               module: { connect: { id } },
@@ -1556,8 +1585,19 @@ export const resolvers = {
         modules: permission.modules.map((m) => m.module),
       };
     },
+
     updatePermission: async (_, { permissionId, name, moduleIds }, context) => {
-      await checkPermission(context.user, "permissions.edit");
+      await checkPermission(context.user, "permissions.update");
+
+      const existing = await prisma.permission.findUnique({
+        where: { id: permissionId },
+      });
+
+      // ❌ SYSTEM ko edit nahi karne dena
+      if (existing.type === "SYSTEM") {
+        throw new Error("System permissions cannot be updated");
+      }
+
       if (moduleIds) {
         await prisma.modulePermission.deleteMany({
           where: { permissionId },
@@ -1586,8 +1626,19 @@ export const resolvers = {
         modules: permission.modules.map((m) => m.module),
       };
     },
+
     deletePermission: async (_, { permissionId }, context) => {
       await checkPermission(context.user, "permissions.delete");
+
+      const existing = await prisma.permission.findUnique({
+        where: { id: permissionId },
+      });
+
+      // ❌ SYSTEM delete block
+      if (existing.type === "SYSTEM") {
+        throw new Error("System permissions cannot be deleted");
+      }
+
       await prisma.modulePermission.deleteMany({
         where: { permissionId },
       });
