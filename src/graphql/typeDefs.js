@@ -403,6 +403,7 @@ const typeDefs = gql`
     name: String!
     slug: String!
     description: String
+    section: String!
     isActive: Boolean
     createdAt: DateTime
     updatedAt: DateTime
@@ -497,11 +498,13 @@ const typeDefs = gql`
   type DeleteResponse {
     success: Boolean!
     message: String!
-    error: String!
+    error: String
   }
 
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
+   getCoupons: [Coupon]
+    getSections: [String!]!
     getModulesPaginated(page: Int, limit: Int): ModulePagination!
     getModulesBySection(section: String!): [Module!]!
     getMyAccess: [ModuleAccess!]!
@@ -655,7 +658,9 @@ const typeDefs = gql`
     updateRechargePack(id: ID!, input: UpdateRechargePackInput!): RechargePack!
     deleteRechargePack(id: ID!): String!
 
-    createCoupon(input: CreateCouponInput!): Coupon!
+    createCoupon(input: CreateCouponInput!): Coupon
+    deleteCoupon(id: ID!): Boolean
+    updateCouponStatus(id: ID!, status: String!): Coupon
 
     #------------------------------START module -----------------#
     createModule(
@@ -669,6 +674,7 @@ const typeDefs = gql`
       name: String
       slug: String
       description: String
+      section: String
       isActive: Boolean
     ): Module!
 

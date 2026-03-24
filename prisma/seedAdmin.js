@@ -26,13 +26,13 @@ async function main() {
     },
   });
 
-  // ================= MODULES =================
+ 
   const modulesData = [
-    { name: "Roles", slug: "roles", section: "admin" },
-    { name: "Permissions", slug: "permissions", section: "admin" },
-    { name: "Modules", slug: "modules", section: "admin" },
-    { name: "Departments", slug: "departments", section: "admin" },
-    { name: "Staff", slug: "staff", section: "admin" },
+    { name: "Roles", slug: "roles", section: "privilege" },
+    { name: "Permissions", slug: "permissions", section: "privilege" },
+    { name: "Modules", slug: "modules", section: "privilege" },
+    { name: "Departments", slug: "departments", section: "privilege" },
+    { name: "Staff", slug: "staff", section: "privilege" },
   ];
 
   for (const mod of modulesData) {
@@ -43,7 +43,7 @@ async function main() {
     });
   }
 
-  // ================= PERMISSIONS =================
+
   const actions = ["create", "read", "update", "delete"];
   const modules = await prisma.module.findMany();
 
@@ -67,10 +67,10 @@ async function main() {
     }
   }
 
-  // ================= 🔥 FETCH AFTER CREATION =================
+
   const allPermissions = await prisma.permission.findMany();
 
-  // ================= 🔥 ASSIGN TO SUPER ADMIN =================
+
   await prisma.rolePermission.createMany({
     data: allPermissions.map((perm) => ({
       roleId: role.id,
@@ -79,7 +79,7 @@ async function main() {
     skipDuplicates: true,
   });
 
-  // ================= SUPER ADMIN USER =================
+
   const hashedPassword = await bcrypt.hash("123456", 10);
 
   await prisma.staff.upsert({

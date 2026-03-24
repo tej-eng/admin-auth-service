@@ -62,6 +62,11 @@ async function checkPermission(staff, requiredPermission) {
     ...staffPerms.map((s) => s.permission.name),
   ];
 
+  console.log("staff:", staff);
+  console.log("requiredPermission:", requiredPermission);
+  console.log("rolePerms:", rolePerms.map(r => r.permission.name));
+  console.log("staffPerms:", staffPerms.map(s => s.permission.name));
+
   if (!allPermissions.includes(requiredPermission)) {
     throw new Error("Unauthorized: Missing permission");
   }
@@ -80,7 +85,7 @@ const generateCRUDPermissions = async (module) => {
       update: {},
       create: {
         name,
-        type: "SYSTEM", // ✅ important
+        type: "SYSTEM",
         modules: {
           create: {
             module: { connect: { id: module.id } },
@@ -492,19 +497,13 @@ export const resolvers = {
       }
     },
 
-    getRechargePacks: async (_, __, context) => {
-      // if (!context.user) {
-      //   throw new Error("Unauthorized");
-      // }
+getRechargePacks: async (_, __, context) => {
+  await checkPermission(context.user, "walletpackages.read");
 
-      const packs = await prisma.rechargePack.findMany({
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-
-      return packs;
-    },
+  return prisma.rechargePack.findMany({
+    orderBy: { createdAt: "desc" },
+  });
+},
 
     getWallets: async () => {
       try {
@@ -694,7 +693,7 @@ export const resolvers = {
         const modules = await prisma.module.findMany({
           where: { isDeleted: false, isActive: true },
         });
-
+        if (!fullUser) throw new Error("User not found in DB");
         return modules.map((mod) => ({
           id: mod.id,
           name: mod.name,
@@ -781,11 +780,33 @@ export const resolvers = {
     getModulesBySection: async (_, { section }) => {
       return prisma.module.findMany({
         where: {
-          section: section.toLowerCase(),
+          section: section.trim().toLowerCase(),
           isActive: true,
         },
         orderBy: { createdAt: "asc" },
       });
+    },
+
+    getSections: async () => {
+      const sections = await prisma.module.findMany({
+        select: { section: true },
+        distinct: ["section"],
+      });
+
+      return sections.map((s) => s.section);
+    },
+
+    // get coupons 
+    getCoupons: async (_, __, context) => {
+      await checkPermission(context.user, "coupons.read");
+
+      try {
+        return await prisma.coupon.findMany({
+          orderBy: { createdAt: "desc" },
+        });
+      } catch (error) {
+        throw error;
+      }
     },
   },
 
@@ -1314,69 +1335,60 @@ export const resolvers = {
 
     // Recharge packages ===============================
 
-    createRechargePack: async (_, { input }, context) => {
-      try {
-        console.log("user data---------------------: ", context.user);
-        // if (!context.user || context.user.role !== "ADMIN") {
-        //   throw new Error("Admin only");
-        // }
+createRechargePack: async (_, { input }, context) => {
+  await checkPermission(context.user, "walletpackages.create");
 
-        const pack = await prisma.rechargePack.create({
-          data: {
-            name: input.name,
-            description: input.description,
-            price: input.price,
+  try {
+    const pack = await prisma.rechargePack.create({
+      data: {
+        name: input.name,
+        description: input.description,
+        price: input.price,
+        talktime: input.talktime,
+        isActive: input.isActive ?? true,
+      },
+    });
 
-            talktime: input.talktime,
+    return pack;
+  } catch (error) {
+    throw error;
+  }
+},
 
-            isActive: input.isActive ?? true,
-          },
-        });
+ deleteRechargePack: async (_, { id }, context) => {
+  await checkPermission(context.user, "walletpackages.delete");
 
-        return pack;
-      } catch (error) {
-        throw error;
-      }
-    },
+  try {
+    await prisma.rechargePack.delete({
+      where: { id },
+    });
 
-    updateRechargePack: async (_, { id, input }, context) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN") {
-          throw new Error("Admin only");
-        }
+    return true;
+  } catch (error) {
+    throw error;
+  }
+},
 
-        const pack = await prisma.rechargePack.update({
-          where: { id },
-          data: input,
-        });
+ updateRechargePack: async (_, { id, input }, context) => {
+  await checkPermission(context.user, "walletpackages.update");
 
-        return pack;
-      } catch (error) {
-        console.error("updateRechargePack error:", error);
-        throw error;
-      }
-    },
+  try {
+    const pack = await prisma.rechargePack.update({
+      where: { id },
+      data: input,
+    });
 
-    deleteRechargePack: async (_, { id }, context) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN") {
-          throw new Error("Admin only");
-        }
-
-        await prisma.rechargePack.delete({
-          where: { id },
-        });
-
-        return "Recharge pack deleted successfully";
-      } catch (error) {
-        console.error("deleteRechargePack error:", error);
-        throw error;
-      }
-    },
+    return pack;
+  } catch (error) {
+    throw error;
+  }
+},
 
     // ===============Coupons ++++++++++++++++++++++
 
-    createCoupon: async (_, { input }) => {
+    createCoupon: async (_, { input }, context) => {
+      await checkPermission(context.user, "coupons.create");
+
       try {
         const coupon = await prisma.coupon.create({
           data: {
@@ -1400,23 +1412,52 @@ export const resolvers = {
       }
     },
 
+    deleteCoupon: async (_, { id }, context) => {
+      await checkPermission(context.user, "coupons.delete");
+
+      try {
+        await prisma.coupon.delete({
+          where: { id },
+        });
+
+        return true;
+      } catch (error) {
+        throw error;
+      }
+    },
+
+    updateCouponStatus: async (_, { id, status }, context) => {
+      await checkPermission(context.user, "coupons.update");
+
+      try {
+        const updated = await prisma.coupon.update({
+          where: { id },
+          data: {
+            status: status === "active",
+          },
+        });
+
+        return updated;
+      } catch (error) {
+        throw error;
+      }
+    },
+
     // ****************************** Modules ********************
 
     createModule: async (_, { name, slug, description, section }, context) => {
       try {
-        // await checkPermission(context.user, "modules.create");
-
         const normalizedName = name.trim();
         const normalizedSlug = slug.trim().toLowerCase();
+        const normalizedSection = section.trim().toLowerCase();
 
-        const existingModule = await prisma.module.findFirst({
-          where: {
-            OR: [{ name: normalizedName }, { slug: normalizedSlug }],
-          },
+        // 🔥 slug must be unique
+        const existingModule = await prisma.module.findUnique({
+          where: { slug: normalizedSlug },
         });
 
         if (existingModule) {
-          throw new Error("Module with same name or slug already exists");
+          throw new Error("Module with same slug already exists");
         }
 
         const module = await prisma.module.create({
@@ -1424,9 +1465,10 @@ export const resolvers = {
             name: normalizedName,
             slug: normalizedSlug,
             description,
-            section: section.toLowerCase(),
+            section: normalizedSection,
           },
         });
+
 
         await generateCRUDPermissions(module);
 
@@ -1438,8 +1480,8 @@ export const resolvers = {
 
     updateModule: async (
       _,
-      { id, name, slug, description, isActive },
-      context,
+      { id, name, slug, description, section, isActive },
+      context
     ) => {
       try {
         await checkPermission(context.user, "modules.edit");
@@ -1452,12 +1494,28 @@ export const resolvers = {
           throw new Error("Module not found");
         }
 
+        // 🔥 normalize values if provided
+        const normalizedSlug = slug?.trim().toLowerCase();
+        const normalizedSection = section?.trim().toLowerCase();
+
+        // 🔥 check slug uniqueness (if changed)
+        if (normalizedSlug && normalizedSlug !== moduleExists.slug) {
+          const existingSlug = await prisma.module.findUnique({
+            where: { slug: normalizedSlug },
+          });
+
+          if (existingSlug) {
+            throw new Error("Slug already exists");
+          }
+        }
+
         const updatedModule = await prisma.module.update({
           where: { id },
           data: {
-            ...(name && { name }),
-            ...(slug && { slug }),
+            ...(name && { name: name.trim() }),
+            ...(normalizedSlug && { slug: normalizedSlug }),
             ...(description !== undefined && { description }),
+            ...(normalizedSection && { section: normalizedSection }), // 🔥 ADD THIS
             ...(isActive !== undefined && { isActive }),
           },
         });
@@ -1546,6 +1604,7 @@ export const resolvers = {
         return {
           success: true,
           message: "Role deleted successfully",
+          error: ""
         };
       } catch (error) {
         return {
