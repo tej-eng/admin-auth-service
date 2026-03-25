@@ -46,20 +46,17 @@ async function startServer() {
   app.use(
     "/graphql",
     expressMiddleware(server, {
+
       context: async ({ req, res }) => {
         let user = null;
 
         const authHeader = req.headers["authorization"];
 
-        console.log("HEADERS:", req.headers); // 🔥 debug
-        console.log("AUTH HEADER:", req.headers.authorization);
         if (authHeader?.startsWith("Bearer ")) {
           const token = authHeader.replace("Bearer ", "");
 
           try {
             const decoded = verifyAccessToken(token);
-
-            console.log("DECODED TOKEN:", decoded);
 
             if (decoded?.type === "staff") {
               user = await prisma.staff.findUnique({
@@ -67,17 +64,13 @@ async function startServer() {
                 include: { role: true },
               });
             }
-
-            console.log("CONTEXT USER:", user);
           } catch (err) {
-            console.log("JWT ERROR:", err.message);
             user = null;
           }
-        } else {
-          console.log("No Authorization Header");
         }
 
-        return { req, res, user };
+        // ✅ FIX HERE
+        return { req, res, user, prisma };
       },
     }),
   );

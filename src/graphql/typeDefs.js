@@ -501,9 +501,41 @@ const typeDefs = gql`
     error: String
   }
 
+  type AddAstrologerResponse {
+    success: Boolean!
+    message: String!
+    data: Astrologer
+  }
+
+  # --- dhwani services ___ #
+  type Service {
+    id: ID!
+    name: String!
+    slug: String!
+    type: String!
+    image: String
+    description: String
+    price: Float
+    parentId: ID
+    hasChildren: Boolean
+    children: [Service]
+  }
+
+  input CreateServiceInput {
+    name: String!
+    slug: String!
+    type: String!
+    image: String
+    description: String
+    price: Float
+    parentId: ID
+  }
+
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
-   getCoupons: [Coupon]
+    getServices(parentId: ID): [Service]
+    getServiceBySlug(slug: String!): Service
+    getCoupons: [Coupon]
     getSections: [String!]!
     getModulesPaginated(page: Int, limit: Int): ModulePagination!
     getModulesBySection(section: String!): [Module!]!
@@ -570,6 +602,11 @@ const typeDefs = gql`
   }
 
   type Mutation {
+    createService(input: CreateServiceInput!): Service
+    updateService(id: ID!, input: CreateServiceInput!): Service
+    deleteService(id: ID!): Boolean
+
+    addAstrologer(data: AddAstrologerInput!): AddAstrologerResponse!
     loginStaff(email: String!, password: String!): AuthPayload!
     logoutAdmin: String!
     updateUser(userId: String!, data: UpdateUserInput!): User!
@@ -624,8 +661,6 @@ const typeDefs = gql`
     ): Admin
 
     deleteAdmin(adminId: String!): Boolean!
-
-    addAstrologer(data: AddAstrologerInput!): Astrologer!
 
     updateAstrologer(
       astrologerId: ID!

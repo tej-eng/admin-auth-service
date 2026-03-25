@@ -497,13 +497,13 @@ export const resolvers = {
       }
     },
 
-getRechargePacks: async (_, __, context) => {
-  await checkPermission(context.user, "walletpackages.read");
+    getRechargePacks: async (_, __, context) => {
+      await checkPermission(context.user, "walletpackages.read");
 
-  return prisma.rechargePack.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-},
+      return prisma.rechargePack.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+    },
 
     getWallets: async () => {
       try {
@@ -808,6 +808,33 @@ getRechargePacks: async (_, __, context) => {
         throw error;
       }
     },
+
+    // dhwani services 
+    getServices: async (_, { parentId }, context) => {
+      const { prisma, user } = context;
+
+      await checkPermission(user, "dhwani-services.read");
+
+      return prisma.service.findMany({
+        where: {
+          parentId: parentId || null,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+    },
+
+    getServiceBySlug: async (_, { slug }, context) => {
+      const { prisma, user } = context;
+
+      await checkPermission(user, "dhwani-services.read");
+
+      return prisma.service.findUnique({
+        where: { slug },
+        include: {
+          children: true,
+        },
+      });
+    },
   },
 
   // *******************************************************************************************************************************
@@ -1002,105 +1029,91 @@ getRechargePacks: async (_, __, context) => {
 
     // ================= ADD ASTROLOGER =================
     addAstrologer: async (_, { data }, context) => {
-      // if (
-      //   !context.user ||
-      //   !["SUPER_ADMIN", "MANAGER"].includes(context.user.role)
-      // ) {
-      //   throw new Error("Not authorized");
-      // }
+      try {
 
-      console.log("documents received:", data.documents);
-      console.log("aadhaar:", data.documents?.aadhaar);
-      console.log("pan:", data.documents?.panCard);
-      console.log("passbook:", data.documents?.passbook);
-      console.log("profile:", data.documents?.profilePic);
+        await checkPermission(context.user, "astrologer.create");
 
-      const astrologer = await prisma.astrologer.create({
-        data: {
-          name: data.astroname,
-          displayName: data.displayName,
+        const astrologer = await prisma.astrologer.create({
+          data: {
+            name: data.astroname,
+            displayName: data.displayName,
+            gender: data.gender,
+            email: data.email,
+            contactNo: String(data.phoneNumber),
+            password: data.password,
+            experience: Number(data.experience),
+            aboutEnglish: data.aboutEnglish,
 
-          gender: data.gender,
+            languages: data.languages,
+            skills: data.expertise,
+            problems: data.problems,
 
-          email: data.email,
+            tags: data.tags,
+            vtags: data.vtags,
 
-          contactNo: String(data.phoneNumber),
+            callChatCharges: Number(data.charges.callChatCharges),
+            callChatOfferCharges: Number(data.charges.callChatOfferCharges),
+            callChatCommission: Number(data.charges.callChatCommission),
+            videocall_charges: Number(data.charges.videocall_charges),
+            audiocall_charges: Number(data.charges.audiocall_charges),
+            audiovideocall_offer_charges: Number(
+              data.charges.audiovideocall_offer_charges
+            ),
 
-          password: data.password,
-
-          experience: Number(data.experience),
-
-          aboutEnglish: data.aboutEnglish,
-
-          languages: data.languages,
-
-          skills: data.expertise,
-
-          problems: data.problems,
-
-          tags: data.tags,
-
-          vtags: data.vtags,
-
-          callChatCharges: Number(data.charges.callChatCharges),
-          callChatOfferCharges: Number(data.charges.callChatOfferCharges),
-          callChatCommission: Number(data.charges.callChatCommission),
-          videocall_charges: Number(data.charges.videocall_charges),
-          audiocall_charges: Number(data.charges.audiocall_charges),
-          audiovideocall_offer_charges: Number(
-            data.charges.audiovideocall_offer_charges,
-          ),
-
-          addresses: {
-            create: {
-              street: data.address.street,
-              city: data.address.city,
-              state: data.address.state,
-              country: data.address.country,
-              pincode: data.address.pincode,
+            addresses: {
+              create: {
+                street: data.address?.street || "",
+                city: data.address?.city || "",
+                state: data.address?.state || "",
+                country: data.address?.country || "",
+                pincode: data.address?.pincode || "",
+              },
             },
-          },
 
-          documents: {
-            create: [
-              ...(data.documents?.aadhaar
-                ? [{ type: "AADHAAR", fileUrl: data.documents?.aadhaar }]
-                : []),
-
-              ...(data.documents?.panCard
-                ? [{ type: "PAN", fileUrl: data.documents?.panCard }]
-                : []),
-
-              ...(data.documents?.passbook
-                ? [{ type: "PASSBOOK", fileUrl: data.documents?.passbook }]
-                : []),
-
-              ...(data.documents?.profilePic
-                ? [{ type: "PROFILE", fileUrl: data.documents?.profilePic }]
-                : []),
-            ],
-          },
-
-          bankDetails: {
-            create: {
-              accountHolderName: data.bankDetails.accountHolderName,
-              accountNumber: data.bankDetails.accountNumber,
-              bankName: data.bankDetails.bankName,
-              ifscCode: data.bankDetails.ifscCode,
-              panCardNumber: data.bankDetails.panCardNumber,
-              branchName: data.bankDetails.branchName,
+            documents: {
+              create: [
+                ...(data.documents?.aadhaar
+                  ? [{ type: "AADHAAR", fileUrl: data.documents.aadhaar }]
+                  : []),
+                ...(data.documents?.panCard
+                  ? [{ type: "PAN", fileUrl: data.documents.panCard }]
+                  : []),
+                ...(data.documents?.passbook
+                  ? [{ type: "PASSBOOK", fileUrl: data.documents.passbook }]
+                  : []),
+                ...(data.documents?.profilePic
+                  ? [{ type: "PROFILE", fileUrl: data.documents.profilePic }]
+                  : []),
+              ],
             },
+
+            bankDetails: {
+              create: {
+                accountHolderName: data.bankDetails.accountHolderName,
+                accountNumber: data.bankDetails.accountNumber,
+                bankName: data.bankDetails.bankName,
+                ifscCode: data.bankDetails.ifscCode,
+                panCardNumber: data.bankDetails.panCardNumber,
+                branchName: data.bankDetails.branchName,
+              },
+            },
+
+            // optional audit
+            // createdBy: context.user.id,
           },
+        });
 
-          /* -----------------------------
-         Admin relation
-      --------------------------------*/
+        return {
+          success: true,
+          message: "Astrologer added successfully",
+          data: astrologer,
+        };
 
-          // adminId: context.user.id,
-        },
-      });
-      console.log("ertyuio", data.documents);
-      return astrologer;
+      } catch (error) {
+        console.error("AddAstrologer Error:", error.message);
+
+        throw new Error(error.message || "Failed to add astrologer");
+      }
     },
 
     // ================= UPDATE ASTROLOGER =================
@@ -1335,54 +1348,54 @@ getRechargePacks: async (_, __, context) => {
 
     // Recharge packages ===============================
 
-createRechargePack: async (_, { input }, context) => {
-  await checkPermission(context.user, "walletpackages.create");
+    createRechargePack: async (_, { input }, context) => {
+      await checkPermission(context.user, "walletpackages.create");
 
-  try {
-    const pack = await prisma.rechargePack.create({
-      data: {
-        name: input.name,
-        description: input.description,
-        price: input.price,
-        talktime: input.talktime,
-        isActive: input.isActive ?? true,
-      },
-    });
+      try {
+        const pack = await prisma.rechargePack.create({
+          data: {
+            name: input.name,
+            description: input.description,
+            price: input.price,
+            talktime: input.talktime,
+            isActive: input.isActive ?? true,
+          },
+        });
 
-    return pack;
-  } catch (error) {
-    throw error;
-  }
-},
+        return pack;
+      } catch (error) {
+        throw error;
+      }
+    },
 
- deleteRechargePack: async (_, { id }, context) => {
-  await checkPermission(context.user, "walletpackages.delete");
+    deleteRechargePack: async (_, { id }, context) => {
+      await checkPermission(context.user, "walletpackages.delete");
 
-  try {
-    await prisma.rechargePack.delete({
-      where: { id },
-    });
+      try {
+        await prisma.rechargePack.delete({
+          where: { id },
+        });
 
-    return true;
-  } catch (error) {
-    throw error;
-  }
-},
+        return true;
+      } catch (error) {
+        throw error;
+      }
+    },
 
- updateRechargePack: async (_, { id, input }, context) => {
-  await checkPermission(context.user, "walletpackages.update");
+    updateRechargePack: async (_, { id, input }, context) => {
+      await checkPermission(context.user, "walletpackages.update");
 
-  try {
-    const pack = await prisma.rechargePack.update({
-      where: { id },
-      data: input,
-    });
+      try {
+        const pack = await prisma.rechargePack.update({
+          where: { id },
+          data: input,
+        });
 
-    return pack;
-  } catch (error) {
-    throw error;
-  }
-},
+        return pack;
+      } catch (error) {
+        throw error;
+      }
+    },
 
     // ===============Coupons ++++++++++++++++++++++
 
@@ -1921,5 +1934,84 @@ createRechargePack: async (_, { input }, context) => {
         throw new Error(error.message || "Failed to delete staff");
       }
     },
+
+
+
+    // dhwani services 
+    createService: async (_, { input }, context) => {
+      const { prisma, user } = context;
+
+      await checkPermission(user, "dhwani-services.create");
+
+      const { parentId } = input;
+
+      const service = await prisma.service.create({
+        data: {
+          ...input,
+        },
+      });
+
+      // update parent
+      if (parentId) {
+        await prisma.service.update({
+          where: { id: parentId },
+          data: { hasChildren: true },
+        });
+      }
+
+      return service;
+    },
+
+    deleteService: async (_, { id }, context) => {
+      const { prisma, user } = context;
+
+      await checkPermission(user, "dhwani-services.delete");
+
+      // find service
+      const service = await prisma.service.findUnique({
+        where: { id },
+        include: { children: true },
+      });
+
+      if (!service) throw new Error("Service not found");
+
+      // ❌ prevent delete if has children (recommended)
+      if (service.children.length > 0) {
+        throw new Error("Cannot delete category with sub-services");
+      }
+
+      // delete
+      await prisma.service.delete({
+        where: { id },
+      });
+
+      // 🔥 update parent hasChildren
+      if (service.parentId) {
+        const siblings = await prisma.service.count({
+          where: { parentId: service.parentId },
+        });
+
+        if (siblings === 0) {
+          await prisma.service.update({
+            where: { id: service.parentId },
+            data: { hasChildren: false },
+          });
+        }
+      }
+
+      return true;
+    },
+
+    updateService: async (_, { id, input }, context) => {
+      const { prisma, user } = context;
+
+      await checkPermission(user, "dhwani-services.update");
+
+      return prisma.service.update({
+        where: { id },
+        data: input,
+      });
+    },
+
   },
 };
