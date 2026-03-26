@@ -64,16 +64,21 @@ async function checkPermission(staff, requiredPermission) {
 
   console.log("staff:", staff);
   console.log("requiredPermission:", requiredPermission);
-  console.log("rolePerms:", rolePerms.map(r => r.permission.name));
-  console.log("staffPerms:", staffPerms.map(s => s.permission.name));
+  console.log(
+    "rolePerms:",
+    rolePerms.map((r) => r.permission.name),
+  );
+  console.log(
+    "staffPerms:",
+    staffPerms.map((s) => s.permission.name),
+  );
 
   if (!allPermissions.includes(requiredPermission)) {
     throw new Error("Unauthorized: Missing permission");
   }
 }
 
-
-// generate auto permission 
+// generate auto permission
 const generateCRUDPermissions = async (module) => {
   const actions = ["create", "read", "update", "delete"];
 
@@ -143,11 +148,11 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { mobile: { contains: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { mobile: { contains: query } },
+              ],
+            }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -207,12 +212,12 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { skills: { has: query } },
-              { languages: { has: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { skills: { has: query } },
+                { languages: { has: query } },
+              ],
+            }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -796,7 +801,7 @@ export const resolvers = {
       return sections.map((s) => s.section);
     },
 
-    // get coupons 
+    // get coupons
     getCoupons: async (_, __, context) => {
       await checkPermission(context.user, "coupons.read");
 
@@ -809,30 +814,19 @@ export const resolvers = {
       }
     },
 
-    // dhwani services 
+    // dhwani services
     getServices: async (_, __, context) => {
       const { prisma, user } = context;
 
-      await checkPermission(user, "dhwani-services.read");
+      await checkPermission(user, "all-services.read");
 
       return prisma.service.findMany({
-        include: {
-          parent: true,   // 🔥 important for category name
-        },
         orderBy: { createdAt: "desc" },
       });
     },
-
-    getServiceBySlug: async (_, { slug }, context) => {
-      const { prisma, user } = context;
-
-      await checkPermission(user, "dhwani-services.read");
-
-      return prisma.service.findUnique({
-        where: { slug },
-        include: {
-          children: true,
-        },
+    getCategories: async (_, __, { prisma }) => {
+      return prisma.category.findMany({
+        orderBy: { createdAt: "desc" },
       });
     },
   },
@@ -1030,7 +1024,6 @@ export const resolvers = {
     // ================= ADD ASTROLOGER =================
     addAstrologer: async (_, { data }, context) => {
       try {
-
         await checkPermission(context.user, "astrologer.create");
 
         const astrologer = await prisma.astrologer.create({
@@ -1057,7 +1050,7 @@ export const resolvers = {
             videocall_charges: Number(data.charges.videocall_charges),
             audiocall_charges: Number(data.charges.audiocall_charges),
             audiovideocall_offer_charges: Number(
-              data.charges.audiovideocall_offer_charges
+              data.charges.audiovideocall_offer_charges,
             ),
 
             addresses: {
@@ -1108,7 +1101,6 @@ export const resolvers = {
           message: "Astrologer added successfully",
           data: astrologer,
         };
-
       } catch (error) {
         console.error("AddAstrologer Error:", error.message);
 
@@ -1482,7 +1474,6 @@ export const resolvers = {
           },
         });
 
-
         await generateCRUDPermissions(module);
 
         return module;
@@ -1494,7 +1485,7 @@ export const resolvers = {
     updateModule: async (
       _,
       { id, name, slug, description, section, isActive },
-      context
+      context,
     ) => {
       try {
         await checkPermission(context.user, "modules.edit");
@@ -1585,7 +1576,11 @@ export const resolvers = {
       }
     },
 
-    updateRole: async (_, { roleId, name, slug, description, isActive }, context) => {
+    updateRole: async (
+      _,
+      { roleId, name, slug, description, isActive },
+      context,
+    ) => {
       await checkPermission(context.user, "roles.edit");
 
       return prisma.role.update({
@@ -1617,7 +1612,7 @@ export const resolvers = {
         return {
           success: true,
           message: "Role deleted successfully",
-          error: ""
+          error: "",
         };
       } catch (error) {
         return {
@@ -1631,7 +1626,6 @@ export const resolvers = {
     // Permission
     createPermission: async (_, { name, moduleIds }, context) => {
       await checkPermission(context.user, "permissions.create");
-
 
       if (name.includes(".")) {
         throw new Error("System permissions cannot be created manually");
@@ -1935,87 +1929,61 @@ export const resolvers = {
       }
     },
 
+    // dhwani services
 
+    createCategory: async (_, { input }, { prisma }) => {
+      const name = input.name.trim().toLowerCase();
 
-    // dhwani services 
- createService: async (_, { input }, context) => {
-  const { prisma, user } = context;
+      // ✅ check existing
+      const existing = await prisma.category.findUnique({
+        where: { name },
+      });
 
-  await checkPermission(user, "dhwani-services.create");
+      if (existing) {
+        return existing; // 🔥 return existing instead of error
+      }
 
-  let parentId = input.parentId;
-
-  // 🔥 HANDLE NEW CATEGORY
-  if (input.newCategory) {
-    const newCat = await prisma.service.create({
-      data: {
-        name: input.newCategory,
-        slug: input.newCategory.toLowerCase().replace(/\s+/g, "-"),
-        type: "CATEGORY",
-      },
-    });
-
-    parentId = newCat.id;
-  }
-
-  const service = await prisma.service.create({
-    data: {
-      name: input.name,
-      slug: input.slug,
-      type: input.type,
-      image: input.image,
-      description: input.description,
-      longText: input.longText,
-      price: input.price,
-      parentId: parentId || null,
+      return prisma.category.create({
+        data: {
+          name,
+          slug: name.replace(/\s+/g, "-"),
+        },
+      });
     },
-  });
 
-  // update parent flag
-  if (parentId) {
-    await prisma.service.update({
-      where: { id: parentId },
-      data: { hasChildren: true },
-    });
-  }
+    createService: async (_, { input }, { prisma, user }) => {
+      await checkPermission(user, "all-services.create");
 
-  return service;
-},
+      return prisma.service.create({
+        data: {
+          name: input.name,
+          slug: input.slug,
+          type: input.type,
+          categoryId: input.type === "CATEGORY" ? input.categoryId : null,
+          image: input.image,
+          description: input.description,
+          longText: input.longText,
+          price: input.price,
+        },
+      });
+    },
 
     deleteService: async (_, { id }, context) => {
       const { prisma, user } = context;
 
-      await checkPermission(user, "dhwani-services.delete");
+      await checkPermission(user, "all-services.delete");
 
       const service = await prisma.service.findUnique({
         where: { id },
-        include: { children: true },
       });
 
-      if (!service) throw new Error("Service not found");
-
-      // ❌ prevent delete if children exist
-      if (service.children.length > 0) {
-        throw new Error("Cannot delete category with sub-services");
+      if (!service) {
+        throw new Error("Service not found");
       }
 
       await prisma.service.delete({
         where: { id },
       });
-
-      // 🔥 update parent
-      if (service.parentId) {
-        const siblings = await prisma.service.count({
-          where: { parentId: service.parentId },
-        });
-
-        if (siblings === 0) {
-          await prisma.service.update({
-            where: { id: service.parentId },
-            data: { hasChildren: false },
-          });
-        }
-      }
 
       return true;
     },
@@ -2023,7 +1991,7 @@ export const resolvers = {
     updateService: async (_, { id, input }, context) => {
       const { prisma, user } = context;
 
-      await checkPermission(user, "dhwani-services.update");
+      await checkPermission(user, "all-services.update");
 
       const existing = await prisma.service.findUnique({
         where: { id },
@@ -2034,8 +2002,17 @@ export const resolvers = {
       const updated = await prisma.service.update({
         where: { id },
         data: {
-          ...input,
-          parentId: input.parentId || null,
+          name: input.name,
+          slug: input.slug,
+          type: input.type,
+
+          // ✅ FIXED
+          categoryId: input.type === "CATEGORY" ? input.categoryId : null,
+
+          image: input.image,
+          description: input.description,
+          longText: input.longText,
+          price: input.price,
         },
       });
 

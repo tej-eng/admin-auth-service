@@ -508,42 +508,47 @@ const typeDefs = gql`
   }
 
   # --- dhwani services ___ #
-type Service {
-  id: ID!
-  name: String!
-  slug: String!
-  type: String!
+  type Category {
+    id: ID!
+    name: String!
+    slug: String!
+  }
 
-  image: String
-  description: String
-  longText: String  
-  price: Float
+  type Service {
+    id: ID!
+    name: String!
+    slug: String!
+    type: String!
 
-  parentId: ID
-  hasChildren: Boolean
+    category: Category
 
-  children: [Service]
-}
+    image: String
+    description: String
+    longText: String
+    price: Float
+  }
 
-input CreateServiceInput {
-  name: String!
-  slug: String!
-  type: String!
+  input CreateServiceInput {
+    name: String!
+    slug: String!
+    type: String!
 
-  image: String
-  description: String
-  longText: String
-  price: Float
+    categoryId: ID
 
-  parentId: ID
+    image: String
+    description: String
+    longText: String
+    price: Float
+  }
 
-  newCategory: String   # 🔥 ADD THIS
-}
+  input CreateCategoryInput {
+    name: String!
+  }
 
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
-    getServices(parentId: ID): [Service]
-    getServiceBySlug(slug: String!): Service
+    getServices: [Service]
+    getCategories: [Category]
     getCoupons: [Coupon]
     getSections: [String!]!
     getModulesPaginated(page: Int, limit: Int): ModulePagination!
@@ -614,6 +619,7 @@ input CreateServiceInput {
     createService(input: CreateServiceInput!): Service
     updateService(id: ID!, input: CreateServiceInput!): Service
     deleteService(id: ID!): Boolean
+    createCategory(input: CreateCategoryInput!): Category
 
     addAstrologer(data: AddAstrologerInput!): AddAstrologerResponse!
     loginStaff(email: String!, password: String!): AuthPayload!
