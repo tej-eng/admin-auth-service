@@ -508,28 +508,37 @@ const typeDefs = gql`
   }
 
   # --- dhwani services ___ #
-  type Service {
-    id: ID!
-    name: String!
-    slug: String!
-    type: String!
-    image: String
-    description: String
-    price: Float
-    parentId: ID
-    hasChildren: Boolean
-    children: [Service]
-  }
+type Service {
+  id: ID!
+  name: String!
+  slug: String!
+  type: String!
 
-  input CreateServiceInput {
-    name: String!
-    slug: String!
-    type: String!
-    image: String
-    description: String
-    price: Float
-    parentId: ID
-  }
+  image: String
+  description: String
+  longText: String  
+  price: Float
+
+  parentId: ID
+  hasChildren: Boolean
+
+  children: [Service]
+}
+
+input CreateServiceInput {
+  name: String!
+  slug: String!
+  type: String!
+
+  image: String
+  description: String
+  longText: String
+  price: Float
+
+  parentId: ID
+
+  newCategory: String   # 🔥 ADD THIS
+}
 
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {

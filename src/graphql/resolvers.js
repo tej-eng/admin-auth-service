@@ -810,14 +810,14 @@ export const resolvers = {
     },
 
     // dhwani services 
-    getServices: async (_, { parentId }, context) => {
+    getServices: async (_, __, context) => {
       const { prisma, user } = context;
 
       await checkPermission(user, "dhwani-services.read");
 
       return prisma.service.findMany({
-        where: {
-          parentId: parentId || null,
+        include: {
+          parent: true,   // 🔥 important for category name
         },
         orderBy: { createdAt: "desc" },
       });
@@ -1938,36 +1938,55 @@ export const resolvers = {
 
 
     // dhwani services 
-    createService: async (_, { input }, context) => {
-      const { prisma, user } = context;
+ createService: async (_, { input }, context) => {
+  const { prisma, user } = context;
 
-      await checkPermission(user, "dhwani-services.create");
+  await checkPermission(user, "dhwani-services.create");
 
-      const { parentId } = input;
+  let parentId = input.parentId;
 
-      const service = await prisma.service.create({
-        data: {
-          ...input,
-        },
-      });
+  // 🔥 HANDLE NEW CATEGORY
+  if (input.newCategory) {
+    const newCat = await prisma.service.create({
+      data: {
+        name: input.newCategory,
+        slug: input.newCategory.toLowerCase().replace(/\s+/g, "-"),
+        type: "CATEGORY",
+      },
+    });
 
-      // update parent
-      if (parentId) {
-        await prisma.service.update({
-          where: { id: parentId },
-          data: { hasChildren: true },
-        });
-      }
+    parentId = newCat.id;
+  }
 
-      return service;
+  const service = await prisma.service.create({
+    data: {
+      name: input.name,
+      slug: input.slug,
+      type: input.type,
+      image: input.image,
+      description: input.description,
+      longText: input.longText,
+      price: input.price,
+      parentId: parentId || null,
     },
+  });
+
+  // update parent flag
+  if (parentId) {
+    await prisma.service.update({
+      where: { id: parentId },
+      data: { hasChildren: true },
+    });
+  }
+
+  return service;
+},
 
     deleteService: async (_, { id }, context) => {
       const { prisma, user } = context;
 
       await checkPermission(user, "dhwani-services.delete");
 
-      // find service
       const service = await prisma.service.findUnique({
         where: { id },
         include: { children: true },
@@ -1975,17 +1994,16 @@ export const resolvers = {
 
       if (!service) throw new Error("Service not found");
 
-      // ❌ prevent delete if has children (recommended)
+      // ❌ prevent delete if children exist
       if (service.children.length > 0) {
         throw new Error("Cannot delete category with sub-services");
       }
 
-      // delete
       await prisma.service.delete({
         where: { id },
       });
 
-      // 🔥 update parent hasChildren
+      // 🔥 update parent
       if (service.parentId) {
         const siblings = await prisma.service.count({
           where: { parentId: service.parentId },
@@ -2007,11 +2025,21 @@ export const resolvers = {
 
       await checkPermission(user, "dhwani-services.update");
 
-      return prisma.service.update({
+      const existing = await prisma.service.findUnique({
         where: { id },
-        data: input,
       });
-    },
 
+      if (!existing) throw new Error("Service not found");
+
+      const updated = await prisma.service.update({
+        where: { id },
+        data: {
+          ...input,
+          parentId: input.parentId || null,
+        },
+      });
+
+      return updated;
+    },
   },
 };

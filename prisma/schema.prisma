@@ -495,8 +495,10 @@ model Service {
   name        String
   slug        String    @unique
   type        ServiceType
+
   image       String?
   description String?
+  longText    String?   
   price       Float?
 
   parentId    String?
@@ -511,5 +513,5 @@ model Service {
 
 enum ServiceType {
   CATEGORY
-  SERVICE
+  DIRECT_SERVICE
 }
