@@ -1,4 +1,3 @@
-// src/server.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -20,19 +19,23 @@ const prisma = new PrismaClient();
 async function startServer() {
   const app = express();
 
-  // ✅ CORS
-  app.use(
-    cors({
-      origin: "http://localhost:3001",
-      credentials: true,
-    }),
-  );
-
+app.use(
+  cors({
+    origin: true, // 🔥 allow all origins (for dev)
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
+app.options("*", cors());
   app.use(express.json());
   app.use(cookieParser());
   app.use(rateLimiter);
 
+  // ✅ static folder
   app.use("/uploads", express.static("uploads"));
+
+  // ✅ REST upload
   app.use("/api", uploadRoutes);
 
   const server = new ApolloServer({
@@ -43,10 +46,11 @@ async function startServer() {
 
   await server.start();
 
+  // 🔥 MUST be before /graphql
+
   app.use(
     "/graphql",
     expressMiddleware(server, {
-
       context: async ({ req, res }) => {
         let user = null;
 
@@ -69,10 +73,9 @@ async function startServer() {
           }
         }
 
-        // ✅ FIX HERE
         return { req, res, user, prisma };
       },
-    }),
+    })
   );
 
   const PORT = process.env.PORT || 4001;

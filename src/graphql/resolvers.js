@@ -33,26 +33,24 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
   }
 }
 
-async function checkPermission(staff, requiredPermission) {
-  if (!staff) throw new Error("Unauthorized");
+async function checkPermission(context, requiredPermission) {
+  const staff = context.user;
 
-  // 🔥 SUPER ADMIN BYPASS
-  const fullStaff = await prisma.staff.findUnique({
-    where: { id: staff.id },
-    include: { role: true },
-  });
+  if (!staff || !staff.id) {
+    throw new Error("Unauthorized");
+  }
 
-  if (fullStaff.role?.slug === "super-admin") {
+  // 🔥 SUPER ADMIN
+  if (staff.role?.slug === "super-admin") {
     return true;
   }
 
-  // 🔥 Normal RBAC flow
-  const rolePerms = await prisma.rolePermission.findMany({
+  const rolePerms = await context.prisma.rolePermission.findMany({
     where: { roleId: staff.roleId },
     include: { permission: true },
   });
 
-  const staffPerms = await prisma.staffPermission.findMany({
+  const staffPerms = await context.prisma.staffPermission.findMany({
     where: { staffId: staff.id },
     include: { permission: true },
   });
@@ -62,42 +60,44 @@ async function checkPermission(staff, requiredPermission) {
     ...staffPerms.map((s) => s.permission.name),
   ];
 
-  console.log("staff:", staff);
-  console.log("requiredPermission:", requiredPermission);
-  console.log(
-    "rolePerms:",
-    rolePerms.map((r) => r.permission.name),
-  );
-  console.log(
-    "staffPerms:",
-    staffPerms.map((s) => s.permission.name),
-  );
-
   if (!allPermissions.includes(requiredPermission)) {
     throw new Error("Unauthorized: Missing permission");
   }
+
+  return true;
 }
 
 // generate auto permission
-const generateCRUDPermissions = async (module) => {
+const generateCRUDPermissions = async (module, prismaInstance) => {
   const actions = ["create", "read", "update", "delete"];
 
   for (const action of actions) {
     const name = `${module.slug}.${action}`;
 
-    await prisma.permission.upsert({
+    const permission = await prismaInstance.permission.upsert({
       where: { name },
       update: {},
       create: {
         name,
         type: "SYSTEM",
-        modules: {
-          create: {
-            module: { connect: { id: module.id } },
-          },
-        },
       },
     });
+
+    const existingLink = await prismaInstance.modulePermission.findFirst({
+      where: {
+        moduleId: module.id,
+        permissionId: permission.id,
+      },
+    });
+
+    if (!existingLink) {
+      await prismaInstance.modulePermission.create({
+        data: {
+          moduleId: module.id,
+          permissionId: permission.id,
+        },
+      });
+    }
   }
 };
 
@@ -177,8 +177,10 @@ export const resolvers = {
     },
 
     getAstrologerListBySearch: async (_, { searchInput }, context) => {
+      const { prisma } = context;
+      await checkPermission(context, "astrologer.read");
       try {
-        if (!context.user) throw new Error("Not authorized");
+        if (!context) throw new Error("Not authorized");
 
         const {
           query,
@@ -563,6 +565,8 @@ export const resolvers = {
 
     // ROLES QUERY
     getRoles: async (_, { page = 1, limit = 10 }, context) => {
+      const { prisma } = context;
+      await checkPermission(context, "roles.read");
       try {
         const skip = (page - 1) * limit;
 
@@ -590,7 +594,8 @@ export const resolvers = {
 
     // Permission Query
     getPermissions: async (_, { page = 1, limit = 100, type }, context) => {
-      await checkPermission(context.user, "permissions.read");
+      const { prisma } = context;
+      await checkPermission(context, "permissions.read");
 
       const skip = (page - 1) * limit;
 
@@ -629,8 +634,10 @@ export const resolvers = {
     },
 
     // Department Query
-    getDepartments: async (_, { page = 1, limit = 10 }) => {
+    getDepartments: async (_, { page = 1, limit = 10 }, context) => {
       const skip = (page - 1) * limit;
+      const { prisma } = context;
+      await checkPermission(context, "departments.read");
 
       const [departments, totalCount] = await Promise.all([
         prisma.department.findMany({
@@ -803,7 +810,8 @@ export const resolvers = {
 
     // get coupons
     getCoupons: async (_, __, context) => {
-      await checkPermission(context.user, "coupons.read");
+      const { prisma } = context;
+      await checkPermission(context, "coupons.read");
 
       try {
         return await prisma.coupon.findMany({
@@ -816,9 +824,9 @@ export const resolvers = {
 
     // dhwani services
     getServices: async (_, __, context) => {
-      const { prisma, user } = context;
+      const { prisma } = context;
 
-      await checkPermission(user, "all-services.read");
+      await checkPermission(context, "all-services.read");
 
       return prisma.service.findMany({
         orderBy: { createdAt: "desc" },
@@ -826,6 +834,17 @@ export const resolvers = {
     },
     getCategories: async (_, __, { prisma }) => {
       return prisma.category.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+    },
+
+    // gifts
+    getGifts: async (_, __, context) => {
+      const { prisma } = context;
+
+      await checkPermission(context, "gifts.read"); // ✅ FIXED
+
+      return prisma.gift.findMany({
         orderBy: { createdAt: "desc" },
       });
     },
@@ -1341,7 +1360,8 @@ export const resolvers = {
     // Recharge packages ===============================
 
     createRechargePack: async (_, { input }, context) => {
-      await checkPermission(context.user, "walletpackages.create");
+      const { prisma } = context;
+      await checkPermission(context, "walletpackages.create");
 
       try {
         const pack = await prisma.rechargePack.create({
@@ -1361,7 +1381,8 @@ export const resolvers = {
     },
 
     deleteRechargePack: async (_, { id }, context) => {
-      await checkPermission(context.user, "walletpackages.delete");
+      const { prisma } = context;
+      await checkPermission(context, "walletpackages.delete");
 
       try {
         await prisma.rechargePack.delete({
@@ -1375,7 +1396,8 @@ export const resolvers = {
     },
 
     updateRechargePack: async (_, { id, input }, context) => {
-      await checkPermission(context.user, "walletpackages.update");
+      const { prisma } = context;
+      await checkPermission(context, "walletpackages.update");
 
       try {
         const pack = await prisma.rechargePack.update({
@@ -1392,7 +1414,8 @@ export const resolvers = {
     // ===============Coupons ++++++++++++++++++++++
 
     createCoupon: async (_, { input }, context) => {
-      await checkPermission(context.user, "coupons.create");
+      const { prisma } = context;
+      await checkPermission(context, "coupons.create");
 
       try {
         const coupon = await prisma.coupon.create({
@@ -1418,7 +1441,8 @@ export const resolvers = {
     },
 
     deleteCoupon: async (_, { id }, context) => {
-      await checkPermission(context.user, "coupons.delete");
+      const { prisma } = context;
+      await checkPermission(context, "coupons.delete");
 
       try {
         await prisma.coupon.delete({
@@ -1432,7 +1456,8 @@ export const resolvers = {
     },
 
     updateCouponStatus: async (_, { id, status }, context) => {
-      await checkPermission(context.user, "coupons.update");
+      const { prisma } = context;
+      await checkPermission(context, "coupons.update");
 
       try {
         const updated = await prisma.coupon.update({
@@ -1451,33 +1476,38 @@ export const resolvers = {
     // ****************************** Modules ********************
 
     createModule: async (_, { name, slug, description, section }, context) => {
+      const { prisma } = context;
+
       try {
+        await checkPermission(context, "modules.create");
+
         const normalizedName = name.trim();
         const normalizedSlug = slug.trim().toLowerCase();
         const normalizedSection = section.trim().toLowerCase();
 
-        // 🔥 slug must be unique
-        const existingModule = await prisma.module.findUnique({
-          where: { slug: normalizedSlug },
+        const module = await prisma.$transaction(async (tx) => {
+          const newModule = await tx.module.create({
+            data: {
+              name: normalizedName,
+              slug: normalizedSlug,
+              description,
+              section: normalizedSection,
+            },
+          });
+
+          await generateCRUDPermissions(newModule, tx);
+
+          return newModule;
         });
-
-        if (existingModule) {
-          throw new Error("Module with same slug already exists");
-        }
-
-        const module = await prisma.module.create({
-          data: {
-            name: normalizedName,
-            slug: normalizedSlug,
-            description,
-            section: normalizedSection,
-          },
-        });
-
-        await generateCRUDPermissions(module);
 
         return module;
       } catch (error) {
+        console.error("CREATE MODULE ERROR 👉", error);
+
+        if (error.code === "P2002") {
+          throw new Error("Module with same slug already exists");
+        }
+
         throw new Error(error.message || "Failed to create module");
       }
     },
@@ -1487,8 +1517,9 @@ export const resolvers = {
       { id, name, slug, description, section, isActive },
       context,
     ) => {
+      const { prisma } = context;
       try {
-        await checkPermission(context.user, "modules.edit");
+        await checkPermission(context, "modules.edit");
 
         const moduleExists = await prisma.module.findUnique({
           where: { id },
@@ -1531,7 +1562,8 @@ export const resolvers = {
     },
 
     deleteModule: async (_, { id }, context) => {
-      await checkPermission(context.user, "modules.delete");
+      const { prisma } = context;
+      await checkPermission(context, "modules.delete");
 
       await prisma.modulePermission.deleteMany({
         where: { moduleId: id },
@@ -1547,8 +1579,9 @@ export const resolvers = {
     // Roles +++++++++++++++++++++++++++++++
 
     createRole: async (_, { name, slug, description }, context) => {
+      const { prisma } = context;
       try {
-        await checkPermission(context.user, "roles.create");
+        await checkPermission(context, "roles.create");
         const normalizedName = name.trim();
         const normalizedSlug = slug.trim().toLowerCase();
 
@@ -1581,7 +1614,8 @@ export const resolvers = {
       { roleId, name, slug, description, isActive },
       context,
     ) => {
-      await checkPermission(context.user, "roles.edit");
+      const { prisma } = context;
+      await checkPermission(context, "roles.edit");
 
       return prisma.role.update({
         where: { id: roleId },
@@ -1595,8 +1629,9 @@ export const resolvers = {
     },
 
     deleteRole: async (_, { roleId }, context) => {
+      const { prisma } = context;
       try {
-        await checkPermission(context.user, "roles.delete");
+        await checkPermission(context, "roles.delete");
         const role = await prisma.role.findUnique({
           where: { id: roleId },
         });
@@ -1625,7 +1660,8 @@ export const resolvers = {
 
     // Permission
     createPermission: async (_, { name, moduleIds }, context) => {
-      await checkPermission(context.user, "permissions.create");
+      const { prisma } = context;
+      await checkPermission(context, "permissions.create");
 
       if (name.includes(".")) {
         throw new Error("System permissions cannot be created manually");
@@ -1653,7 +1689,8 @@ export const resolvers = {
     },
 
     updatePermission: async (_, { permissionId, name, moduleIds }, context) => {
-      await checkPermission(context.user, "permissions.update");
+      const { prisma } = context;
+      await checkPermission(context, "permissions.update");
 
       const existing = await prisma.permission.findUnique({
         where: { id: permissionId },
@@ -1694,7 +1731,8 @@ export const resolvers = {
     },
 
     deletePermission: async (_, { permissionId }, context) => {
-      await checkPermission(context.user, "permissions.delete");
+      const { prisma } = context;
+      await checkPermission(context, "permissions.delete");
 
       const existing = await prisma.permission.findUnique({
         where: { id: permissionId },
@@ -1718,7 +1756,8 @@ export const resolvers = {
 
     // Department
     createDepartment: async (_, { name, description }, context) => {
-      await checkPermission(context.user, "departments.create");
+      const { prisma } = context;
+      await checkPermission(context, "departments.create");
       const slug = generateSlug(name);
 
       const department = await prisma.department.create({
@@ -1731,12 +1770,14 @@ export const resolvers = {
 
       return department;
     },
+
     updateDepartment: async (
       _,
       { departmentId, name, description, isActive },
       context,
     ) => {
-      await checkPermission(context.user, "departments.edit");
+      const { prisma } = context;
+      await checkPermission(context, "departments.edit");
       let slug;
 
       if (name) {
@@ -1757,7 +1798,8 @@ export const resolvers = {
     },
 
     deleteDepartment: async (_, { departmentId }, context) => {
-      await checkPermission(context.user, "departments.delete");
+      const { prisma } = context;
+      await checkPermission(context, "departments.delete");
       const staffCount = await prisma.staff.count({
         where: { departmentId },
       });
@@ -1774,13 +1816,15 @@ export const resolvers = {
     },
 
     // Stafff
+
     createStaff: async (
       _,
       { name, email, password, departmentId, roleId, permissionIds },
       context,
     ) => {
+      const { prisma } = context;
       try {
-        await checkPermission(context.user, "staff.create");
+        await checkPermission(context, "staff.create");
 
         const normalizedEmail = email.toLowerCase().trim();
 
@@ -1832,8 +1876,9 @@ export const resolvers = {
       { staffId, name, email, password, departmentId, roleId, permissionIds },
       context,
     ) => {
+      const { prisma } = context;
       try {
-        await checkPermission(context.user, "staff.edit");
+        await checkPermission(context, "staff.edit");
         const staffExists = await prisma.staff.findUnique({
           where: { id: staffId },
         });
@@ -1904,9 +1949,11 @@ export const resolvers = {
         throw new Error(error.message || "Failed to update staff");
       }
     },
+
     deleteStaff: async (_, { staffId }, context) => {
+      const { prisma } = context;
       try {
-        await checkPermission(context.user, "staff.delete");
+        await checkPermission(context, "staff.delete");
         const staff = await prisma.staff.findUnique({
           where: { id: staffId },
         });
@@ -1951,8 +1998,9 @@ export const resolvers = {
       });
     },
 
-    createService: async (_, { input }, { prisma, user }) => {
-      await checkPermission(user, "all-services.create");
+    createService: async (_, { input }, { context }) => {
+      const { prisma } = context;
+      await checkPermission(context, "all-services.create");
 
       return prisma.service.create({
         data: {
@@ -1969,9 +2017,9 @@ export const resolvers = {
     },
 
     deleteService: async (_, { id }, context) => {
-      const { prisma, user } = context;
+      const { prisma } = context;
 
-      await checkPermission(user, "all-services.delete");
+      await checkPermission(context, "all-services.delete");
 
       const service = await prisma.service.findUnique({
         where: { id },
@@ -1989,9 +2037,9 @@ export const resolvers = {
     },
 
     updateService: async (_, { id, input }, context) => {
-      const { prisma, user } = context;
+      const { prisma } = context;
 
-      await checkPermission(user, "all-services.update");
+      await checkPermission(context, "all-services.update");
 
       const existing = await prisma.service.findUnique({
         where: { id },
@@ -2017,6 +2065,43 @@ export const resolvers = {
       });
 
       return updated;
+    },
+
+    // gifts
+    createGift: async (_, { input }, context) => {
+      await checkPermission(context, "gifts.create"); // ✅ FIXED
+
+      return await context.prisma.gift.create({
+        data: {
+          name: input.name,
+          amount: input.amount,
+          image: input.image,
+          status: input.status,
+        },
+      });
+    },
+
+    updateGift: async (_, { id, input }, context) => {
+      await checkPermission(context, "gifts.update"); // ✅ FIXED
+
+      return await context.prisma.gift.update({
+        where: { id },
+        data: {
+          name: input.name,
+          amount: input.amount,
+          status: input.status,
+          ...(input.image && { image: input.image }),
+        },
+      });
+    },
+    deleteGift: async (_, { id }, context) => {
+      await checkPermission(context, "gifts.delete"); // ✅ FIXED
+
+      await context.prisma.gift.delete({
+        where: { id },
+      });
+
+      return true;
     },
   },
 };

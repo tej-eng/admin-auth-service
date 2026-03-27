@@ -522,3 +522,16 @@ enum ServiceType {
   CATEGORY
   DIRECT_SERVICE
 }
+
+
+
+model Gift {
+  id      String   @id @default(cuid())
+  name    String
+  amount  Float
+  image   String?
+  status  String   @default("active")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

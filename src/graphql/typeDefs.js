@@ -545,10 +545,29 @@ const typeDefs = gql`
     name: String!
   }
 
+  #----gifts -------#
+  type Gift {
+    id: ID!
+    name: String!
+    amount: Float!
+    image: String
+    status: String!
+  }
+
+  input GiftInput {
+    name: String!
+    amount: Float!
+    image: String
+    status: String!
+  }
+
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
+    getGifts: [Gift]
+
     getServices: [Service]
     getCategories: [Category]
+
     getCoupons: [Coupon]
     getSections: [String!]!
     getModulesPaginated(page: Int, limit: Int): ModulePagination!
@@ -616,6 +635,10 @@ const typeDefs = gql`
   }
 
   type Mutation {
+    createGift(input: GiftInput!): Gift
+    deleteGift(id: ID!): Boolean
+    updateGift(id: ID!, input: GiftInput!): Gift
+
     createService(input: CreateServiceInput!): Service
     updateService(id: ID!, input: CreateServiceInput!): Service
     deleteService(id: ID!): Boolean

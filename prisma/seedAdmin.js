@@ -26,7 +26,6 @@ async function main() {
     },
   });
 
- 
   const modulesData = [
     { name: "Roles", slug: "roles", section: "privilege" },
     { name: "Permissions", slug: "permissions", section: "privilege" },
@@ -43,7 +42,6 @@ async function main() {
     });
   }
 
-
   const actions = ["create", "read", "update", "delete"];
   const modules = await prisma.module.findMany();
 
@@ -51,25 +49,36 @@ async function main() {
     for (const action of actions) {
       const name = `${mod.slug}.${action}`;
 
-      await prisma.permission.upsert({
+      // 1. create or get permission
+      const permission = await prisma.permission.upsert({
         where: { name },
         update: {},
         create: {
           name,
           type: "SYSTEM",
-          modules: {
-            create: {
-              module: { connect: { id: mod.id } },
-            },
-          },
         },
       });
+
+      // 2. ensure module link exists
+      const existingLink = await prisma.modulePermission.findFirst({
+        where: {
+          moduleId: mod.id,
+          permissionId: permission.id,
+        },
+      });
+
+      if (!existingLink) {
+        await prisma.modulePermission.create({
+          data: {
+            moduleId: mod.id,
+            permissionId: permission.id,
+          },
+        });
+      }
     }
   }
 
-
   const allPermissions = await prisma.permission.findMany();
-
 
   await prisma.rolePermission.createMany({
     data: allPermissions.map((perm) => ({
@@ -78,7 +87,6 @@ async function main() {
     })),
     skipDuplicates: true,
   });
-
 
   const hashedPassword = await bcrypt.hash("123456", 10);
 
