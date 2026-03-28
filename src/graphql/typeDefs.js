@@ -561,8 +561,61 @@ const typeDefs = gql`
     status: String!
   }
 
+  #------ Testimonial-------#
+  type Testimonial {
+    id: ID!
+    name: String!
+    address: String
+    content: String!
+    image: String
+    rating: Int!
+    createdAt: String
+    updatedAt: String
+  }
+
+  input CreateTestimonialInput {
+    name: String!
+    address: String
+    content: String!
+    image: String
+    rating: Int!
+  }
+
+  input UpdateTestimonialInput {
+    name: String
+    address: String
+    content: String
+    image: String
+    rating: Int
+  }
+
+  #------ FAQ ------#
+  type Faq {
+    id: ID!
+    question: String!
+    answer: String!
+    createdAt: String
+    updatedAt: String
+  }
+
+  input CreateFaqInput {
+    question: String!
+    answer: String!
+  }
+
+  input UpdateFaqInput {
+    question: String
+    answer: String
+  }
+
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
+    faqs: [Faq!]!
+    faq(id: ID!): Faq
+
+    testimonials: [Testimonial!]!
+    testimonial(id: ID!): Testimonial
+
     getGifts: [Gift]
 
     getServices: [Service]
@@ -635,6 +688,14 @@ const typeDefs = gql`
   }
 
   type Mutation {
+    createFaq(input: CreateFaqInput!): Faq!
+    updateFaq(id: ID!, input: UpdateFaqInput!): Faq!
+    deleteFaq(id: ID!): String!
+
+    createTestimonial(input: CreateTestimonialInput!): Testimonial!
+    updateTestimonial(id: ID!, input: UpdateTestimonialInput!): Testimonial!
+    deleteTestimonial(id: ID!): String!
+
     createGift(input: GiftInput!): Gift
     deleteGift(id: ID!): Boolean
     updateGift(id: ID!, input: GiftInput!): Gift

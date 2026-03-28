@@ -148,11 +148,11 @@ export const resolvers = {
 
         const where = query
           ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { mobile: { contains: query } },
-              ],
-            }
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { mobile: { contains: query } },
+            ],
+          }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -214,12 +214,12 @@ export const resolvers = {
 
         const where = query
           ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { skills: { has: query } },
-                { languages: { has: query } },
-              ],
-            }
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { skills: { has: query } },
+              { languages: { has: query } },
+            ],
+          }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -505,7 +505,7 @@ export const resolvers = {
     },
 
     getRechargePacks: async (_, __, context) => {
-      await checkPermission(context.user, "walletpackages.read");
+      await checkPermission(context, "walletpackages.read");
 
       return prisma.rechargePack.findMany({
         orderBy: { createdAt: "desc" },
@@ -832,8 +832,13 @@ export const resolvers = {
         orderBy: { createdAt: "desc" },
       });
     },
-    getCategories: async (_, __, { prisma }) => {
-      return prisma.category.findMany({
+
+    getCategories: async (_, __, context) => {
+      if (!context || !context.prisma) {
+        throw new Error("Context not available");
+      }
+
+      return context.prisma.category.findMany({
         orderBy: { createdAt: "desc" },
       });
     },
@@ -846,6 +851,40 @@ export const resolvers = {
 
       return prisma.gift.findMany({
         orderBy: { createdAt: "desc" },
+      });
+    },
+
+    // Testimonial
+    testimonials: async (_, __, context) => {
+      await checkPermission(context, "testimonials.read");
+
+      return await context.prisma.testimonial.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+    },
+
+    testimonial: async (_, { id }, context) => {
+      await checkPermission(context, "testimonials.read");
+
+      return await context.prisma.testimonial.findUnique({
+        where: { id },
+      });
+    },
+
+    // FAQs
+    faqs: async (_, __, context) => {
+      await checkPermission(context, "faqs.read");
+
+      return context.prisma.faq.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+    },
+
+    faq: async (_, { id }, context) => {
+      await checkPermission(context, "faqs.read");
+
+      return context.prisma.faq.findUnique({
+        where: { id },
       });
     },
   },
@@ -1817,11 +1856,7 @@ export const resolvers = {
 
     // Stafff
 
-    createStaff: async (
-      _,
-      { name, email, password, departmentId, roleId, permissionIds },
-      context,
-    ) => {
+    createStaff: async (_, { name, email, password, departmentId, roleId, permissionIds }, context,) => {
       const { prisma } = context;
       try {
         await checkPermission(context, "staff.create");
@@ -1978,17 +2013,18 @@ export const resolvers = {
 
     // dhwani services
 
-    createCategory: async (_, { input }, { prisma }) => {
+    createCategory: async (_, { input }, context) => {
+      await checkPermission(context, "categories.create");
+
+      const { prisma } = context;
+
       const name = input.name.trim().toLowerCase();
 
-      // ✅ check existing
-      const existing = await prisma.category.findUnique({
+      const existing = await prisma.category.findFirst({
         where: { name },
       });
 
-      if (existing) {
-        return existing; // 🔥 return existing instead of error
-      }
+      if (existing) return existing;
 
       return prisma.category.create({
         data: {
@@ -1998,7 +2034,7 @@ export const resolvers = {
       });
     },
 
-    createService: async (_, { input }, { context }) => {
+    createService: async (_, { input }, context ) => {
       const { prisma } = context;
       await checkPermission(context, "all-services.create");
 
@@ -2069,7 +2105,7 @@ export const resolvers = {
 
     // gifts
     createGift: async (_, { input }, context) => {
-      await checkPermission(context, "gifts.create"); // ✅ FIXED
+      await checkPermission(context, "gifts.create");
 
       return await context.prisma.gift.create({
         data: {
@@ -2102,6 +2138,85 @@ export const resolvers = {
       });
 
       return true;
+    },
+
+    // Testimonials
+    createTestimonial: async (_, { input }, context) => {
+      await checkPermission(context, "testimonials.create");
+
+      // optional validation (good for interviews)
+      if (input.rating < 1 || input.rating > 5) {
+        throw new Error("Rating must be between 1 and 5");
+      }
+
+      return await context.prisma.testimonial.create({
+        data: {
+          name: input.name,
+          address: input.address,
+          content: input.content,
+          image: input.image,
+          rating: input.rating,
+        },
+      });
+    },
+
+    updateTestimonial: async (_, { id, input }, context) => {
+      await checkPermission(context, "testimonials.update");
+
+      return await context.prisma.testimonial.update({
+        where: { id },
+        data: {
+          ...(input.name && { name: input.name }),
+          ...(input.address && { address: input.address }),
+          ...(input.content && { content: input.content }),
+          ...(input.image && { image: input.image }),
+          ...(input.rating && { rating: input.rating }),
+        },
+      });
+    },
+
+    deleteTestimonial: async (_, { id }, context) => {
+      await checkPermission(context, "testimonials.delete");
+
+      await context.prisma.testimonial.delete({
+        where: { id },
+      });
+
+      return "Testimonial deleted successfully";
+    },
+
+    // FAQs
+    createFaq: async (_, { input }, context) => {
+      await checkPermission(context, "faqs.create");
+
+      return context.prisma.faq.create({
+        data: {
+          question: input.question,
+          answer: input.answer,
+        },
+      });
+    },
+
+    updateFaq: async (_, { id, input }, context) => {
+      await checkPermission(context, "faqs.update");
+
+      return context.prisma.faq.update({
+        where: { id },
+        data: {
+          ...(input.question && { question: input.question }),
+          ...(input.answer && { answer: input.answer }),
+        },
+      });
+    },
+
+    deleteFaq: async (_, { id }, context) => {
+      await checkPermission(context, "faqs.delete");
+
+      await context.prisma.faq.delete({
+        where: { id },
+      });
+
+      return "FAQ deleted";
     },
   },
 };
