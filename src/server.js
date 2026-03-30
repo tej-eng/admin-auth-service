@@ -19,15 +19,15 @@ const prisma = new PrismaClient();
 async function startServer() {
   const app = express();
 
-app.use(
-  cors({
-    origin: true, // 🔥 allow all origins (for dev)
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-  })
-);
-app.options("*", cors());
+  app.use(
+    cors({
+      origin: "http://localhost:7002",
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
+  app.options("*", cors());
   app.use(express.json());
   app.use(cookieParser());
   app.use(rateLimiter);

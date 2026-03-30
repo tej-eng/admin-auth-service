@@ -1,47 +1,41 @@
-// import express from "express";
-// import { upload } from "../utils/upload.js";
-
-// const router = express.Router();
-
-// router.post(
-//   "/upload-documents",
-//   upload.fields([
-//     { name: "aadhaar", maxCount: 1 },
-//     { name: "panCard", maxCount: 1 },
-//     { name: "passbook", maxCount: 1 },
-//     { name: "profilePic", maxCount: 1 },
-//   ]),
-//   (req, res) => {
-//     const files = req.files;
-
-//     res.json({
-//       aadhaar: files?.aadhaar?.[0]?.path || null,
-//       panCard: files?.panCard?.[0]?.path || null,
-//       passbook: files?.passbook?.[0]?.path || null,
-//       profilePic: files?.profilePic?.[0]?.path || null,
-//     });
-//   }
-// );
-
-// export default router;
-
-
-
-
-
 import express from "express";
 import { upload } from "../utils/upload.js";
 
 const router = express.Router();
 
-router.post("/upload", upload.single("file"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
+router.post(
+  "/upload-documents",
+  upload.fields([
+    { name: "profilePic", maxCount: 1 },
+    { name: "aadhaar", maxCount: 1 },
+    { name: "panCard", maxCount: 1 },
+    { name: "passbook", maxCount: 1 },
+  ]),
+  (req, res) => {
+    try {
+      const files = req.files;
 
-  return res.json({
-    url: `/uploads/${req.file.filename}`, // 🔥 important
-  });
-});
+      const response = {
+        profilePic: files?.profilePic?.[0]?.filename
+          ? `/uploads/${files.profilePic[0].filename}`
+          : null,
+        aadhaar: files?.aadhaar?.[0]?.filename
+          ? `/uploads/${files.aadhaar[0].filename}`
+          : null,
+        panCard: files?.panCard?.[0]?.filename
+          ? `/uploads/${files.panCard[0].filename}`
+          : null,
+        passbook: files?.passbook?.[0]?.filename
+          ? `/uploads/${files.passbook[0].filename}`
+          : null,
+      };
+
+      return res.json(response);
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ error: "Upload failed" });
+    }
+  }
+);
 
 export default router;

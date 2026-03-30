@@ -1081,8 +1081,9 @@ export const resolvers = {
 
     // ================= ADD ASTROLOGER =================
     addAstrologer: async (_, { data }, context) => {
+      const { prisma } = context;
       try {
-        await checkPermission(context.user, "astrologer.create");
+        await checkPermission(context, "astrologer.create");
 
         const astrologer = await prisma.astrologer.create({
           data: {
