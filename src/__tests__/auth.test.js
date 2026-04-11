@@ -10,7 +10,6 @@ import { PrismaClient } from "@prisma/client";
 
 import typeDefs from "../graphql/typeDefs.js";
 import { resolvers } from "../graphql/resolvers.js";
-import redis from "../config/redis.js";
 const { DocumentType, DocumentStatus } = require("@prisma/client"); 
 
 const prisma = new PrismaClient();
@@ -102,7 +101,6 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.$disconnect();
-  await redis.quit();
   await server.stop();
 });
 

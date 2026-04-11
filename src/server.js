@@ -1,4 +1,4 @@
-import "dotenv/config"; 
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -7,19 +7,36 @@ import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@apollo/server/express4";
 import { ApolloServerPluginLandingPageLocalDefault } from "@apollo/server/plugin/landingPage/default";
 
+import { PrismaClient } from "@prisma/client";
 import typeDefs from "./graphql/typeDefs.js";
 import { resolvers } from "./graphql/resolvers.js";
-import auth from "./middleware/auth.js";
 import rateLimiter from "./middleware/rateLimiter.js";
 import { verifyAccessToken } from "./config/jwt.js";
+import uploadRoutes from "./routes/upload.js";
+
+const prisma = new PrismaClient();
 
 async function startServer() {
   const app = express();
 
-  app.use(cors());
+  app.use(
+    cors({
+      origin: "http://localhost:7002",
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+    })
+  );
+  app.options("*", cors());
   app.use(express.json());
   app.use(cookieParser());
   app.use(rateLimiter);
+
+  // ✅ static folder
+  app.use("/uploads", express.static("uploads"));
+
+  // ✅ REST upload
+  app.use("/api", uploadRoutes);
 
   const server = new ApolloServer({
     typeDefs,
@@ -29,33 +46,41 @@ async function startServer() {
 
   await server.start();
 
+  // 🔥 MUST be before /graphql
+
   app.use(
     "/graphql",
     expressMiddleware(server, {
       context: async ({ req, res }) => {
         let user = null;
+
         const authHeader = req.headers["authorization"];
 
         if (authHeader?.startsWith("Bearer ")) {
           const token = authHeader.replace("Bearer ", "");
+
           try {
-            user = verifyAccessToken(token);
+            const decoded = verifyAccessToken(token);
+
+            if (decoded?.type === "staff") {
+              user = await prisma.staff.findUnique({
+                where: { id: decoded.id },
+                include: { role: true },
+              });
+            }
           } catch (err) {
             user = null;
           }
         }
 
-        // fallback to auth middleware if needed
-        if (!user) user = auth(req);
-
-        return { req, res, user };
+        return { req, res, user, prisma };
       },
     })
   );
 
   const PORT = process.env.PORT ||8006;
   app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}/graphql`);
+    console.log(`🚀 Server running at http://localhost:${PORT}/graphql`);
   });
 }
 

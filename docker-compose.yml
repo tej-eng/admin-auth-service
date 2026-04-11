@@ -1,15 +1,13 @@
 services:
-  user-auth-service:
+  admin-auth:
     build: .
-    container_name: user-auth-service
-    restart: always
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@dhwaniastro-postgres:5432/astro
-      NODE_ENV: production
-      PORT: 8006
+    container_name: admin-auth-service
     ports:
-      - "8006:8006"
-    cpus: 0.7
+      - "4001:4001"
+      - "5556:5555"
+      
+    env_file:
+      - .env
     networks:
       - dhwaniastro-net
 
