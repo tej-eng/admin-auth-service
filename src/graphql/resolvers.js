@@ -148,11 +148,11 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { mobile: { contains: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { mobile: { contains: query } },
+              ],
+            }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -214,12 +214,12 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { skills: { has: query } },
-              { languages: { has: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { skills: { has: query } },
+                { languages: { has: query } },
+              ],
+            }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -885,6 +885,16 @@ export const resolvers = {
 
       return context.prisma.faq.findUnique({
         where: { id },
+      });
+    },
+
+    // banners
+    getBanners: async (_, __, context) => {
+      const { prisma } = context;
+      await checkPermission(context, "banners.read");
+
+      return await prisma.banner.findMany({
+        orderBy: { sortorder: "asc" },
       });
     },
   },
@@ -1857,7 +1867,11 @@ export const resolvers = {
 
     // Stafff
 
-    createStaff: async (_, { name, email, password, departmentId, roleId, permissionIds }, context,) => {
+    createStaff: async (
+      _,
+      { name, email, password, departmentId, roleId, permissionIds },
+      context,
+    ) => {
       const { prisma } = context;
       try {
         await checkPermission(context, "staff.create");
@@ -2035,7 +2049,7 @@ export const resolvers = {
       });
     },
 
-    createService: async (_, { input }, context ) => {
+    createService: async (_, { input }, context) => {
       const { prisma } = context;
       await checkPermission(context, "all-services.create");
 
@@ -2218,6 +2232,47 @@ export const resolvers = {
       });
 
       return "FAQ deleted";
+    },
+
+    // banners
+createBanner: async (_, { input }, context) => {
+  const { prisma } = context;
+  await checkPermission(context, "banners.create");
+
+  return await prisma.banner.create({
+    data: {
+      heading: input.heading,
+      subheading: input.subheading,
+      slug: input.slug,
+      sortorder: input.sortorder,
+      bannerlink: input.bannerlink,
+      language: input.language,
+      imageUrl: input.imageUrl,
+    },
+  });
+},
+
+   updateBanner: async (_, { id, input }, context) => {
+  const { prisma } = context;
+  await checkPermission(context, "banners.update");
+
+  return await prisma.banner.update({
+    where: { id },
+    data: {
+      ...input,
+    },
+  });
+},
+
+    deleteBanner: async (_, { id }, context) => {
+      const { prisma } = context;
+      await checkPermission(context, "banners.delete");
+
+      await prisma.banner.delete({
+        where: { id },
+      });
+
+      return true;
     },
   },
 };

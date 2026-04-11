@@ -1,11 +1,26 @@
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 
-// storage config
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); // folder must exist
+    let uploadPath = "uploads/";
+
+    if (req.originalUrl.includes("upload-banner")) {
+      uploadPath = "uploads/banners/";
+    } else if (req.originalUrl.includes("upload-documents")) {
+      uploadPath = "uploads/documents/";
+    } else if (req.originalUrl.includes("upload-profile")) {
+      uploadPath = "uploads/profile/";
+    }
+
+
+    fs.mkdirSync(uploadPath, { recursive: true });
+
+    cb(null, uploadPath);
   },
+
   filename: function (req, file, cb) {
     const uniqueName =
       Date.now() + "-" + file.originalname.replace(/\s/g, "_");
@@ -13,7 +28,7 @@ const storage = multer.diskStorage({
   },
 });
 
-// file filter (IMPORTANT 🔥)
+
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpg|jpeg|png|pdf/;
   const ext = path.extname(file.originalname).toLowerCase();
@@ -25,11 +40,11 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// size limit (1MB)
+
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 1 * 1024 * 1024 }, // 1MB
+  limits: { fileSize: 2 * 1024 * 1024 },
 });
 
 export { upload };

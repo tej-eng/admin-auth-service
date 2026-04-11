@@ -608,8 +608,37 @@ const typeDefs = gql`
     answer: String
   }
 
+ #---------------- baneers --------# 
+  type Banner {
+  id: ID!
+  heading: String!
+  subheading: String
+  slug: String!
+  sortorder: Int
+  bannerlink: String
+  language: String
+  imageUrl: String 
+  status: Boolean
+  createdAt: String
+  updatedAt: String
+}
+
+input BannerInput {
+  heading: String!
+  subheading: String
+  slug: String!
+  sortorder: Int
+  bannerlink: String
+  language: String
+  imageUrl: String 
+}
+
+
+
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
+  getBanners: [Banner]
+
     faqs: [Faq!]!
     faq(id: ID!): Faq
 
@@ -688,6 +717,10 @@ const typeDefs = gql`
   }
 
   type Mutation {
+   createBanner(input: BannerInput!): Banner
+   updateBanner(id: ID!, input: BannerInput!): Banner
+   deleteBanner(id: ID!): Boolean
+
     createFaq(input: CreateFaqInput!): Faq!
     updateFaq(id: ID!, input: UpdateFaqInput!): Faq!
     deleteFaq(id: ID!): String!
