@@ -178,6 +178,7 @@ model Astrologer {
   interviews     Interview[]
   documents      AstrologerDocument[]
   rejections     AstrologerRejectionHistory[]
+  intakes   Intake[]
 }
 
 //////////////////// ADMIN ////////////////////
