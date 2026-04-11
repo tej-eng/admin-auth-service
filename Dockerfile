@@ -2,14 +2,18 @@ FROM node:20
 
 WORKDIR /app
 
+# copy dependency files first
 COPY package*.json ./
 
-RUN npm install
+# install dependencies with lower memory usage
+RUN npm install --no-audit --no-fund
 
+# copy project files
 COPY . .
 
-RUN npx prisma generate
+# generate prisma client
+RUN npx prisma generate --schema=./prisma/schema.prisma
 
-EXPOSE 4001
+EXPOSE 8006
 
 CMD ["node", "src/server.js"]
