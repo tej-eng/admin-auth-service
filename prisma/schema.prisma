@@ -457,3 +457,32 @@ model AstrologerRejectionHistory {
 
   astrologer Astrologer @relation(fields: [astrologerId], references: [id])
 }
+
+model Intake {
+  id           String   @id @default(uuid())
+
+  userId       String
+  astrologerId String
+
+  chatId       String?
+
+  name         String
+  countryCode  String?
+  mobile       String?
+
+  gender       Gender?
+  birthDate    DateTime?
+  birthTime    String?
+
+  occupation   String?
+  birthPlace   String?
+  requestType  String?
+
+  createdAt    DateTime @default(now())
+
+  user         User       @relation(fields: [userId], references: [id])
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+
+  @@index([userId])
+  @@index([astrologerId])
+}
