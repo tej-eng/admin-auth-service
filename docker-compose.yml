@@ -1,15 +1,17 @@
 services:
-  admin-auth:
+  admin-auth-service:
     build: .
     container_name: admin-auth-service
-    ports:
-      - "4001:4001"
-      - "5556:5555"
-      
+    restart: always
     env_file:
       - .env
+    ports:
+      - "8008:8008"
     networks:
       - dhwaniastro-net
+
+    mem_limit: 50m       
+    memswap_limit: 50m    
 
 networks:
   dhwaniastro-net:
