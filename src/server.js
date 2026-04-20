@@ -21,7 +21,7 @@ async function startServer() {
 
   app.use(
     cors({
-      origin: "http://localhost:7002",
+      origin: true,
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],

@@ -100,36 +100,27 @@ model Astrologer {
   password     String
   experience   Int
   aboutEnglish String
-
   languages String[]
   skills    String[]
   problems  String[]
-
   callChatCharges              Float
   callChatOfferCharges         Float
   callChatCommission           Float
   videocall_charges            Float
   audiocall_charges            Float
   audiovideocall_offer_charges Float
-
   tags  String
   vtags String
-
   approvalStatus ApprovalStatus @default(PENDING)
-
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   addresses   Address[]
   bankDetails BankDetails?
   documents   AstrologerDocument[]
-
   createdById String?
   createdBy   Staff?  @relation("CreatedAstrologers", fields: [createdById], references: [id])
-
   approvedById String?
   approvedBy   Staff?  @relation("ApprovedAstrologers", fields: [approvedById], references: [id])
-
   experiences  ExperiencePlatform[]
   interviews   Interview[]
   wallet       AstrologerWallet?

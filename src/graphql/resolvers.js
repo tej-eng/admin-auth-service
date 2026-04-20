@@ -889,7 +889,7 @@ export const resolvers = {
     },
 
     // banners
-    getBanners: async (_, __, context) => {
+    getBanners: async (_, __, context) => {4
       const { prisma } = context;
       await checkPermission(context, "banners.read");
 
