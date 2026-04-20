@@ -11,7 +11,7 @@ async function logEvent(type, identifier, details = {}) {
 
     await collection.insertOne({
       type,
-      identifier, // email or adminId
+      identifier, 
       details,
       timestamp: new Date(),
     });
@@ -178,3 +178,4 @@ export const addAstrologerService = async ({
     throw new Error("Failed to add astrologer");
   }
 };
+  

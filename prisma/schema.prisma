@@ -7,7 +7,279 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-//////////////////// ENUMS ////////////////////
+model User {
+  id            String         @id @default(uuid())
+  name          String?
+  mobile        String?        @unique
+  gender        Gender?
+  birthDate     DateTime?
+  birthTime     String?
+  occupation    String?
+  isActive      Boolean        @default(true)
+  isDeleted     Boolean        @default(false)
+  refreshToken  String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  Intake        Intake[]
+  payments      Payment[]
+  paymentOrders PaymentOrder[]
+  sessions      Session[]
+  wallet        UserWallet?
+}
+
+model Role {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  slug        String  @unique
+  description String?
+
+  isActive  Boolean @default(true)
+  isDeleted Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  staff       Staff[]
+  permissions RolePermission[]
+
+  @@index([name])
+  @@index([slug])
+}
+
+model Permission {
+  id          String  @id @default(uuid())
+  name        String  @unique
+  description String?
+
+  // ✅ NEW FIELD
+  type PermissionType @default(SYSTEM)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roles            RolePermission[]
+  modules          ModulePermission[]
+  staffPermissions StaffPermission[]
+
+  isDeleted Boolean @default(false)
+
+  @@index([name])
+  @@index([type])
+}
+
+model ModulePermission {
+  id String @id @default(uuid())
+
+  moduleId     String
+  permissionId String
+
+  module     Module     @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([moduleId, permissionId])
+}
+
+model RolePermission {
+  id           String     @id @default(uuid())
+  roleId       String
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model Astrologer {
+  id           String  @id @default(uuid())
+  name         String
+  displayName  String
+  profilePic   String?
+  gender       Gender
+  email        String  @unique
+  contactNo    String
+  password     String
+  experience   Int
+  aboutEnglish String
+  languages String[]
+  skills    String[]
+  problems  String[]
+  callChatCharges              Float
+  callChatOfferCharges         Float
+  callChatCommission           Float
+  videocall_charges            Float
+  audiocall_charges            Float
+  audiovideocall_offer_charges Float
+  tags  String
+  vtags String
+  approvalStatus ApprovalStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  addresses   Address[]
+  bankDetails BankDetails?
+  documents   AstrologerDocument[]
+  createdById String?
+  createdBy   Staff?  @relation("CreatedAstrologers", fields: [createdById], references: [id])
+  approvedById String?
+  approvedBy   Staff?  @relation("ApprovedAstrologers", fields: [approvedById], references: [id])
+  experiences  ExperiencePlatform[]
+  interviews   Interview[]
+  wallet       AstrologerWallet?
+  sessions     Session[]
+  refreshToken String?
+}
+
+model AstrologerDocument {
+  id           String @id @default(uuid())
+  astrologerId String
+  type         String
+  fileUrl      String
+
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id])
+}
+
+model Address {
+  id           Int        @id @default(autoincrement())
+  astrologerId String
+  street       String
+  city         String
+  state        String
+  country      String
+  pincode      String
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+}
+
+model BankDetails {
+  id           Int    @id @default(autoincrement())
+  astrologerId String @unique
+
+  accountHolderName String
+  accountNumber     String
+  bankName          String
+  ifscCode          String
+  panCardNumber     String
+  branchName        String
+
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id])
+}
+
+model ExperiencePlatform {
+  id           Int        @id @default(autoincrement())
+  astrologerId String
+  platformName String
+  yearsWorked  Int
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+}
+
+model Interview {
+  id              Int             @id @default(autoincrement())
+  astrologerId    String
+  roundNumber     Int
+  interviewerName String
+  scheduledAt     DateTime
+  status          InterviewStatus @default(SCHEDULED)
+  createdAt       DateTime        @default(now())
+  astrologer      Astrologer      @relation(fields: [astrologerId], references: [id])
+}
+
+model RechargePack {
+  id          String  @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  talktime    Int
+  isActive    Boolean @default(true)
+
+  payments     Payment[]
+  transactions WalletTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model UserWallet {
+  id           String              @id @default(uuid())
+  userId       String              @unique
+  balanceCoins Int                 @default(0)
+  lockedCoins  Int                 @default(0)
+  user         User                @relation(fields: [userId], references: [id])
+  transactions WalletTransaction[]
+}
+
+model AstrologerWallet {
+  id           String              @id @default(uuid())
+  astrologerId String              @unique
+  balanceCoins Int                 @default(0)
+  astrologer   Astrologer          @relation(fields: [astrologerId], references: [id])
+  transactions WalletTransaction[]
+}
+
+model WalletTransaction {
+  id                 String            @id @default(uuid())
+  userWalletId       String?
+  astrologerWalletId String?
+  rechargePackId     String?
+  coins              Int
+  type               TransactionType
+  createdAt          DateTime          @default(now())
+  astrologerWallet   AstrologerWallet? @relation(fields: [astrologerWalletId], references: [id])
+  rechargePack       RechargePack?     @relation(fields: [rechargePackId], references: [id])
+  userWallet         UserWallet?       @relation(fields: [userWalletId], references: [id])
+}
+
+model Session {
+  id           String        @id @default(uuid())
+  userId       String
+  astrologerId String
+  type         SessionType
+  status       SessionStatus
+  createdAt    DateTime      @default(now())
+  astrologer   Astrologer    @relation(fields: [astrologerId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+}
+
+model Payment {
+  id             String        @id @default(uuid())
+  userId         String
+  amount         Float
+  status         PaymentStatus
+  rechargePackId String
+  rechargePack   RechargePack  @relation(fields: [rechargePackId], references: [id])
+  user           User          @relation(fields: [userId], references: [id])
+}
+
+model PaymentOrder {
+  id     String @id @default(uuid())
+  userId String
+  amount Float
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Intake {
+  id           String @id @default(uuid())
+  userId       String
+  astrologerId String
+  name         String
+  mobile       String
+  birthPlace   String
+  user         User   @relation(fields: [userId], references: [id])
+}
+
+// model AstrologerDocument {
+//   id           Int            @id @default(autoincrement())
+//   astrologerId String
+//   documentType DocumentType
+//   documentUrl  String
+//   status       DocumentStatus @default(PENDING)
+//   verifiedBy   String?
+//   verifiedAt   DateTime?
+//   remarks      String?
+//   createdAt    DateTime       @default(now())
+//   astrologer   Astrologer     @relation(fields: [astrologerId], references: [id])
+
+//   @@unique([astrologerId, documentType])
+//   @@index([astrologerId])
+//   @@index([status])
+// }
 
 enum Gender {
   MALE
