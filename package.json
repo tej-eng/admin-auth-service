@@ -6,10 +6,10 @@
   "scripts": {
     "start": "node src/server.js",
     "test": "jest --runInBand",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seedAdmin.js"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seedAdmin.js"
   },
   "jest": {
     "testEnvironment": "node",

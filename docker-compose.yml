@@ -7,6 +7,7 @@ services:
       - .env
     ports:
       - "8008:8008"
+      
     networks:
       - dhwaniastro-net
 
