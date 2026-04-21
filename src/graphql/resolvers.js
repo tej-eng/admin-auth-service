@@ -36,17 +36,30 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
 async function checkPermission(context, requiredPermission) {
   const staff = context.user;
 
+  console.log("STAFF OBJECT:", staff); // 👈 here
+
   if (!staff || !staff.id) {
     throw new Error("Unauthorized");
   }
 
-  // 🔥 SUPER ADMIN
+  // SUPER ADMIN CHECK
+  console.log("ROLE:", staff.role); // 👈 here
+
   if (staff.role?.slug === "super-admin") {
     return true;
   }
 
+  const roleId = staff.roleId || staff.role?.id;
+
+  console.log("ROLE ID:", roleId); // 👈 here
+  console.log("REQUIRED:", requiredPermission); // 👈 here
+
+  if (!roleId) {
+    throw new Error("Unauthorized: Role missing");
+  }
+
   const rolePerms = await context.prisma.rolePermission.findMany({
-    where: { roleId: staff.roleId },
+    where: { roleId },
     include: { permission: true },
   });
 
@@ -59,6 +72,8 @@ async function checkPermission(context, requiredPermission) {
     ...rolePerms.map((r) => r.permission.name),
     ...staffPerms.map((s) => s.permission.name),
   ];
+
+  console.log("ALL PERMS:", allPermissions); // 👈 MOST IMPORTANT
 
   if (!allPermissions.includes(requiredPermission)) {
     throw new Error("Unauthorized: Missing permission");
@@ -148,11 +163,11 @@ export const resolvers = {
 
         const where = query
           ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { mobile: { contains: query } },
-              ],
-            }
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { mobile: { contains: query } },
+            ],
+          }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -214,12 +229,12 @@ export const resolvers = {
 
         const where = query
           ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { skills: { has: query } },
-                { languages: { has: query } },
-              ],
-            }
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { skills: { has: query } },
+              { languages: { has: query } },
+            ],
+          }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -889,7 +904,8 @@ export const resolvers = {
     },
 
     // banners
-    getBanners: async (_, __, context) => {4
+    getBanners: async (_, __, context) => {
+      4
       const { prisma } = context;
       await checkPermission(context, "banners.read");
 
@@ -1135,16 +1151,31 @@ export const resolvers = {
             documents: {
               create: [
                 ...(data.documents?.aadhaar
-                  ? [{ type: "AADHAAR", fileUrl: data.documents.aadhaar }]
+                  ? [{
+                    documentType: "AADHAAR",
+                    documentUrl: data.documents.aadhaar
+                  }]
                   : []),
+
                 ...(data.documents?.panCard
-                  ? [{ type: "PAN", fileUrl: data.documents.panCard }]
+                  ? [{
+                    documentType: "PAN",
+                    documentUrl: data.documents.panCard
+                  }]
                   : []),
+
                 ...(data.documents?.passbook
-                  ? [{ type: "PASSBOOK", fileUrl: data.documents.passbook }]
+                  ? [{
+                    documentType: "PASSBOOK",
+                    documentUrl: data.documents.passbook
+                  }]
                   : []),
+
                 ...(data.documents?.profilePic
-                  ? [{ type: "PROFILE", fileUrl: data.documents.profilePic }]
+                  ? [{
+                    documentType: "PROFILE",
+                    documentUrl: data.documents.profilePic
+                  }]
                   : []),
               ],
             },
@@ -1872,6 +1903,7 @@ export const resolvers = {
       { name, email, password, departmentId, roleId, permissionIds },
       context,
     ) => {
+       console.log("CTX USERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR:", context.user); 
       const { prisma } = context;
       try {
         await checkPermission(context, "staff.create");
@@ -2235,34 +2267,34 @@ export const resolvers = {
     },
 
     // banners
-createBanner: async (_, { input }, context) => {
-  const { prisma } = context;
-  await checkPermission(context, "banners.create");
+    createBanner: async (_, { input }, context) => {
+      const { prisma } = context;
+      await checkPermission(context, "banners.create");
 
-  return await prisma.banner.create({
-    data: {
-      heading: input.heading,
-      subheading: input.subheading,
-      slug: input.slug,
-      sortorder: input.sortorder,
-      bannerlink: input.bannerlink,
-      language: input.language,
-      imageUrl: input.imageUrl,
+      return await prisma.banner.create({
+        data: {
+          heading: input.heading,
+          subheading: input.subheading,
+          slug: input.slug,
+          sortorder: input.sortorder,
+          bannerlink: input.bannerlink,
+          language: input.language,
+          imageUrl: input.imageUrl,
+        },
+      });
     },
-  });
-},
 
-   updateBanner: async (_, { id, input }, context) => {
-  const { prisma } = context;
-  await checkPermission(context, "banners.update");
+    updateBanner: async (_, { id, input }, context) => {
+      const { prisma } = context;
+      await checkPermission(context, "banners.update");
 
-  return await prisma.banner.update({
-    where: { id },
-    data: {
-      ...input,
+      return await prisma.banner.update({
+        where: { id },
+        data: {
+          ...input,
+        },
+      });
     },
-  });
-},
 
     deleteBanner: async (_, { id }, context) => {
       const { prisma } = context;

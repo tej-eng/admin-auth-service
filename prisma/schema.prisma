@@ -640,9 +640,10 @@ enum DocumentStatus {
 }
 
 enum DocumentType {
-  ID_PROOF
-  CERTIFICATE
-  EXPERIENCE_PROOF
+  AADHAAR
+  PAN
+  PASSBOOK
+  PROFILE
 }
 
 enum RejectionStage {

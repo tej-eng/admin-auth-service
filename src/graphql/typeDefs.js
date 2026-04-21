@@ -41,11 +41,12 @@ const typeDefs = gql`
     REJECTED
   }
 
-  enum DocumentType {
-    ID_PROOF
-    CERTIFICATE
-    EXPERIENCE_PROOF
-  }
+enum DocumentType {
+  AADHAAR
+  PAN
+  PASSBOOK
+  PROFILE
+}
 
   enum SortOrder {
     ASC
