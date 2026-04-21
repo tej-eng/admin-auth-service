@@ -41,12 +41,12 @@ const typeDefs = gql`
     REJECTED
   }
 
-enum DocumentType {
-  AADHAAR
-  PAN
-  PASSBOOK
-  PROFILE
-}
+  enum DocumentType {
+    AADHAAR
+    PAN
+    PASSBOOK
+    PROFILE
+  }
 
   enum SortOrder {
     ASC
@@ -88,14 +88,14 @@ enum DocumentType {
     updatedAt: DateTime
   }
 
-  input ChargesInput {
-    callChatCharges: Float
-    callChatOfferCharges: Float
-    callChatCommission: Float
-    videocall_charges: Float
-    audiocall_charges: Float
-    audiovideocall_offer_charges: Float
-  }
+  #--------------------------------------#
+input PricingInput {
+  type: PricingType!
+  price: Float!
+  offerPrice: Float
+  commissionPercent: Float
+  isActive: Boolean!
+}
 
   input BankDetailsInput {
     accountHolderName: String!
@@ -125,7 +125,9 @@ enum DocumentType {
     vtags: String
 
     address: AddressInput
-    charges: ChargesInput
+
+    pricing: [PricingInput!]!
+
     bankDetails: BankDetailsInput
     documents: AstrologerDocumentsInput
   }
@@ -153,12 +155,7 @@ enum DocumentType {
     skills: [String!]!
     problems: [String!]!
 
-    callChatCharges: Float
-    callChatOfferCharges: Float
-    callChatCommission: Float
-    videocall_charges: Float
-    audiocall_charges: Float
-    audiovideocall_offer_charges: Float
+    pricing: [AstrologerPricing!]!
 
     tags: String
     vtags: String
@@ -609,36 +606,50 @@ enum DocumentType {
     answer: String
   }
 
- #---------------- baneers --------# 
+  #---------------- baneers --------#
   type Banner {
-  id: ID!
-  heading: String!
-  subheading: String
-  slug: String!
-  sortorder: Int
-  bannerlink: String
-  language: String
-  imageUrl: String 
-  status: Boolean
-  createdAt: String
-  updatedAt: String
-}
+    id: ID!
+    heading: String!
+    subheading: String
+    slug: String!
+    sortorder: Int
+    bannerlink: String
+    language: String
+    imageUrl: String
+    status: Boolean
+    createdAt: String
+    updatedAt: String
+  }
 
-input BannerInput {
-  heading: String!
-  subheading: String
-  slug: String!
-  sortorder: Int
-  bannerlink: String
-  language: String
-  imageUrl: String 
-}
+  input BannerInput {
+    heading: String!
+    subheading: String
+    slug: String!
+    sortorder: Int
+    bannerlink: String
+    language: String
+    imageUrl: String
+  }
 
-
+  #-------------------- pricing --------------#
+  enum PricingType {
+    CHAT
+    CALL
+    VIDEO
+    AUDIO
+  }
+  type AstrologerPricing {
+    id: ID!
+    type: PricingType!
+    price: Float!
+    offerPrice: Float
+    commissionPercent: Float
+    isActive: Boolean!
+  }
 
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
-  getBanners: [Banner]
+    getBanners: [Banner]
 
     faqs: [Faq!]!
     faq(id: ID!): Faq
@@ -718,9 +729,9 @@ input BannerInput {
   }
 
   type Mutation {
-   createBanner(input: BannerInput!): Banner
-   updateBanner(id: ID!, input: BannerInput!): Banner
-   deleteBanner(id: ID!): Boolean
+    createBanner(input: BannerInput!): Banner
+    updateBanner(id: ID!, input: BannerInput!): Banner
+    deleteBanner(id: ID!): Boolean
 
     createFaq(input: CreateFaqInput!): Faq!
     updateFaq(id: ID!, input: UpdateFaqInput!): Faq!

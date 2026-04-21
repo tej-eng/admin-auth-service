@@ -72,45 +72,42 @@ model Intake {
 }
 
 model Astrologer {
-  id                           String                       @id @default(uuid())
-  name                         String
-  displayName                  String
-  profilePic                   String?
-  gender                       Gender
-  email                        String                       @unique
-  contactNo                    String
-  password                     String
-  experience                   Int
-  aboutEnglish                 String
-  languages                    String[]
-  skills                       String[]
-  problems                     String[]
-  callChatCharges              Float
-  callChatOfferCharges         Float
-  callChatCommission           Float
-  videocall_charges            Float
-  audiocall_charges            Float
-  audiovideocall_offer_charges Float
-  tags                         String
-  vtags                        String
-  approvalStatus               ApprovalStatus               @default(PENDING)
-  createdAt                    DateTime                     @default(now())
-  updatedAt                    DateTime                     @updatedAt
-  refreshToken                 String?
-  approvedById                 String?
-  createdById                  String?
-  addresses                    Address[]
-  approvedBy                   Staff?                       @relation("ApprovedAstrologers", fields: [approvedById], references: [id])
-  createdBy                    Staff?                       @relation("CreatedAstrologers", fields: [createdById], references: [id])
-  documents                    AstrologerDocument[]
-  rejectionHistory             AstrologerRejectionHistory[]
-  wallet                       AstrologerWallet?
-  bankDetails                  BankDetails?
-  experiences                  ExperiencePlatform[]
-  intakes                      Intake[]
-  interviews                   Interview[]
-  reviews                      Review[]
-  sessions                     Session[]
+  id           String              @id @default(uuid())
+  name         String
+  displayName  String
+  profilePic   String?
+  gender       Gender
+  email        String              @unique
+  contactNo    String
+  password     String
+  experience   Int
+  aboutEnglish String
+  languages    String[]
+  skills       String[]
+  problems     String[]
+  pricing      AstrologerPricing[]
+
+  tags                   String
+  vtags                  String
+  approvalStatus         ApprovalStatus               @default(PENDING)
+  createdAt              DateTime                     @default(now())
+  updatedAt              DateTime                     @updatedAt
+  refreshToken           String?
+  approvedById           String?
+  createdById            String?
+  addresses              Address[]
+  approvedBy             Staff?                       @relation("ApprovedAstrologers", fields: [approvedById], references: [id])
+  createdBy              Staff?                       @relation("CreatedAstrologers", fields: [createdById], references: [id])
+  documents              AstrologerDocument[]
+  rejectionHistory       AstrologerRejectionHistory[]
+  wallet                 AstrologerWallet?
+  bankDetails            BankDetails?
+  experiences            ExperiencePlatform[]
+  intakes                Intake[]
+  interviews             Interview[]
+  reviews                Review[]
+  sessions               Session[]
+  astrologerCommissionId String?
 }
 
 model AstrologerApproved {
@@ -566,13 +563,6 @@ model PaymentOrder {
   @@index([status])
 }
 
-model CommissionConfig {
-  id          String   @id @default(uuid())
-  chatPercent Float
-  callPercent Float
-  createdAt   DateTime @unique @default(now())
-}
-
 model Coupon {
   id             String           @id @default(uuid())
   code           String           @unique
@@ -720,4 +710,27 @@ enum CouponVisibility {
 enum PermissionType {
   SYSTEM
   CUSTOM
+}
+
+// ----------------------------------price call chat 
+
+model AstrologerPricing {
+  id                String      @id @default(uuid())
+  astrologerId      String
+  type              PricingType
+  price             Float
+  offerPrice        Float?
+  commissionPercent Float?
+  isActive          Boolean     @default(true)
+
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id])
+
+  @@unique([astrologerId, type])
+}
+
+enum PricingType {
+  CHAT
+  CALL
+  VIDEO
+  AUDIO
 }

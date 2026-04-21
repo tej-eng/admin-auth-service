@@ -163,11 +163,11 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { mobile: { contains: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { mobile: { contains: query } },
+              ],
+            }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -229,12 +229,12 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { skills: { has: query } },
-              { languages: { has: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { skills: { has: query } },
+                { languages: { has: query } },
+              ],
+            }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -905,7 +905,7 @@ export const resolvers = {
 
     // banners
     getBanners: async (_, __, context) => {
-      4
+      4;
       const { prisma } = context;
       await checkPermission(context, "banners.read");
 
@@ -1129,14 +1129,17 @@ export const resolvers = {
             tags: data.tags,
             vtags: data.vtags,
 
-            callChatCharges: Number(data.charges.callChatCharges),
-            callChatOfferCharges: Number(data.charges.callChatOfferCharges),
-            callChatCommission: Number(data.charges.callChatCommission),
-            videocall_charges: Number(data.charges.videocall_charges),
-            audiocall_charges: Number(data.charges.audiocall_charges),
-            audiovideocall_offer_charges: Number(
-              data.charges.audiovideocall_offer_charges,
-            ),
+            pricing: {
+              create: data.pricing
+                .filter((p) => p.isActive) 
+                .map((p) => ({
+                  type: p.type,
+                  price: Number(p.price),
+                  offerPrice: p.offerPrice ? Number(p.offerPrice) : null,
+                  commissionPercent: Number(p.commissionPercent),
+                  isActive: p.isActive,
+                })),
+            },
 
             addresses: {
               create: {
@@ -1151,31 +1154,39 @@ export const resolvers = {
             documents: {
               create: [
                 ...(data.documents?.aadhaar
-                  ? [{
-                    documentType: "AADHAAR",
-                    documentUrl: data.documents.aadhaar
-                  }]
+                  ? [
+                      {
+                        documentType: "AADHAAR",
+                        documentUrl: data.documents.aadhaar,
+                      },
+                    ]
                   : []),
 
                 ...(data.documents?.panCard
-                  ? [{
-                    documentType: "PAN",
-                    documentUrl: data.documents.panCard
-                  }]
+                  ? [
+                      {
+                        documentType: "PAN",
+                        documentUrl: data.documents.panCard,
+                      },
+                    ]
                   : []),
 
                 ...(data.documents?.passbook
-                  ? [{
-                    documentType: "PASSBOOK",
-                    documentUrl: data.documents.passbook
-                  }]
+                  ? [
+                      {
+                        documentType: "PASSBOOK",
+                        documentUrl: data.documents.passbook,
+                      },
+                    ]
                   : []),
 
                 ...(data.documents?.profilePic
-                  ? [{
-                    documentType: "PROFILE",
-                    documentUrl: data.documents.profilePic
-                  }]
+                  ? [
+                      {
+                        documentType: "PROFILE",
+                        documentUrl: data.documents.profilePic,
+                      },
+                    ]
                   : []),
               ],
             },
@@ -1903,7 +1914,7 @@ export const resolvers = {
       { name, email, password, departmentId, roleId, permissionIds },
       context,
     ) => {
-       console.log("CTX USERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR:", context.user); 
+      console.log("CTX USERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR:", context.user);
       const { prisma } = context;
       try {
         await checkPermission(context, "staff.create");
