@@ -104,6 +104,77 @@ async function main() {
     },
   });
 
+  // new hiring
+
+  // ================= NEW ASTROLOGERS =================
+  // ================= INTERVIEWER ROLE =================
+  const interviewerRole = await prisma.role.upsert({
+    where: { slug: "interviewer" },
+    update: {},
+    create: {
+      name: "INTERVIEWER",
+      slug: "interviewer",
+    },
+  });
+
+  // ================= INTERVIEWER STAFF =================
+  const interviewerUser = await prisma.staff.upsert({
+    where: { email: "interviewer@astro.com" },
+    update: {},
+    create: {
+      name: "Amit Sharma",
+      email: "interviewer@astro.com",
+      password: hashedPassword,
+      roleId: interviewerRole.id, // ✅ FIXED
+      departmentId: department.id,
+    },
+  });
+
+  // ================= NEW ASTROLOGERS =================
+  await prisma.newAstrologer.createMany({
+    data: [
+      {
+        name: "Rahul Sharma",
+        phoneNumber: "9999999999",
+        gender: "Male",
+        skills: "Vedic Astrology, Tarot",
+        experience: 5,
+        interviewStatus: "PENDING",
+        documentStatus: "PENDING",
+        approvalStatus: "PENDING",
+      },
+      {
+        name: "Sneha Kapoor",
+        phoneNumber: "8888888888",
+        gender: "Female",
+        skills: "Numerology, Palmistry",
+        experience: 3,
+        interviewStatus: "SCHEDULED",
+        interviewerId: interviewerUser.id,
+        interviewDate: new Date(),
+        interviewTime: "14:00",
+        round: 1,
+        documentStatus: "PENDING",
+        approvalStatus: "PENDING",
+      },
+      {
+        name: "Vikram Joshi",
+        phoneNumber: "7777777777",
+        gender: "Male",
+        skills: "KP Astrology",
+        experience: 7,
+        interviewStatus: "PASSED",
+        interviewerId: interviewerUser.id,
+        interviewDate: new Date(),
+        interviewTime: "11:00",
+        round: 2,
+        documentStatus: "VERIFIED",
+        approvalStatus: "APPROVED",
+      },
+    ],
+    skipDuplicates: true, // ✅ IMPORTANT
+  });
+
   console.log("Seed Done ✅");
 }
 

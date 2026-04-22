@@ -2,16 +2,7 @@
 CREATE TYPE "Gender" AS ENUM ('MALE', 'FEMALE', 'OTHER');
 
 -- CreateEnum
-CREATE TYPE "ApprovalStatus" AS ENUM ('PENDING', 'INTERVIEW', 'DOCUMENT_VERIFICATION', 'APPROVED', 'REJECTED');
-
--- CreateEnum
-CREATE TYPE "InterviewStatus" AS ENUM ('SCHEDULED', 'PASSED', 'FAILED', 'RESCHEDULED');
-
--- CreateEnum
-CREATE TYPE "DocumentStatus" AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
-
--- CreateEnum
-CREATE TYPE "DocumentType" AS ENUM ('ID_PROOF', 'CERTIFICATE', 'EXPERIENCE_PROOF');
+CREATE TYPE "DocumentType" AS ENUM ('AADHAAR', 'PAN', 'PASSBOOK', 'PROFILE');
 
 -- CreateEnum
 CREATE TYPE "RejectionStage" AS ENUM ('PROFILE', 'INTERVIEW', 'DOCUMENT');
@@ -51,6 +42,18 @@ CREATE TYPE "CouponVisibility" AS ENUM ('PUBLIC', 'PRIVATE');
 
 -- CreateEnum
 CREATE TYPE "PermissionType" AS ENUM ('SYSTEM', 'CUSTOM');
+
+-- CreateEnum
+CREATE TYPE "PricingType" AS ENUM ('CHAT', 'CALL', 'VIDEO', 'AUDIO');
+
+-- CreateEnum
+CREATE TYPE "InterviewStatus" AS ENUM ('PENDING', 'SCHEDULED', 'PASSED', 'REJECTED');
+
+-- CreateEnum
+CREATE TYPE "DocumentStatus" AS ENUM ('PENDING', 'VERIFIED', 'REJECTED');
+
+-- CreateEnum
+CREATE TYPE "ApprovalStatus" AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -121,12 +124,6 @@ CREATE TABLE "Astrologer" (
     "languages" TEXT[],
     "skills" TEXT[],
     "problems" TEXT[],
-    "callChatCharges" DOUBLE PRECISION NOT NULL,
-    "callChatOfferCharges" DOUBLE PRECISION NOT NULL,
-    "callChatCommission" DOUBLE PRECISION NOT NULL,
-    "videocall_charges" DOUBLE PRECISION NOT NULL,
-    "audiocall_charges" DOUBLE PRECISION NOT NULL,
-    "audiovideocall_offer_charges" DOUBLE PRECISION NOT NULL,
     "tags" TEXT NOT NULL,
     "vtags" TEXT NOT NULL,
     "approvalStatus" "ApprovalStatus" NOT NULL DEFAULT 'PENDING',
@@ -135,6 +132,7 @@ CREATE TABLE "Astrologer" (
     "refreshToken" TEXT,
     "approvedById" TEXT,
     "createdById" TEXT,
+    "astrologerCommissionId" TEXT,
 
     CONSTRAINT "Astrologer_pkey" PRIMARY KEY ("id")
 );
@@ -553,16 +551,6 @@ CREATE TABLE "PaymentOrder" (
 );
 
 -- CreateTable
-CREATE TABLE "CommissionConfig" (
-    "id" TEXT NOT NULL,
-    "chatPercent" DOUBLE PRECISION NOT NULL,
-    "callPercent" DOUBLE PRECISION NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT "CommissionConfig_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
 CREATE TABLE "Coupon" (
     "id" TEXT NOT NULL,
     "code" TEXT NOT NULL,
@@ -599,6 +587,40 @@ CREATE TABLE "Message" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Message_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AstrologerPricing" (
+    "id" TEXT NOT NULL,
+    "astrologerId" TEXT NOT NULL,
+    "type" "PricingType" NOT NULL,
+    "price" DOUBLE PRECISION NOT NULL,
+    "offerPrice" DOUBLE PRECISION,
+    "commissionPercent" DOUBLE PRECISION,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+
+    CONSTRAINT "AstrologerPricing_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "NewAstrologer" (
+    "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "phoneNumber" TEXT NOT NULL,
+    "gender" TEXT NOT NULL,
+    "skills" TEXT NOT NULL,
+    "experience" INTEGER NOT NULL,
+    "interviewStatus" "InterviewStatus" NOT NULL DEFAULT 'PENDING',
+    "interviewer" TEXT,
+    "interviewDate" TIMESTAMP(3),
+    "interviewTime" TEXT,
+    "round" INTEGER,
+    "documentStatus" "DocumentStatus" NOT NULL DEFAULT 'PENDING',
+    "approvalStatus" "ApprovalStatus" NOT NULL DEFAULT 'PENDING',
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "NewAstrologer_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -854,9 +876,6 @@ CREATE INDEX "PaymentOrder_razorpayOrderId_idx" ON "PaymentOrder"("razorpayOrder
 CREATE INDEX "PaymentOrder_status_idx" ON "PaymentOrder"("status");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "CommissionConfig_createdAt_key" ON "CommissionConfig"("createdAt");
-
--- CreateIndex
 CREATE UNIQUE INDEX "Coupon_code_key" ON "Coupon"("code");
 
 -- CreateIndex
@@ -869,13 +888,13 @@ CREATE INDEX "Message_sessionId_idx" ON "Message"("sessionId");
 CREATE INDEX "Message_senderId_idx" ON "Message"("senderId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "AstrologerPricing_astrologerId_type_key" ON "AstrologerPricing"("astrologerId", "type");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "_CouponToRechargePack_AB_unique" ON "_CouponToRechargePack"("A", "B");
 
 -- CreateIndex
 CREATE INDEX "_CouponToRechargePack_B_index" ON "_CouponToRechargePack"("B");
-
--- AddForeignKey
-ALTER TABLE "Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Review" ADD CONSTRAINT "Review_astrologerId_fkey" FOREIGN KEY ("astrologerId") REFERENCES "Astrologer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -884,10 +903,13 @@ ALTER TABLE "Review" ADD CONSTRAINT "Review_astrologerId_fkey" FOREIGN KEY ("ast
 ALTER TABLE "Review" ADD CONSTRAINT "Review_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Intake" ADD CONSTRAINT "Intake_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Review" ADD CONSTRAINT "Review_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Intake" ADD CONSTRAINT "Intake_astrologerId_fkey" FOREIGN KEY ("astrologerId") REFERENCES "Astrologer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Intake" ADD CONSTRAINT "Intake_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Astrologer" ADD CONSTRAINT "Astrologer_approvedById_fkey" FOREIGN KEY ("approvedById") REFERENCES "Staff"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -923,16 +945,16 @@ ALTER TABLE "ModulePermission" ADD CONSTRAINT "ModulePermission_moduleId_fkey" F
 ALTER TABLE "ModulePermission" ADD CONSTRAINT "ModulePermission_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "Permission"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Staff" ADD CONSTRAINT "Staff_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Staff" ADD CONSTRAINT "Staff_departmentId_fkey" FOREIGN KEY ("departmentId") REFERENCES "Department"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "StaffPermission" ADD CONSTRAINT "StaffPermission_staffId_fkey" FOREIGN KEY ("staffId") REFERENCES "Staff"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Staff" ADD CONSTRAINT "Staff_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "StaffPermission" ADD CONSTRAINT "StaffPermission_permissionId_fkey" FOREIGN KEY ("permissionId") REFERENCES "Permission"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "StaffPermission" ADD CONSTRAINT "StaffPermission_staffId_fkey" FOREIGN KEY ("staffId") REFERENCES "Staff"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Service" ADD CONSTRAINT "Service_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -950,10 +972,10 @@ ALTER TABLE "UserWallet" ADD CONSTRAINT "UserWallet_userId_fkey" FOREIGN KEY ("u
 ALTER TABLE "AstrologerWallet" ADD CONSTRAINT "AstrologerWallet_astrologerId_fkey" FOREIGN KEY ("astrologerId") REFERENCES "Astrologer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WalletTransaction" ADD CONSTRAINT "WalletTransaction_userWalletId_fkey" FOREIGN KEY ("userWalletId") REFERENCES "UserWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "WalletTransaction" ADD CONSTRAINT "WalletTransaction_astrologerWalletId_fkey" FOREIGN KEY ("astrologerWalletId") REFERENCES "AstrologerWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WalletTransaction" ADD CONSTRAINT "WalletTransaction_astrologerWalletId_fkey" FOREIGN KEY ("astrologerWalletId") REFERENCES "AstrologerWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "WalletTransaction" ADD CONSTRAINT "WalletTransaction_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "Payment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "WalletTransaction" ADD CONSTRAINT "WalletTransaction_rechargePackId_fkey" FOREIGN KEY ("rechargePackId") REFERENCES "RechargePack"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -962,34 +984,37 @@ ALTER TABLE "WalletTransaction" ADD CONSTRAINT "WalletTransaction_rechargePackId
 ALTER TABLE "WalletTransaction" ADD CONSTRAINT "WalletTransaction_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "WalletTransaction" ADD CONSTRAINT "WalletTransaction_paymentId_fkey" FOREIGN KEY ("paymentId") REFERENCES "Payment"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "WalletTransaction" ADD CONSTRAINT "WalletTransaction_userWalletId_fkey" FOREIGN KEY ("userWalletId") REFERENCES "UserWallet"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Withdrawal" ADD CONSTRAINT "Withdrawal_astrologerWalletId_fkey" FOREIGN KEY ("astrologerWalletId") REFERENCES "AstrologerWallet"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE "Session" ADD CONSTRAINT "Session_astrologerId_fkey" FOREIGN KEY ("astrologerId") REFERENCES "Astrologer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Payment" ADD CONSTRAINT "Payment_rechargePackId_fkey" FOREIGN KEY ("rechargePackId") REFERENCES "RechargePack"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Payment" ADD CONSTRAINT "Payment_paymentOrderId_fkey" FOREIGN KEY ("paymentOrderId") REFERENCES "PaymentOrder"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PaymentOrder" ADD CONSTRAINT "PaymentOrder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_rechargePackId_fkey" FOREIGN KEY ("rechargePackId") REFERENCES "RechargePack"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Payment" ADD CONSTRAINT "Payment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PaymentOrder" ADD CONSTRAINT "PaymentOrder_rechargePackId_fkey" FOREIGN KEY ("rechargePackId") REFERENCES "RechargePack"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "PaymentOrder" ADD CONSTRAINT "PaymentOrder_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Message" ADD CONSTRAINT "Message_sessionId_fkey" FOREIGN KEY ("sessionId") REFERENCES "Session"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AstrologerPricing" ADD CONSTRAINT "AstrologerPricing_astrologerId_fkey" FOREIGN KEY ("astrologerId") REFERENCES "Astrologer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "_CouponToRechargePack" ADD CONSTRAINT "_CouponToRechargePack_A_fkey" FOREIGN KEY ("A") REFERENCES "Coupon"("id") ON DELETE CASCADE ON UPDATE CASCADE;

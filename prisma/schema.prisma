@@ -316,6 +316,11 @@ model Staff {
   department          Department        @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   role                Role              @relation(fields: [roleId], references: [id])
   permissions         StaffPermission[]
+  //  INTERVIEWER SIDE
+  interviews          NewAstrologer[]   @relation("InterviewerRelation")
+
+  //  CREATED / OWNED ASTROLOGERS
+  createdAstrologerss NewAstrologer[] @relation("StaffRelation")
 
   @@index([roleId])
   @@index([departmentId])
@@ -608,27 +613,6 @@ enum Gender {
   OTHER
 }
 
-enum ApprovalStatus {
-  PENDING
-  INTERVIEW
-  DOCUMENT_VERIFICATION
-  APPROVED
-  REJECTED
-}
-
-enum InterviewStatus {
-  SCHEDULED
-  PASSED
-  FAILED
-  RESCHEDULED
-}
-
-enum DocumentStatus {
-  PENDING
-  VERIFIED
-  REJECTED
-}
-
 enum DocumentType {
   AADHAAR
   PAN
@@ -734,3 +718,83 @@ enum PricingType {
   VIDEO
   AUDIO
 }
+
+// hiring astrologer process
+model NewAstrologer {
+  id String @id @default(uuid())
+
+  name        String
+  phoneNumber String
+  gender      String
+  skills String[]
+  experience  Int
+
+  //  INTERVIEW
+  interviewStatus InterviewStatus @default(PENDING)
+
+  //  INTERVIEWER RELATION
+  interviewerId String?
+  interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
+
+  //  CREATED BY / OWNER (staff)
+  staffId String?
+  staff   Staff?  @relation("StaffRelation", fields: [staffId], references: [id])
+
+  interviewDate DateTime?
+  interviewTime String?
+  round         Int?
+
+  //  DOCUMENTS
+  documentStatus DocumentStatus @default(PENDING)
+
+  //  APPROVAL
+  approvalStatus ApprovalStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum InterviewStatus {
+  PENDING
+  SCHEDULED
+  PASSED
+  REJECTED
+}
+
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// new astrologer application 
+model AstrologerApplication {
+  id String @id @default(uuid())
+
+  name        String
+  phoneNumber String
+  email       String
+  dob         DateTime
+  gender      String
+  languages   String[]
+  skills      String[]
+  experience  Int
+  about       String?
+
+  status ApplicationStatus @default(PENDING)
+
+  createdAt DateTime @default(now())
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+

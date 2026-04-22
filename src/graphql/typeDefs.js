@@ -89,13 +89,13 @@ const typeDefs = gql`
   }
 
   #--------------------------------------#
-input PricingInput {
-  type: PricingType!
-  price: Float!
-  offerPrice: Float
-  commissionPercent: Float
-  isActive: Boolean!
-}
+  input PricingInput {
+    type: PricingType!
+    price: Float!
+    offerPrice: Float
+    commissionPercent: Float
+    isActive: Boolean!
+  }
 
   input BankDetailsInput {
     accountHolderName: String!
@@ -647,8 +647,46 @@ input PricingInput {
     isActive: Boolean!
   }
 
+  #-------------------------astrologer hirirng-------------------#
+type NewAstrologer {
+  id: ID!
+  name: String!
+  phoneNumber: String!
+  gender: String!
+  skills: String!
+  experience: Int!
+
+  interviewStatus: String!
+  interviewer: String
+  interviewDate: String
+  interviewTime: String
+  round: Int
+
+  documentStatus: String!
+  approvalStatus: String!
+}
+
+#----------registerd astro application ----------#
+ type AstrologerApplication {
+    id: ID!
+    name: String!
+    phoneNumber: String!
+    email: String!
+    gender: String!
+    skills: [String!]!
+    languages: [String!]!
+    experience: Int!
+    status: String!
+    createdAt: String!
+  }
+
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
+   getPendingApplications: [AstrologerApplication!]!
+
+  getInterviewers: [Staff] 
+    getNewAstrologers: [NewAstrologer]
+
     getBanners: [Banner]
 
     faqs: [Faq!]!
@@ -813,12 +851,7 @@ input PricingInput {
 
     deleteAstrologer(astrologerId: ID!): Boolean!
 
-    scheduleInterview(
-      astrologerId: ID!
-      roundNumber: Int!
-      interviewerName: String!
-      scheduledAt: String!
-    ): Interview
+ 
 
     verifyDocument(
       documentId: ID!
@@ -832,7 +865,7 @@ input PricingInput {
       reason: String!
     ): Boolean
 
-    approveAstrologer(astrologerId: ID!): Boolean
+    
     createRechargePack(input: RechargePackInput!): RechargePack!
     updateRechargePack(id: ID!, input: UpdateRechargePackInput!): RechargePack!
     deleteRechargePack(id: ID!): String!
@@ -889,6 +922,32 @@ input PricingInput {
     ): Staff!
 
     deleteStaff(staffId: ID!): Boolean!
+
+    #---------------hiring astrologer mutation-------------------#
+    approveAstrologer(applicationId: ID!): String!
+
+     scheduleInterview(
+    astrologerId: ID!
+    interviewer: String!
+    interviewDate: String!
+    interviewTime: String!
+    round: Int!
+  ): NewAstrologer
+
+  updateInterviewStatus(
+    astrologerId: ID!
+    status: String!
+  ): NewAstrologer
+
+  updateDocumentStatus(
+    astrologerId: ID!
+    status: String!
+  ): NewAstrologer
+
+  updateApprovalStatus(
+    astrologerId: ID!
+    status: String!
+  ): NewAstrologer
   }
 `;
 

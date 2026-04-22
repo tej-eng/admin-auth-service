@@ -913,6 +913,39 @@ export const resolvers = {
         orderBy: { sortorder: "asc" },
       });
     },
+
+    // hiring astrologer
+    getNewAstrologers: async (_, __, { prisma }) => {
+      return prisma.newAstrologer.findMany({
+        orderBy: { createdAt: "desc" },
+      });
+    },
+    getInterviewers: async (_, __, { prisma }) => {
+      return prisma.staff.findMany({
+        where: {
+          role: {
+            slug: "interviewer",
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
+    },
+
+  getPendingApplications: async (_, __, { prisma }) => {
+  return await prisma.astrologerApplication.findMany({
+    where: {
+      status: "PENDING",
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+},
+
   },
 
   // *******************************************************************************************************************************
@@ -1131,7 +1164,7 @@ export const resolvers = {
 
             pricing: {
               create: data.pricing
-                .filter((p) => p.isActive) 
+                .filter((p) => p.isActive)
                 .map((p) => ({
                   type: p.type,
                   price: Number(p.price),
@@ -1383,28 +1416,6 @@ export const resolvers = {
     },
 
     // ================= SCHEDULE INTERVIEW =================
-    scheduleInterview: async (_, args, context) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN")
-          throw new Error("Admin only");
-
-        await prisma.astrologer.update({
-          where: { id: args.astrologerId },
-          data: { approvalStatus: "INTERVIEW" },
-        });
-
-        return await prisma.interview.create({
-          data: {
-            astrologerId: args.astrologerId,
-            roundNumber: args.roundNumber,
-            interviewerName: args.interviewerName,
-            scheduledAt: new Date(args.scheduledAt),
-          },
-        });
-      } catch (error) {
-        throw new Error(error.message || "Failed to schedule interview");
-      }
-    },
 
     // ================= REJECT ASTROLOGER =================
     rejectAstrologer: async (_, { astrologerId, stage, reason }, context) => {
@@ -2317,5 +2328,65 @@ export const resolvers = {
 
       return true;
     },
+
+    // hiring astrologer
+ scheduleInterview: async (_, args, { prisma }) => {
+  return prisma.newAstrologer.update({
+    where: { id: args.astrologerId },
+    data: {
+      interviewerId: args.interviewerId, // 👈 updated
+      interviewDate: new Date(args.interviewDate),
+      interviewTime: args.interviewTime,
+      round: args.round,
+      interviewStatus: "SCHEDULED"
+    }
+  });
+},
+
+    updateInterviewStatus: async (_, { astrologerId, status }, { prisma }) => {
+      return prisma.newAstrologer.update({
+        where: { id: astrologerId },
+        data: { interviewStatus: status },
+      });
+    },
+
+    updateDocumentStatus: async (_, { astrologerId, status }, { prisma }) => {
+      return prisma.newAstrologer.update({
+        where: { id: astrologerId },
+        data: { documentStatus: status },
+      });
+    },
+
+    updateApprovalStatus: async (_, { astrologerId, status }, { prisma }) => {
+      return prisma.newAstrologer.update({
+        where: { id: astrologerId },
+        data: { approvalStatus: status },
+      });
+    },
+
+    approveAstrologer: async (_, { id }, { prisma }) => {
+  const app = await prisma.astrologerApplication.findUnique({
+    where: { id },
+  });
+
+  if (!app) throw new Error("Not found");
+
+  await prisma.newAstrologer.create({
+    data: {
+      name: app.name,
+      phoneNumber: app.phoneNumber,
+      gender: app.gender,
+      skills: app.skills,
+      experience: app.experience,
+    },
+  });
+
+  await prisma.astrologerApplication.update({
+    where: { id },
+    data: { status: "APPROVED" },
+  });
+
+  return "Approved";
+},
   },
 };
