@@ -26,6 +26,7 @@ async function main() {
     },
   });
 
+  // ================= MODULES =================
   const modulesData = [
     { name: "Roles", slug: "roles", section: "privilege" },
     { name: "Permissions", slug: "permissions", section: "privilege" },
@@ -42,6 +43,7 @@ async function main() {
     });
   }
 
+  // ================= PERMISSIONS =================
   const actions = ["create", "read", "update", "delete"];
   const modules = await prisma.module.findMany();
 
@@ -49,7 +51,6 @@ async function main() {
     for (const action of actions) {
       const name = `${mod.slug}.${action}`;
 
-      // 1. create or get permission
       const permission = await prisma.permission.upsert({
         where: { name },
         update: {},
@@ -59,7 +60,6 @@ async function main() {
         },
       });
 
-      // 2. ensure module link exists
       const existingLink = await prisma.modulePermission.findFirst({
         where: {
           moduleId: mod.id,
@@ -88,6 +88,7 @@ async function main() {
     skipDuplicates: true,
   });
 
+  // ================= SUPER ADMIN =================
   const hashedPassword = await bcrypt.hash("123456", 10);
 
   await prisma.staff.upsert({
@@ -104,9 +105,6 @@ async function main() {
     },
   });
 
-  // new hiring
-
-  // ================= NEW ASTROLOGERS =================
   // ================= INTERVIEWER ROLE =================
   const interviewerRole = await prisma.role.upsert({
     where: { slug: "interviewer" },
@@ -118,61 +116,16 @@ async function main() {
   });
 
   // ================= INTERVIEWER STAFF =================
-  const interviewerUser = await prisma.staff.upsert({
+  await prisma.staff.upsert({
     where: { email: "interviewer@astro.com" },
     update: {},
     create: {
       name: "Amit Sharma",
       email: "interviewer@astro.com",
       password: hashedPassword,
-      roleId: interviewerRole.id, // ✅ FIXED
+      roleId: interviewerRole.id,
       departmentId: department.id,
     },
-  });
-
-  // ================= NEW ASTROLOGERS =================
-  await prisma.newAstrologer.createMany({
-    data: [
-      {
-        name: "Rahul Sharma",
-        phoneNumber: "9999999999",
-        gender: "Male",
-        skills: "Vedic Astrology, Tarot",
-        experience: 5,
-        interviewStatus: "PENDING",
-        documentStatus: "PENDING",
-        approvalStatus: "PENDING",
-      },
-      {
-        name: "Sneha Kapoor",
-        phoneNumber: "8888888888",
-        gender: "Female",
-        skills: "Numerology, Palmistry",
-        experience: 3,
-        interviewStatus: "SCHEDULED",
-        interviewerId: interviewerUser.id,
-        interviewDate: new Date(),
-        interviewTime: "14:00",
-        round: 1,
-        documentStatus: "PENDING",
-        approvalStatus: "PENDING",
-      },
-      {
-        name: "Vikram Joshi",
-        phoneNumber: "7777777777",
-        gender: "Male",
-        skills: "KP Astrology",
-        experience: 7,
-        interviewStatus: "PASSED",
-        interviewerId: interviewerUser.id,
-        interviewDate: new Date(),
-        interviewTime: "11:00",
-        round: 2,
-        documentStatus: "VERIFIED",
-        approvalStatus: "APPROVED",
-      },
-    ],
-    skipDuplicates: true, // ✅ IMPORTANT
   });
 
   console.log("Seed Done ✅");

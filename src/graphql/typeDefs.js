@@ -648,44 +648,89 @@ const typeDefs = gql`
   }
 
   #-------------------------astrologer hirirng-------------------#
-type NewAstrologer {
-  id: ID!
-  name: String!
-  phoneNumber: String!
-  gender: String!
-  skills: String!
-  experience: Int!
+enum InterviewStatus {
+  PENDING
+  SCHEDULED
+  PASSED
+  REJECTED
+}
 
-  interviewStatus: String!
-  interviewer: String
+enum DocumentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+type AstrologerApplication {
+  id: ID!
+  name: String
+  phoneNumber: String
+  email: String
+  gender: String
+  skills: [String]
+  languages: [String]
+  experience: Int
+ applicationStatus: String!
+  interviewStatus: InterviewStatus
+  documentStatus: DocumentStatus
+  approvalStatus: ApprovalStatus
+
+  interviewerId: String
   interviewDate: String
   interviewTime: String
   round: Int
 
-  documentStatus: String!
-  approvalStatus: String!
+  createdAt: String
 }
 
-#----------registerd astro application ----------#
- type AstrologerApplication {
-    id: ID!
-    name: String!
-    phoneNumber: String!
-    email: String!
-    gender: String!
-    skills: [String!]!
-    languages: [String!]!
-    experience: Int!
-    status: String!
-    createdAt: String!
-  }
+# pricing config #
+enum OfferType {
+  FREE
+  ONE_RUPEE
+  ORIGINAL
+}
+
+type PricingConfig {
+  id: ID!
+  isFirstFreeEnabled: Boolean!
+
+  chatOfferType: OfferType!
+  callOfferType: OfferType!
+
+  chatOfferPrice: Float
+  callOfferPrice: Float
+}
+
+type UserOfferUsage {
+  userId: String!
+  hasUsedFirstOffer: Boolean!
+}
+
+type FinalPrice {
+  chatPrice: Float!
+  callPrice: Float!
+  isOfferApplied: Boolean!
+}
+
 
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
-   getPendingApplications: [AstrologerApplication!]!
+  #pricing config #
+   getPricingConfig: PricingConfig
 
-  getInterviewers: [Staff] 
-    getNewAstrologers: [NewAstrologer]
+  getFinalPrice(astrologerId: String!): FinalPrice
+  getAdminPreviewPrice(astrologerId: String!): FinalPrice
+
+  #astrologer registration #
+
+  getApplications: [AstrologerApplication]
+  getPendingApplications: [AstrologerApplication]
+  getInterviewers: [Staff]
 
     getBanners: [Banner]
 
@@ -924,30 +969,41 @@ type NewAstrologer {
     deleteStaff(staffId: ID!): Boolean!
 
     #---------------hiring astrologer mutation-------------------#
-    approveAstrologer(applicationId: ID!): String!
-
      scheduleInterview(
     astrologerId: ID!
-    interviewer: String!
+    interviewerId: String!
     interviewDate: String!
     interviewTime: String!
     round: Int!
-  ): NewAstrologer
+  ): AstrologerApplication
 
   updateInterviewStatus(
     astrologerId: ID!
-    status: String!
-  ): NewAstrologer
+    status: InterviewStatus!
+  ): AstrologerApplication
 
   updateDocumentStatus(
     astrologerId: ID!
-    status: String!
-  ): NewAstrologer
+    status: DocumentStatus!
+  ): AstrologerApplication
 
   updateApprovalStatus(
     astrologerId: ID!
-    status: String!
-  ): NewAstrologer
+    status: ApprovalStatus!
+  ): AstrologerApplication
+
+   approveAstrologer(id: ID!): AstrologerApplication!
+
+   # pricing config mutation #
+     updatePricingConfig(
+    isFirstFreeEnabled: Boolean
+    chatOfferType: OfferType
+    callOfferType: OfferType
+    chatOfferPrice: Float
+    callOfferPrice: Float
+  ): PricingConfig
+
+  markOfferUsed(userId: String!): Boolean
   }
 `;
 

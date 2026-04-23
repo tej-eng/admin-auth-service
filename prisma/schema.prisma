@@ -108,6 +108,7 @@ model Astrologer {
   reviews                Review[]
   sessions               Session[]
   astrologerCommissionId String?
+  AstrologerApplication  AstrologerApplication[]
 }
 
 model AstrologerApproved {
@@ -301,26 +302,25 @@ model Department {
 }
 
 model Staff {
-  id                  String            @id @default(uuid())
+  id                  String                  @id @default(uuid())
   name                String
-  email               String            @unique
+  email               String                  @unique
   password            String
   roleId              String
   departmentId        String
-  isActive            Boolean           @default(true)
-  isDeleted           Boolean           @default(false)
-  createdAt           DateTime          @default(now())
-  updatedAt           DateTime          @updatedAt
-  approvedAstrologers Astrologer[]      @relation("ApprovedAstrologers")
-  createdAstrologers  Astrologer[]      @relation("CreatedAstrologers")
-  department          Department        @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  role                Role              @relation(fields: [roleId], references: [id])
+  isActive            Boolean                 @default(true)
+  isDeleted           Boolean                 @default(false)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @updatedAt
+  approvedAstrologers Astrologer[]            @relation("ApprovedAstrologers")
+  createdAstrologers  Astrologer[]            @relation("CreatedAstrologers")
+  department          Department              @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  role                Role                    @relation(fields: [roleId], references: [id])
   permissions         StaffPermission[]
   //  INTERVIEWER SIDE
-  interviews          NewAstrologer[]   @relation("InterviewerRelation")
+  interviews          AstrologerApplication[] @relation("InterviewerRelation")
 
-  //  CREATED / OWNED ASTROLOGERS
-  createdAstrologerss NewAstrologer[] @relation("StaffRelation")
+  createdApplications AstrologerApplication[] @relation("StaffRelation")
 
   @@index([roleId])
   @@index([departmentId])
@@ -698,19 +698,6 @@ enum PermissionType {
 
 // ----------------------------------price call chat 
 
-model AstrologerPricing {
-  id                String      @id @default(uuid())
-  astrologerId      String
-  type              PricingType
-  price             Float
-  offerPrice        Float?
-  commissionPercent Float?
-  isActive          Boolean     @default(true)
-
-  astrologer Astrologer @relation(fields: [astrologerId], references: [id])
-
-  @@unique([astrologerId, type])
-}
 
 enum PricingType {
   CHAT
@@ -720,39 +707,39 @@ enum PricingType {
 }
 
 // hiring astrologer process
-model NewAstrologer {
-  id String @id @default(uuid())
+// model NewAstrologer {
+//   id String @id @default(uuid())
 
-  name        String
-  phoneNumber String
-  gender      String
-  skills String[]
-  experience  Int
+//   name        String
+//   phoneNumber String
+//   gender      String
+//   skills String[]
+//   experience  Int
 
-  //  INTERVIEW
-  interviewStatus InterviewStatus @default(PENDING)
+//   //  INTERVIEW
+//   interviewStatus InterviewStatus @default(PENDING)
 
-  //  INTERVIEWER RELATION
-  interviewerId String?
-  interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
+//   //  INTERVIEWER RELATION
+//   interviewerId String?
+//   interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
 
-  //  CREATED BY / OWNER (staff)
-  staffId String?
-  staff   Staff?  @relation("StaffRelation", fields: [staffId], references: [id])
+//   //  CREATED BY / OWNER (staff)
+//   staffId String?
+//   staff   Staff?  @relation("StaffRelation", fields: [staffId], references: [id])
 
-  interviewDate DateTime?
-  interviewTime String?
-  round         Int?
+//   interviewDate DateTime?
+//   interviewTime String?
+//   round         Int?
 
-  //  DOCUMENTS
-  documentStatus DocumentStatus @default(PENDING)
+//   //  DOCUMENTS
+//   documentStatus DocumentStatus @default(PENDING)
 
-  //  APPROVAL
-  approvalStatus ApprovalStatus @default(PENDING)
+//   //  APPROVAL
+//   approvalStatus ApprovalStatus @default(PENDING)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+// }
 
 enum InterviewStatus {
   PENDING
@@ -777,19 +764,43 @@ enum ApprovalStatus {
 model AstrologerApplication {
   id String @id @default(uuid())
 
+  // 🔹 BASIC INFO
   name        String
-  phoneNumber String
-  email       String
+  phoneNumber String   @unique
+  email       String   @unique
   dob         DateTime
-  gender      String
+  gender      Gender
   languages   String[]
   skills      String[]
   experience  Int
   about       String?
 
-  status ApplicationStatus @default(PENDING)
+  // 🔥 WORKFLOW STATES
+  applicationStatus ApplicationStatus @default(PENDING)
+  interviewStatus   InterviewStatus   @default(PENDING)
+  documentStatus    DocumentStatus    @default(PENDING)
+  approvalStatus    ApprovalStatus    @default(PENDING)
 
-  createdAt DateTime @default(now())
+  // 🔹 INTERVIEW DETAILS
+  interviewerId String?
+  interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
+
+  interviewDate DateTime?
+  interviewTime String?
+  round         Int?
+
+  // 🔹 CREATED / HANDLED BY STAFF
+  staffId String?
+  staff   Staff?  @relation("StaffRelation", fields: [staffId], references: [id])
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  astrologer   Astrologer? @relation(fields: [astrologerId], references: [id])
+  astrologerId String?
+
+  @@index([applicationStatus])
+  @@index([interviewStatus])
+  @@index([approvalStatus])
 }
 
 enum ApplicationStatus {
@@ -797,4 +808,65 @@ enum ApplicationStatus {
   APPROVED
   REJECTED
 }
+
+model Notification {
+  id String @id @default(uuid())
+
+  staffId String
+  message String
+  isRead  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+}
+
+
+
+
+model PricingConfig {
+  id              String   @id @default(uuid())
+  
+  isFirstFreeEnabled Boolean @default(true)
+
+  chatOfferType    OfferType @default(FREE)
+  callOfferType    OfferType @default(FREE)
+
+  chatOfferPrice   Float?    // if ₹1 type
+  callOfferPrice   Float?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+enum OfferType {
+  FREE
+  ONE_RUPEE
+  ORIGINAL
+}
+
+model UserOfferUsage {
+  id        String   @id @default(uuid())
+
+  userId    String   @unique
+
+  hasUsedFirstOffer Boolean @default(false)
+
+  usedAt    DateTime?
+
+  createdAt DateTime @default(now())
+}
+
+model AstrologerPricing {
+  id                String      @id @default(uuid())
+  astrologerId      String
+  type              PricingType
+  price             Float
+  offerPrice        Float?
+  commissionPercent Float?
+  isActive          Boolean     @default(true)
+
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id])
+
+  @@unique([astrologerId, type])
+}
+
 

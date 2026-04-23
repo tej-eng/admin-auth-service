@@ -163,11 +163,11 @@ export const resolvers = {
 
         const where = query
           ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { mobile: { contains: query } },
-              ],
-            }
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { mobile: { contains: query } },
+            ],
+          }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -229,12 +229,12 @@ export const resolvers = {
 
         const where = query
           ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { skills: { has: query } },
-                { languages: { has: query } },
-              ],
-            }
+            OR: [
+              { name: { contains: query, mode: "insensitive" } },
+              { skills: { has: query } },
+              { languages: { has: query } },
+            ],
+          }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -915,11 +915,7 @@ export const resolvers = {
     },
 
     // hiring astrologer
-    getNewAstrologers: async (_, __, { prisma }) => {
-      return prisma.newAstrologer.findMany({
-        orderBy: { createdAt: "desc" },
-      });
-    },
+
     getInterviewers: async (_, __, { prisma }) => {
       return prisma.staff.findMany({
         where: {
@@ -935,15 +931,115 @@ export const resolvers = {
       });
     },
 
-  getPendingApplications: async (_, __, { prisma }) => {
-  return await prisma.astrologerApplication.findMany({
+    getPendingApplications: async (_, __, { prisma }) => {
+      return await prisma.astrologerApplication.findMany({
+        where: {
+          status: "PENDING",
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
+
+    getApplications: (_, { status }, { prisma }) => {
+      return prisma.astrologerApplication.findMany({
+        where: status
+          ? { applicationStatus: status }
+          : {},
+      });
+    },
+
+    // pricing config 
+    getFinalPrice: async (_, { astrologerId }, { prisma, userId }) => {
+      const config = await prisma.pricingConfig.findFirst();
+
+      const prices = await prisma.astrologerPricing.findMany({
+        where: {
+          astrologerId,
+          isActive: true
+        }
+      });
+
+      // 🔥 extract chat & call
+      const chat = prices.find(p => p.type === "CHAT");
+      const call = prices.find(p => p.type === "CALL");
+
+      if (!chat || !call) {
+        return {
+          chatPrice: 0,
+          callPrice: 0,
+          isOfferApplied: false
+        };
+      }
+
+      const userOffer = await prisma.userOfferUsage.findUnique({
+        where: { userId }
+      });
+
+      const isEnabled = config?.isFirstFreeEnabled ?? true;
+
+      const getPrice = (type, actualPrice) => {
+        if (type === "FREE") return 0;
+        if (type === "ONE_RUPEE") return 1;
+        if (type === "ORIGINAL") return actualPrice;
+        return actualPrice;
+      };
+
+      // 👉 offer used or disabled
+      if (!isEnabled || userOffer?.hasUsedFirstOffer) {
+        return {
+          chatPrice: chat.price,
+          callPrice: call.price,
+          isOfferApplied: false
+        };
+      }
+
+      return {
+        chatPrice: getPrice(config?.chatOfferType || "FREE", chat.price),
+        callPrice: getPrice(config?.callOfferType || "FREE", call.price),
+        isOfferApplied: true
+      };
+    },
+
+    getPricingConfig: async (_, __, { prisma }) => {
+      return await prisma.pricingConfig.findFirst();
+    },
+   getAdminPreviewPrice: async (_, { astrologerId }, { prisma }) => {
+  const config = await prisma.pricingConfig.findFirst();
+
+  const prices = await prisma.astrologerPricing.findMany({
     where: {
-      status: "PENDING",
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+      astrologerId,
+      isActive: true
+    }
   });
+
+  console.log("prices:", prices); // 🔥 debug
+
+  const chat = prices.find(p => p.type.toUpperCase() === "CHAT");
+  const call = prices.find(p => p.type.toUpperCase() === "CALL");
+
+  if (!chat || !call) {
+    return {
+      chatPrice: 0,
+      callPrice: 0,
+      isOfferApplied: false
+    };
+  }
+
+  const getPrice = (type, actualPrice) => {
+    if (type === "FREE") return 0;
+    if (type === "ONE_RUPEE") return 1;
+    if (type === "ORIGINAL") return actualPrice;
+    return actualPrice;
+  };
+
+  return {
+    chatPrice: getPrice(config?.chatOfferType || "FREE", chat.price),
+    callPrice: getPrice(config?.callOfferType || "FREE", call.price),
+    isOfferApplied: true
+  };
 },
 
   },
@@ -1188,38 +1284,38 @@ export const resolvers = {
               create: [
                 ...(data.documents?.aadhaar
                   ? [
-                      {
-                        documentType: "AADHAAR",
-                        documentUrl: data.documents.aadhaar,
-                      },
-                    ]
+                    {
+                      documentType: "AADHAAR",
+                      documentUrl: data.documents.aadhaar,
+                    },
+                  ]
                   : []),
 
                 ...(data.documents?.panCard
                   ? [
-                      {
-                        documentType: "PAN",
-                        documentUrl: data.documents.panCard,
-                      },
-                    ]
+                    {
+                      documentType: "PAN",
+                      documentUrl: data.documents.panCard,
+                    },
+                  ]
                   : []),
 
                 ...(data.documents?.passbook
                   ? [
-                      {
-                        documentType: "PASSBOOK",
-                        documentUrl: data.documents.passbook,
-                      },
-                    ]
+                    {
+                      documentType: "PASSBOOK",
+                      documentUrl: data.documents.passbook,
+                    },
+                  ]
                   : []),
 
                 ...(data.documents?.profilePic
                   ? [
-                      {
-                        documentType: "PROFILE",
-                        documentUrl: data.documents.profilePic,
-                      },
-                    ]
+                    {
+                      documentType: "PROFILE",
+                      documentUrl: data.documents.profilePic,
+                    },
+                  ]
                   : []),
               ],
             },
@@ -2330,63 +2426,117 @@ export const resolvers = {
     },
 
     // hiring astrologer
- scheduleInterview: async (_, args, { prisma }) => {
-  return prisma.newAstrologer.update({
-    where: { id: args.astrologerId },
-    data: {
-      interviewerId: args.interviewerId, // 👈 updated
-      interviewDate: new Date(args.interviewDate),
-      interviewTime: args.interviewTime,
-      round: args.round,
-      interviewStatus: "SCHEDULED"
-    }
-  });
-},
+    scheduleInterview: async (_, args, { prisma }) => {
+      return prisma.astrologerApplication.update({
+        where: { id: args.astrologerId },
+        data: {
+          interviewerId: args.interviewerId,
+          interviewDate: new Date(args.interviewDate),
+          interviewTime: args.interviewTime,
+          round: args.round,
+          interviewStatus: "SCHEDULED",
+        },
+      });
+    },
 
     updateInterviewStatus: async (_, { astrologerId, status }, { prisma }) => {
-      return prisma.newAstrologer.update({
+      return prisma.astrologerApplication.update({
         where: { id: astrologerId },
         data: { interviewStatus: status },
       });
     },
 
     updateDocumentStatus: async (_, { astrologerId, status }, { prisma }) => {
-      return prisma.newAstrologer.update({
+      return prisma.astrologerApplication.update({
         where: { id: astrologerId },
         data: { documentStatus: status },
       });
     },
 
     updateApprovalStatus: async (_, { astrologerId, status }, { prisma }) => {
-      return prisma.newAstrologer.update({
+      return prisma.astrologerApplication.update({
         where: { id: astrologerId },
         data: { approvalStatus: status },
       });
     },
 
-    approveAstrologer: async (_, { id }, { prisma }) => {
-  const app = await prisma.astrologerApplication.findUnique({
-    where: { id },
-  });
+    approveAstrologer: async (_, { id }, { prisma, user }) => {
+      const application = await prisma.astrologerApplication.findUnique({
+        where: { id },
+      });
 
-  if (!app) throw new Error("Not found");
+      if (!application) throw new Error("Application not found");
 
-  await prisma.newAstrologer.create({
-    data: {
-      name: app.name,
-      phoneNumber: app.phoneNumber,
-      gender: app.gender,
-      skills: app.skills,
-      experience: app.experience,
+      // role check (important)
+      if (user.role !== "ADMIN") {
+        throw new Error("Not authorized");
+      }
+
+      const result = await prisma.$transaction([
+        prisma.astrologer.create({
+          data: {
+            name: application.name,
+            email: application.email,
+            phoneNumber: application.phoneNumber,
+            gender: application.gender,
+            languages: application.languages,
+            skills: application.skills,
+            experience: application.experience,
+            about: application.about,
+            applicationId: application.id,
+            approvedById: user.id,
+          },
+        }),
+
+        prisma.astrologerApplication.update({
+          where: { id },
+          data: {
+            approvalStatus: "APPROVED",
+            applicationStatus: "APPROVED",
+          },
+        }),
+      ]);
+
+      return result[1]; // updated application
     },
-  });
 
-  await prisma.astrologerApplication.update({
-    where: { id },
-    data: { status: "APPROVED" },
-  });
+    // pricng config 
+    updatePricingConfig: async (_, args, { prisma }) => {
+      const existing = await prisma.pricingConfig.findFirst();
 
-  return "Approved";
-},
+      if (existing) {
+        return await prisma.pricingConfig.update({
+          where: { id: existing.id },
+          data: args
+        });
+      }
+
+
+      // 👉 FIRST TIME CREATE
+      return await prisma.pricingConfig.create({
+        data: {
+          isFirstFreeEnabled: args.isFirstFreeEnabled ?? true,
+          chatOfferType: args.chatOfferType || "FREE",
+          callOfferType: args.callOfferType || "FREE"
+        }
+      });
+    },
+
+    markOfferUsed: async (_, __, { prisma, userId }) => {
+      await prisma.userOfferUsage.upsert({
+        where: { userId },
+        update: {
+          hasUsedFirstOffer: true,
+          usedAt: new Date()
+        },
+        create: {
+          userId,
+          hasUsedFirstOffer: true,
+          usedAt: new Date()
+        }
+      });
+
+      return true;
+    }
   },
 };
