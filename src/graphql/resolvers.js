@@ -953,94 +953,106 @@ export const resolvers = {
     // pricing config 
     getFinalPrice: async (_, { astrologerId }, { prisma, userId }) => {
       const config = await prisma.pricingConfig.findFirst();
-
-      const prices = await prisma.astrologerPricing.findMany({
-        where: {
-          astrologerId,
-          isActive: true
+      await prisma.userOfferUsage.upsert({
+        where: { userId },
+        update: {
+          visitCount: { increment: 1 }
+        },
+        create: {
+          userId,
+          visitCount: 1
         }
       });
 
-      // 🔥 extract chat & call
-      const chat = prices.find(p => p.type === "CHAT");
-      const call = prices.find(p => p.type === "CALL");
-
-      if (!chat || !call) {
-        return {
-          chatPrice: 0,
-          callPrice: 0,
-          isOfferApplied: false
-        };
-      }
-
-      const userOffer = await prisma.userOfferUsage.findUnique({
+      const userUsage = await prisma.userOfferUsage.findUnique({
         where: { userId }
       });
 
-      const isEnabled = config?.isFirstFreeEnabled ?? true;
+      const visitCount = userUsage?.visitCount || 0;
 
-      const getPrice = (type, actualPrice) => {
-        if (type === "FREE") return 0;
-        if (type === "ONE_RUPEE") return 1;
-        if (type === "ORIGINAL") return actualPrice;
-        return actualPrice;
-      };
-
-      // 👉 offer used or disabled
-      if (!isEnabled || userOffer?.hasUsedFirstOffer) {
+      // 🧠 decision engine
+      if (visitCount === 0 && config?.isFirstOfferEnabled) {
         return {
-          chatPrice: chat.price,
-          callPrice: call.price,
-          isOfferApplied: false
+          chatPrice: config.firstChatPrice,
+          callPrice: config.firstCallPrice,
+          isOfferApplied: true
         };
       }
 
+      if (visitCount === 1 && config?.isSecondOfferEnabled) {
+        return {
+          chatPrice: config.secondChatPrice,
+          callPrice: config.secondCallPrice,
+          isOfferApplied: true
+        };
+      }
+
+      // fallback → original astrologer price
+      const chat = await prisma.astrologerPricing.findFirst({
+        where: { astrologerId, type: "CHAT", isActive: true }
+      });
+
+      const call = await prisma.astrologerPricing.findFirst({
+        where: { astrologerId, type: "CALL", isActive: true }
+      });
+
       return {
-        chatPrice: getPrice(config?.chatOfferType || "FREE", chat.price),
-        callPrice: getPrice(config?.callOfferType || "FREE", call.price),
-        isOfferApplied: true
+        chatPrice: chat?.price || 0,
+        callPrice: call?.price || 0,
+        isOfferApplied: false
       };
     },
 
     getPricingConfig: async (_, __, { prisma }) => {
       return await prisma.pricingConfig.findFirst();
     },
-   getAdminPreviewPrice: async (_, { astrologerId }, { prisma }) => {
-  const config = await prisma.pricingConfig.findFirst();
 
-  const prices = await prisma.astrologerPricing.findMany({
-    where: {
-      astrologerId,
-      isActive: true
-    }
-  });
 
-  console.log("prices:", prices); // 🔥 debug
+    getAdminPreviewPrice: async (_, __, { prisma }) => {
+      const config = await prisma.pricingConfig.findFirst();
 
-  const chat = prices.find(p => p.type.toUpperCase() === "CHAT");
-  const call = prices.find(p => p.type.toUpperCase() === "CALL");
+      return {
+        chatPrice: config?.isFirstOfferEnabled
+          ? config.firstChatPrice
+          : 50, // fallback
 
-  if (!chat || !call) {
-    return {
-      chatPrice: 0,
-      callPrice: 0,
-      isOfferApplied: false
-    };
-  }
+        callPrice: config?.isFirstOfferEnabled
+          ? config.firstCallPrice
+          : 100,
 
-  const getPrice = (type, actualPrice) => {
-    if (type === "FREE") return 0;
-    if (type === "ONE_RUPEE") return 1;
-    if (type === "ORIGINAL") return actualPrice;
-    return actualPrice;
-  };
+        isOfferApplied: config?.isFirstOfferEnabled || false
+      };
+    },
 
-  return {
-    chatPrice: getPrice(config?.chatOfferType || "FREE", chat.price),
-    callPrice: getPrice(config?.callOfferType || "FREE", call.price),
-    isOfferApplied: true
-  };
-},
+    getOfferAnalytics: async (_, __, { prisma }) => {
+      const totalUsers = await prisma.userOfferUsage.count();
+
+      const firstUsed = await prisma.userOfferUsage.count({
+        where: { usedFirst: true }
+      });
+
+      const secondUsed = await prisma.userOfferUsage.count({
+        where: { usedSecond: true }
+      });
+
+      return {
+        totalUsers,
+        firstUsed,
+        secondUsed
+      };
+    },
+
+    getMyInterviews: async (_, __, { prisma, userId }) => {
+      return prisma.astrologerApplication.findMany({
+        where: {
+          interviewerId: userId,
+          interviewStatus: "SCHEDULED"
+        },
+        orderBy: {
+          createdAt: "desc"
+        }
+      });
+    },
 
   },
 
@@ -2426,23 +2438,36 @@ export const resolvers = {
     },
 
     // hiring astrologer
-    scheduleInterview: async (_, args, { prisma }) => {
+    scheduleInterview: async (
+      _,
+      { astrologerId, interviewerId, interviewDate, interviewTime, round },
+      { prisma }
+    ) => {
       return prisma.astrologerApplication.update({
-        where: { id: args.astrologerId },
+        where: { id: astrologerId },
         data: {
-          interviewerId: args.interviewerId,
-          interviewDate: new Date(args.interviewDate),
-          interviewTime: args.interviewTime,
-          round: args.round,
+          interviewerId,
+          interviewDate: new Date(interviewDate).toISOString(), // ✅ ISO fix
+          interviewTime,
+          round,
           interviewStatus: "SCHEDULED",
+           
+  interviewScheduledAt: new Date()
         },
       });
     },
-
-    updateInterviewStatus: async (_, { astrologerId, status }, { prisma }) => {
+    updateInterviewResult: async (
+      _,
+      { astrologerId, status, remarks },
+      { prisma }
+    ) => {
       return prisma.astrologerApplication.update({
         where: { id: astrologerId },
-        data: { interviewStatus: status },
+        data: {
+          interviewStatus: status,
+  interviewRemarks: remarks,
+  interviewTakenAt: new Date()
+        }
       });
     },
 
@@ -2511,14 +2536,8 @@ export const resolvers = {
         });
       }
 
-
-      // 👉 FIRST TIME CREATE
       return await prisma.pricingConfig.create({
-        data: {
-          isFirstFreeEnabled: args.isFirstFreeEnabled ?? true,
-          chatOfferType: args.chatOfferType || "FREE",
-          callOfferType: args.callOfferType || "FREE"
-        }
+        data: args
       });
     },
 

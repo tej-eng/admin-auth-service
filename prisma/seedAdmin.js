@@ -6,23 +6,13 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding started...");
 
-  // ================= ROLE =================
-  const role = await prisma.role.upsert({
-    where: { slug: "super-admin" },
-    update: {},
-    create: {
-      name: "SUPER_ADMIN",
-      slug: "super-admin",
-    },
-  });
-
   // ================= DEPARTMENT =================
   const department = await prisma.department.upsert({
-    where: { slug: "admin-department" },
+    where: { slug: "super-admin-department" },
     update: {},
     create: {
-      name: "Admin Department",
-      slug: "admin-department",
+      name: "Super Admin Department",
+      slug: "super-admin-department",
     },
   });
 
@@ -78,57 +68,45 @@ async function main() {
     }
   }
 
+  // ================= SUPER ADMIN ROLE =================
+  const superAdminRole = await prisma.role.upsert({
+    where: { slug: "super-admin" },
+    update: {},
+    create: {
+      name: "SUPER_ADMIN",
+      slug: "super-admin",
+    },
+  });
+
+  // ================= ASSIGN ALL PERMISSIONS =================
   const allPermissions = await prisma.permission.findMany();
 
   await prisma.rolePermission.createMany({
     data: allPermissions.map((perm) => ({
-      roleId: role.id,
+      roleId: superAdminRole.id,
       permissionId: perm.id,
     })),
     skipDuplicates: true,
   });
 
-  // ================= SUPER ADMIN =================
+  // ================= SUPER ADMIN STAFF =================
   const hashedPassword = await bcrypt.hash("123456", 10);
 
   await prisma.staff.upsert({
-    where: { email: "admin@dhwaniastro.com" },
+    where: { email: "admin@yourapp.com" },
     update: {
       password: hashedPassword,
     },
     create: {
       name: "Super Admin",
-      email: "admin@dhwaniastro.com",
+      email: "admin@yourapp.com",
       password: hashedPassword,
-      roleId: role.id,
+      roleId: superAdminRole.id,
       departmentId: department.id,
     },
   });
 
-  // ================= INTERVIEWER ROLE =================
-  const interviewerRole = await prisma.role.upsert({
-    where: { slug: "interviewer" },
-    update: {},
-    create: {
-      name: "INTERVIEWER",
-      slug: "interviewer",
-    },
-  });
-
-  // ================= INTERVIEWER STAFF =================
-  await prisma.staff.upsert({
-    where: { email: "interviewer@astro.com" },
-    update: {},
-    create: {
-      name: "Amit Sharma",
-      email: "interviewer@astro.com",
-      password: hashedPassword,
-      roleId: interviewerRole.id,
-      departmentId: department.id,
-    },
-  });
-
-  console.log("Seed Done ✅");
+  console.log("Seed Done ✅ (Super Admin Created)");
 }
 
 main()

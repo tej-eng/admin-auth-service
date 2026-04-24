@@ -648,89 +648,98 @@ const typeDefs = gql`
   }
 
   #-------------------------astrologer hirirng-------------------#
-enum InterviewStatus {
-  PENDING
-  SCHEDULED
-  PASSED
-  REJECTED
-}
+  enum InterviewStatus {
+    PENDING
+    SCHEDULED
+    PASSED
+    REJECTED
+  }
 
-enum DocumentStatus {
-  PENDING
-  VERIFIED
-  REJECTED
-}
+  enum DocumentStatus {
+    PENDING
+    VERIFIED
+    REJECTED
+  }
 
-enum ApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
-}
-type AstrologerApplication {
-  id: ID!
-  name: String
-  phoneNumber: String
-  email: String
-  gender: String
-  skills: [String]
-  languages: [String]
-  experience: Int
- applicationStatus: String!
-  interviewStatus: InterviewStatus
-  documentStatus: DocumentStatus
-  approvalStatus: ApprovalStatus
+  enum ApprovalStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
+  type AstrologerApplication {
+    id: ID!
+    name: String
+    phoneNumber: String
+    email: String
+    gender: String
+    skills: [String]
+    languages: [String]
+    experience: Int
+    applicationStatus: String!
+    interviewStatus: String
+    interviewRemarks: String
+    documentStatus: DocumentStatus
+    approvalStatus: ApprovalStatus
 
-  interviewerId: String
-  interviewDate: String
-  interviewTime: String
-  round: Int
+    interviewerId: String
+    interviewDate: String
+    interviewTime: String
+    round: Int
 
-  createdAt: String
-}
+    createdAt: String
+  }
 
-# pricing config #
-enum OfferType {
-  FREE
-  ONE_RUPEE
-  ORIGINAL
-}
+  # pricing config #
+  enum OfferType {
+    FREE
+    ONE_RUPEE
+    ORIGINAL
+  }
 
-type PricingConfig {
-  id: ID!
-  isFirstFreeEnabled: Boolean!
+  type PricingConfig {
+    id: ID!
 
-  chatOfferType: OfferType!
-  callOfferType: OfferType!
+    isFirstOfferEnabled: Boolean
+    firstChatPrice: Int
+    firstCallPrice: Int
 
-  chatOfferPrice: Float
-  callOfferPrice: Float
-}
+    isSecondOfferEnabled: Boolean
+    secondChatPrice: Int
+    secondCallPrice: Int
+  }
 
-type UserOfferUsage {
-  userId: String!
-  hasUsedFirstOffer: Boolean!
-}
+  type UserOfferUsage {
+    userId: String!
+    hasUsedFirstOffer: Boolean!
+  }
 
-type FinalPrice {
-  chatPrice: Float!
-  callPrice: Float!
-  isOfferApplied: Boolean!
-}
+  type FinalPrice {
+    chatPrice: Int
+    callPrice: Int
+    isOfferApplied: Boolean
+  }
 
+  type OfferAnalytics {
+    totalUsers: Int
+    firstUsed: Int
+    secondUsed: Int
+  }
 
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
-  #pricing config #
-   getPricingConfig: PricingConfig
+    #pricing config #
+    getOfferAnalytics: OfferAnalytics
 
-  getFinalPrice(astrologerId: String!): FinalPrice
-  getAdminPreviewPrice(astrologerId: String!): FinalPrice
+    getPricingConfig: PricingConfig
+    getAdminPreviewPrice: FinalPrice
+    getFinalPrice(astrologerId: String!): FinalPrice
 
-  #astrologer registration #
+    #astrologer registration #
+    getMyInterviews: [AstrologerApplication]
 
-  getApplications: [AstrologerApplication]
-  getPendingApplications: [AstrologerApplication]
-  getInterviewers: [Staff]
+    getApplications: [AstrologerApplication]
+    getPendingApplications: [AstrologerApplication]
+    getInterviewers: [Staff]
 
     getBanners: [Banner]
 
@@ -896,8 +905,6 @@ type FinalPrice {
 
     deleteAstrologer(astrologerId: ID!): Boolean!
 
- 
-
     verifyDocument(
       documentId: ID!
       status: DocumentStatus!
@@ -910,7 +917,6 @@ type FinalPrice {
       reason: String!
     ): Boolean
 
-    
     createRechargePack(input: RechargePackInput!): RechargePack!
     updateRechargePack(id: ID!, input: UpdateRechargePackInput!): RechargePack!
     deleteRechargePack(id: ID!): String!
@@ -969,41 +975,49 @@ type FinalPrice {
     deleteStaff(staffId: ID!): Boolean!
 
     #---------------hiring astrologer mutation-------------------#
-     scheduleInterview(
-    astrologerId: ID!
-    interviewerId: String!
-    interviewDate: String!
-    interviewTime: String!
-    round: Int!
-  ): AstrologerApplication
+    scheduleInterview(
+      astrologerId: ID!
+      interviewerId: String!
+      interviewDate: String!
+      interviewTime: String!
+      round: Int!
+    ): AstrologerApplication
 
-  updateInterviewStatus(
-    astrologerId: ID!
-    status: InterviewStatus!
-  ): AstrologerApplication
+    updateInterviewStatus(
+      astrologerId: ID!
+      status: InterviewStatus!
+    ): AstrologerApplication
 
-  updateDocumentStatus(
-    astrologerId: ID!
-    status: DocumentStatus!
-  ): AstrologerApplication
+    updateDocumentStatus(
+      astrologerId: ID!
+      status: DocumentStatus!
+    ): AstrologerApplication
 
-  updateApprovalStatus(
-    astrologerId: ID!
-    status: ApprovalStatus!
-  ): AstrologerApplication
+    updateApprovalStatus(
+      astrologerId: ID!
+      status: ApprovalStatus!
+    ): AstrologerApplication
 
-   approveAstrologer(id: ID!): AstrologerApplication!
+    approveAstrologer(id: ID!): AstrologerApplication!
 
-   # pricing config mutation #
-     updatePricingConfig(
-    isFirstFreeEnabled: Boolean
-    chatOfferType: OfferType
-    callOfferType: OfferType
-    chatOfferPrice: Float
-    callOfferPrice: Float
-  ): PricingConfig
+    updateInterviewResult(
+      astrologerId: ID!
+      status: String!
+      remarks: String
+    ): AstrologerApplication
 
-  markOfferUsed(userId: String!): Boolean
+    # pricing config mutation #
+    updatePricingConfig(
+      isFirstOfferEnabled: Boolean
+      firstChatPrice: Int
+      firstCallPrice: Int
+
+      isSecondOfferEnabled: Boolean
+      secondChatPrice: Int
+      secondCallPrice: Int
+    ): PricingConfig
+
+    markOfferUsed(userId: String!): Boolean
   }
 `;
 

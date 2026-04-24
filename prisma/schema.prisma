@@ -788,7 +788,9 @@ model AstrologerApplication {
   interviewDate DateTime?
   interviewTime String?
   round         Int?
-
+interviewRemarks String?
+interviewTakenAt DateTime?
+interviewScheduledAt DateTime?
   // 🔹 CREATED / HANDLED BY STAFF
   staffId String?
   staff   Staff?  @relation("StaffRelation", fields: [staffId], references: [id])
@@ -823,18 +825,15 @@ model Notification {
 
 
 model PricingConfig {
-  id              String   @id @default(uuid())
-  
-  isFirstFreeEnabled Boolean @default(true)
+  id                     String  @id @default(uuid())
 
-  chatOfferType    OfferType @default(FREE)
-  callOfferType    OfferType @default(FREE)
+  isFirstOfferEnabled    Boolean @default(true)
+  firstChatPrice         Int     @default(0)
+  firstCallPrice         Int     @default(0)
 
-  chatOfferPrice   Float?    // if ₹1 type
-  callOfferPrice   Float?
-
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  isSecondOfferEnabled   Boolean @default(false)
+  secondChatPrice        Int     @default(0)
+  secondCallPrice        Int     @default(0)
 }
 
 enum OfferType {
@@ -844,15 +843,16 @@ enum OfferType {
 }
 
 model UserOfferUsage {
-  id        String   @id @default(uuid())
+  id            String   @id @default(uuid())
+  userId        String   @unique
 
-  userId    String   @unique
+  visitCount    Int      @default(0)
 
-  hasUsedFirstOffer Boolean @default(false)
+  usedFirst     Boolean  @default(false)
+  usedSecond    Boolean  @default(false)
 
-  usedAt    DateTime?
-
-  createdAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model AstrologerPricing {
