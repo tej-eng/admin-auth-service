@@ -1,7 +1,9 @@
 // src/graphql/typeDefs.js
+
 import { gql } from "graphql-tag";
 
 const typeDefs = gql`
+scalar JSON
   scalar Upload
   enum Gender {
     MALE
@@ -97,15 +99,6 @@ const typeDefs = gql`
     isActive: Boolean!
   }
 
-  input BankDetailsInput {
-    accountHolderName: String!
-    accountNumber: String!
-    bankName: String!
-    ifscCode: String!
-    panCardNumber: String!
-    branchName: String!
-  }
-
   input AddAstrologerInput {
     astroname: String!
     displayName: String!
@@ -128,15 +121,8 @@ const typeDefs = gql`
 
     pricing: [PricingInput!]!
 
-    bankDetails: BankDetailsInput
-    documents: AstrologerDocumentsInput
   }
-  input AstrologerDocumentsInput {
-    aadhaar: String
-    panCard: String
-    passbook: String
-    profilePic: String
-  }
+
 
   type Astrologer {
     id: ID!
@@ -165,7 +151,6 @@ const typeDefs = gql`
     addresses: [Address!]!
     experiences: [ExperiencePlatform!]!
     interviews: [Interview!]!
-    documents: [AstrologerDocument!]!
 
     createdAt: DateTime
     updatedAt: DateTime
@@ -191,16 +176,6 @@ const typeDefs = gql`
     scheduledAt: String
     status: InterviewStatus
     remarks: String
-  }
-
-  type AstrologerDocument {
-    id: ID!
-    documentType: DocumentType
-    documentUrl: String
-    status: DocumentStatus
-    remarks: String
-    verifiedBy: String
-    verifiedAt: String
   }
 
   type AstrologerRejectionHistory {
@@ -271,12 +246,7 @@ const typeDefs = gql`
     totalPages: Int!
   }
 
-  type PaginatedDocuments {
-    data: [AstrologerDocument!]!
-    totalCount: Int!
-    currentPage: Int!
-    totalPages: Int!
-  }
+ 
 
   input AddressInput {
     street: String!
@@ -685,6 +655,7 @@ const typeDefs = gql`
     interviewDate: String
     interviewTime: String
     round: Int
+    kyc: KycDetail
 
     createdAt: String
   }
@@ -725,6 +696,30 @@ const typeDefs = gql`
     secondUsed: Int
   }
 
+  type UploadResponse {
+  url: String
+  filename: String
+}
+
+#--- docs & bank details -----#
+ type KycDetail {
+    id: ID!
+
+    accountHolderName: String
+    accountNumber: String
+    bankName: String
+    ifsc: String
+    branchName: String
+    panNumber: String
+
+    profileImage: String
+    aadhaarImage: String
+    panImage: String
+    passbookImage: String
+
+    status: DocumentStatus
+  }
+
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
     #pricing config #
@@ -736,8 +731,9 @@ const typeDefs = gql`
 
     #astrologer registration #
     getMyInterviews: [AstrologerApplication]
-
-    getApplications: [AstrologerApplication]
+ getApplication(id: ID!): AstrologerApplication
+  getApplications: [AstrologerApplication!]!
+    
     getPendingApplications: [AstrologerApplication]
     getInterviewers: [Staff]
 
@@ -770,11 +766,7 @@ const typeDefs = gql`
       limit: Int
     ): PaginatedInterviews!
 
-    getAstrologerDocuments(
-      astrologerId: String!
-      page: Int
-      limit: Int
-    ): PaginatedDocuments!
+ 
 
     getAstrologerListBySearch(
       searchInput: AstrologerSearchInput!
@@ -821,6 +813,10 @@ const typeDefs = gql`
   }
 
   type Mutation {
+
+  uploadImage(file: Upload!): UploadResponse
+
+
     createBanner(input: BannerInput!): Banner
     updateBanner(id: ID!, input: BannerInput!): Banner
     deleteBanner(id: ID!): Boolean
@@ -905,11 +901,7 @@ const typeDefs = gql`
 
     deleteAstrologer(astrologerId: ID!): Boolean!
 
-    verifyDocument(
-      documentId: ID!
-      status: DocumentStatus!
-      remarks: String
-    ): AstrologerDocument
+    
 
     rejectAstrologer(
       astrologerId: ID!
@@ -998,7 +990,7 @@ const typeDefs = gql`
       status: ApprovalStatus!
     ): AstrologerApplication
 
-    approveAstrologer(id: ID!): AstrologerApplication!
+   approveAstrologer(id: ID!): Astrologer!
 
     updateInterviewResult(
       astrologerId: ID!
@@ -1018,6 +1010,27 @@ const typeDefs = gql`
     ): PricingConfig
 
     markOfferUsed(userId: String!): Boolean
+
+    #---- Save bank details & docs -----#
+   saveAndVerifyKyc(
+      astrologerId: ID!
+
+      accountHolderName: String
+      accountNumber: String
+      bankName: String
+      ifsc: String
+      branchName: String
+      panNumber: String
+
+      profileImage: String
+      aadhaarImage: String
+      panImage: String
+      passbookImage: String
+
+      status: DocumentStatus!
+    ): KycDetail!
+
+      rejectKyc(astrologerId: ID!): KycDetail!
   }
 `;
 

@@ -101,14 +101,16 @@ model Astrologer {
   documents              AstrologerDocument[]
   rejectionHistory       AstrologerRejectionHistory[]
   wallet                 AstrologerWallet?
-  bankDetails            BankDetails?
+  kyc                    KycDetail?                   @relation(fields: [kycDetailId], references: [id])
   experiences            ExperiencePlatform[]
   intakes                Intake[]
   interviews             Interview[]
   reviews                Review[]
   sessions               Session[]
   astrologerCommissionId String?
-  AstrologerApplication  AstrologerApplication[]
+
+  applications AstrologerApplication[]
+  kycDetailId  String?
 }
 
 model AstrologerApproved {
@@ -137,18 +139,6 @@ model Address {
   @@index([astrologerId])
   @@index([city])
   @@index([pincode])
-}
-
-model BankDetails {
-  id                Int        @id @default(autoincrement())
-  astrologerId      String     @unique
-  accountHolderName String
-  accountNumber     String
-  bankName          String
-  ifscCode          String
-  panCardNumber     String
-  branchName        String
-  astrologer        Astrologer @relation(fields: [astrologerId], references: [id])
 }
 
 model ExperiencePlatform {
@@ -698,7 +688,6 @@ enum PermissionType {
 
 // ----------------------------------price call chat 
 
-
 enum PricingType {
   CHAT
   CALL
@@ -764,45 +753,76 @@ enum ApprovalStatus {
 model AstrologerApplication {
   id String @id @default(uuid())
 
-  // 🔹 BASIC INFO
+  // BASIC INFO
   name        String
   phoneNumber String   @unique
-  email       String   @unique
+  email       String?  @unique
   dob         DateTime
   gender      Gender
   languages   String[]
   skills      String[]
   experience  Int
   about       String?
+  address     String
+  pincode     String?
 
-  // 🔥 WORKFLOW STATES
+  // WORKFLOW
   applicationStatus ApplicationStatus @default(PENDING)
   interviewStatus   InterviewStatus   @default(PENDING)
   documentStatus    DocumentStatus    @default(PENDING)
   approvalStatus    ApprovalStatus    @default(PENDING)
 
-  // 🔹 INTERVIEW DETAILS
+  // INTERVIEW
   interviewerId String?
   interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
 
-  interviewDate DateTime?
-  interviewTime String?
-  round         Int?
-interviewRemarks String?
-interviewTakenAt DateTime?
-interviewScheduledAt DateTime?
-  // 🔹 CREATED / HANDLED BY STAFF
-  staffId String?
-  staff   Staff?  @relation("StaffRelation", fields: [staffId], references: [id])
+  interviewDate    DateTime?
+  interviewTime    String?
+  round            Int?
+  interviewRemarks String?
 
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // RELATIONS
+  kyc          KycDetail?
   astrologer   Astrologer? @relation(fields: [astrologerId], references: [id])
   astrologerId String?
+  staff        Staff?      @relation("StaffRelation", fields: [staffId], references: [id])
+  staffId      String?
 
   @@index([applicationStatus])
   @@index([interviewStatus])
   @@index([approvalStatus])
+}
+
+model KycDetail {
+  id String @id @default(uuid())
+
+  // 🔗 relation
+  astrologerApplicationId String                @unique
+  application             AstrologerApplication @relation(fields: [astrologerApplicationId], references: [id])
+
+  // 🏦 BANK
+  accountHolderName String?
+  accountNumber     String?
+  bankName          String?
+  ifsc              String?
+  branchName        String?
+  panNumber         String?
+
+  // 📄 DOCS
+  profileImage  String?
+  aadhaarImage  String?
+  panImage      String?
+  passbookImage String?
+
+  // 🔥 status
+  status DocumentStatus @default(PENDING)
+
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  Astrologer Astrologer[]
 }
 
 enum ApplicationStatus {
@@ -821,19 +841,16 @@ model Notification {
   createdAt DateTime @default(now())
 }
 
-
-
-
 model PricingConfig {
-  id                     String  @id @default(uuid())
+  id String @id @default(uuid())
 
-  isFirstOfferEnabled    Boolean @default(true)
-  firstChatPrice         Int     @default(0)
-  firstCallPrice         Int     @default(0)
+  isFirstOfferEnabled Boolean @default(true)
+  firstChatPrice      Int     @default(0)
+  firstCallPrice      Int     @default(0)
 
-  isSecondOfferEnabled   Boolean @default(false)
-  secondChatPrice        Int     @default(0)
-  secondCallPrice        Int     @default(0)
+  isSecondOfferEnabled Boolean @default(false)
+  secondChatPrice      Int     @default(0)
+  secondCallPrice      Int     @default(0)
 }
 
 enum OfferType {
@@ -843,16 +860,16 @@ enum OfferType {
 }
 
 model UserOfferUsage {
-  id            String   @id @default(uuid())
-  userId        String   @unique
+  id     String @id @default(uuid())
+  userId String @unique
 
-  visitCount    Int      @default(0)
+  visitCount Int @default(0)
 
-  usedFirst     Boolean  @default(false)
-  usedSecond    Boolean  @default(false)
+  usedFirst  Boolean @default(false)
+  usedSecond Boolean @default(false)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model AstrologerPricing {
@@ -868,5 +885,3 @@ model AstrologerPricing {
 
   @@unique([astrologerId, type])
 }
-
-

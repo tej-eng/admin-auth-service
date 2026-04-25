@@ -11,11 +11,77 @@ import { DateTimeResolver } from "graphql-scalars";
 import { connectMongo } from "../config/mongo.js";
 
 import GraphQLUpload from "graphql-upload/GraphQLUpload.mjs";
+import GraphQLJSON from "graphql-type-json";
 import { generateSlug } from "../utils/slugify.js";
 import { generateAccessToken, generateRefreshToken } from "../config/jwt.js";
 
 const prisma = new PrismaClient();
+import fs from "fs";
+import path from "path";
 
+const handleUpload = async (file) => {
+  const { createReadStream, filename, mimetype } = await file;
+
+  const allowedTypes = [
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  if (!allowedTypes.includes(mimetype)) {
+    throw new Error("Invalid file type");
+  }
+
+  const uploadDir = path.join(process.cwd(), "uploads");
+
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const ext = filename.split(".").pop();
+  const newFileName = `${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(7)}.${ext}`;
+
+  const uploadPath = path.join(uploadDir, newFileName);
+
+  const stream = createReadStream();
+
+  const MAX_SIZE = 5 * 1024 * 1024;
+  let size = 0;
+
+  await new Promise((resolve, reject) => {
+    const out = fs.createWriteStream(uploadPath);
+
+    stream.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > MAX_SIZE) {
+        stream.destroy();
+        out.destroy();
+        fs.unlink(uploadPath, () => {});
+        reject(new Error("File too large (max 5MB)"));
+      }
+    });
+
+    stream.pipe(out);
+
+    out.on("finish", resolve);
+    out.on("error", reject);
+    stream.on("error", reject);
+  });
+
+  const fileUrl = `https://dhwaniastro.com/v2/uploads/${newFileName}`;
+
+  return {
+    url: fileUrl,
+    filename: newFileName,
+    mimetype,
+  };
+};
 async function logGraphQLEvent(type, operation, userId = null, details = {}) {
   try {
     const db = await connectMongo();
@@ -117,6 +183,7 @@ const generateCRUDPermissions = async (module, prismaInstance) => {
 };
 
 export const resolvers = {
+  JSON: GraphQLJSON,
   Upload: GraphQLUpload,
   Query: {
     // ================= GET USERS (ADMIN ONLY) =================
@@ -346,44 +413,7 @@ export const resolvers = {
       }
     },
 
-    getAstrologerDocuments: async (
-      _,
-      { astrologerId, page = 1, limit = 10 },
-      context,
-    ) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN") {
-          throw new Error("Admin only");
-        }
 
-        const safePage = Math.max(page, 1);
-        const safeLimit = Math.min(limit, 50);
-        const skip = (safePage - 1) * safeLimit;
-
-        const whereCondition = { astrologerId };
-
-        const [documents, totalCount] = await Promise.all([
-          prisma.astrologerDocument.findMany({
-            where: whereCondition,
-            skip,
-            take: safeLimit,
-            orderBy: { createdAt: "desc" },
-          }),
-          prisma.astrologerDocument.count({ where: whereCondition }),
-        ]);
-
-        const response = {
-          data: documents,
-          totalCount,
-          currentPage: safePage,
-          totalPages: Math.ceil(totalCount / safeLimit),
-        };
-
-        return response;
-      } catch (error) {
-        throw error;
-      }
-    },
 
     getRegisteredAstrologers: async (_, { page = 1, limit = 10 }, context) => {
       try {
@@ -944,28 +974,26 @@ export const resolvers = {
 
     getApplications: (_, { status }, { prisma }) => {
       return prisma.astrologerApplication.findMany({
-        where: status
-          ? { applicationStatus: status }
-          : {},
+        where: status ? { applicationStatus: status } : {},
       });
     },
 
-    // pricing config 
+    // pricing config
     getFinalPrice: async (_, { astrologerId }, { prisma, userId }) => {
       const config = await prisma.pricingConfig.findFirst();
       await prisma.userOfferUsage.upsert({
         where: { userId },
         update: {
-          visitCount: { increment: 1 }
+          visitCount: { increment: 1 },
         },
         create: {
           userId,
-          visitCount: 1
-        }
+          visitCount: 1,
+        },
       });
 
       const userUsage = await prisma.userOfferUsage.findUnique({
-        where: { userId }
+        where: { userId },
       });
 
       const visitCount = userUsage?.visitCount || 0;
@@ -975,7 +1003,7 @@ export const resolvers = {
         return {
           chatPrice: config.firstChatPrice,
           callPrice: config.firstCallPrice,
-          isOfferApplied: true
+          isOfferApplied: true,
         };
       }
 
@@ -983,23 +1011,23 @@ export const resolvers = {
         return {
           chatPrice: config.secondChatPrice,
           callPrice: config.secondCallPrice,
-          isOfferApplied: true
+          isOfferApplied: true,
         };
       }
 
       // fallback → original astrologer price
       const chat = await prisma.astrologerPricing.findFirst({
-        where: { astrologerId, type: "CHAT", isActive: true }
+        where: { astrologerId, type: "CHAT", isActive: true },
       });
 
       const call = await prisma.astrologerPricing.findFirst({
-        where: { astrologerId, type: "CALL", isActive: true }
+        where: { astrologerId, type: "CALL", isActive: true },
       });
 
       return {
         chatPrice: chat?.price || 0,
         callPrice: call?.price || 0,
-        isOfferApplied: false
+        isOfferApplied: false,
       };
     },
 
@@ -1007,20 +1035,15 @@ export const resolvers = {
       return await prisma.pricingConfig.findFirst();
     },
 
-
     getAdminPreviewPrice: async (_, __, { prisma }) => {
       const config = await prisma.pricingConfig.findFirst();
 
       return {
-        chatPrice: config?.isFirstOfferEnabled
-          ? config.firstChatPrice
-          : 50, // fallback
+        chatPrice: config?.isFirstOfferEnabled ? config.firstChatPrice : 50, // fallback
 
-        callPrice: config?.isFirstOfferEnabled
-          ? config.firstCallPrice
-          : 100,
+        callPrice: config?.isFirstOfferEnabled ? config.firstCallPrice : 100,
 
-        isOfferApplied: config?.isFirstOfferEnabled || false
+        isOfferApplied: config?.isFirstOfferEnabled || false,
       };
     },
 
@@ -1028,17 +1051,17 @@ export const resolvers = {
       const totalUsers = await prisma.userOfferUsage.count();
 
       const firstUsed = await prisma.userOfferUsage.count({
-        where: { usedFirst: true }
+        where: { usedFirst: true },
       });
 
       const secondUsed = await prisma.userOfferUsage.count({
-        where: { usedSecond: true }
+        where: { usedSecond: true },
       });
 
       return {
         totalUsers,
         firstUsed,
-        secondUsed
+        secondUsed,
       };
     },
 
@@ -1046,19 +1069,33 @@ export const resolvers = {
       return prisma.astrologerApplication.findMany({
         where: {
           interviewerId: userId,
-          interviewStatus: "SCHEDULED"
+          interviewStatus: "SCHEDULED",
         },
         orderBy: {
-          createdAt: "desc"
-        }
+          createdAt: "desc",
+        },
       });
     },
-
   },
 
   // *******************************************************************************************************************************
 
   Mutation: {
+    // upload image
+uploadImage: async (_, { file }, context) => {
+  try {
+    if (!context.user) {
+      throw new Error("Unauthorized");
+    }
+
+    return await handleUpload(file);
+
+  } catch (error) {
+    console.error("uploadImage error:", error);
+    throw new Error(error.message || "Upload failed");
+  }
+},
+
     // ================= ADMIN LOGIN =================
     loginStaff: async (_, { email, password }, { res }) => {
       const staff = await prisma.staff.findUnique({
@@ -1504,24 +1541,6 @@ export const resolvers = {
     },
 
     // ================= VERIFY DOCUMENT =================
-    verifyDocument: async (_, { documentId, status, remarks }, context) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN")
-          throw new Error("Admin only");
-
-        return await prisma.astrologerDocument.update({
-          where: { id: Number(documentId) },
-          data: {
-            status,
-            remarks,
-            verifiedBy: context.user.id,
-            verifiedAt: new Date(),
-          },
-        });
-      } catch (error) {
-        throw new Error(error.message || "Failed to verify document");
-      }
-    },
 
     // ================= SCHEDULE INTERVIEW =================
 
@@ -1552,20 +1571,35 @@ export const resolvers = {
     },
 
     // ================= APPROVE ASTROLOGER =================
-    approveAstrologer: async (_, { astrologerId }, context) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN")
-          throw new Error("Admin only");
+    approveAstrologer: async (_, { id }) => {
+      const app = await prisma.astrologerApplication.findUnique({
+        where: { id },
+        include: { kyc: true },
+      });
 
-        await prisma.astrologer.update({
-          where: { id: astrologerId },
-          data: { approvalStatus: "APPROVED" },
-        });
+      if (!app) throw new Error("Application not found");
 
-        return true;
-      } catch (error) {
-        throw new Error(error.message || "Failed to approve astrologer");
-      }
+      // 🔥 create final astrologer
+      const astrologer = await prisma.astrologer.create({
+        data: {
+          name: app.name,
+          email: app.email,
+          contactNo: app.phoneNumber,
+          experience: app.experience,
+          languages: app.languages,
+          skills: app.skills,
+          profilePic: app.kyc?.profileImage,
+          approvalStatus: "APPROVED",
+        },
+      });
+
+      // update application
+      await prisma.astrologerApplication.update({
+        where: { id },
+        data: { approvalStatus: "APPROVED" },
+      });
+
+      return astrologer;
     },
 
     // Recharge packages ===============================
@@ -2441,7 +2475,7 @@ export const resolvers = {
     scheduleInterview: async (
       _,
       { astrologerId, interviewerId, interviewDate, interviewTime, round },
-      { prisma }
+      { prisma },
     ) => {
       return prisma.astrologerApplication.update({
         where: { id: astrologerId },
@@ -2451,23 +2485,23 @@ export const resolvers = {
           interviewTime,
           round,
           interviewStatus: "SCHEDULED",
-           
-  interviewScheduledAt: new Date()
+
+          interviewScheduledAt: new Date(),
         },
       });
     },
     updateInterviewResult: async (
       _,
       { astrologerId, status, remarks },
-      { prisma }
+      { prisma },
     ) => {
       return prisma.astrologerApplication.update({
         where: { id: astrologerId },
         data: {
           interviewStatus: status,
-  interviewRemarks: remarks,
-  interviewTakenAt: new Date()
-        }
+          interviewRemarks: remarks,
+          interviewTakenAt: new Date(),
+        },
       });
     },
 
@@ -2525,19 +2559,19 @@ export const resolvers = {
       return result[1]; // updated application
     },
 
-    // pricng config 
+    // pricng config
     updatePricingConfig: async (_, args, { prisma }) => {
       const existing = await prisma.pricingConfig.findFirst();
 
       if (existing) {
         return await prisma.pricingConfig.update({
           where: { id: existing.id },
-          data: args
+          data: args,
         });
       }
 
       return await prisma.pricingConfig.create({
-        data: args
+        data: args,
       });
     },
 
@@ -2546,16 +2580,69 @@ export const resolvers = {
         where: { userId },
         update: {
           hasUsedFirstOffer: true,
-          usedAt: new Date()
+          usedAt: new Date(),
         },
         create: {
           userId,
           hasUsedFirstOffer: true,
-          usedAt: new Date()
-        }
+          usedAt: new Date(),
+        },
       });
 
       return true;
-    }
+    },
+
+
+    // docs and image verify 
+    saveAndVerifyKyc: async (_, args, context) => {
+      if (!context.user) throw new Error("Unauthorized");
+
+      const {
+        astrologerId,
+        status,
+        ...rest
+      } = args;
+
+      const kyc = await prisma.kycDetail.upsert({
+        where: {
+          astrologerApplicationId: astrologerId,
+        },
+        update: {
+          ...rest,
+          status,
+        },
+        create: {
+          astrologerApplicationId: astrologerId,
+          ...rest,
+          status,
+        },
+      });
+
+      // 🔥 also update main table
+      await prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: {
+          documentStatus: status,
+        },
+      });
+
+      return kyc;
+    },
+
+    rejectKyc: async (_, { astrologerId }, context) => {
+      if (!context.user) throw new Error("Unauthorized");
+
+      const kyc = await prisma.kycDetail.update({
+        where: { astrologerApplicationId: astrologerId },
+        data: { status: "REJECTED" },
+      });
+
+      await prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: { documentStatus: "REJECTED" },
+      });
+
+      return kyc;
+    },
   },
 };
