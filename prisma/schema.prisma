@@ -89,7 +89,7 @@ model Astrologer {
 
   tags                   String
   vtags                  String
-  approvalStatus         ApprovalStatus               @default(PENDING)
+  // approvalStatus         ApprovalStatus               @default(PENDING)
   createdAt              DateTime                     @default(now())
   updatedAt              DateTime                     @updatedAt
   refreshToken           String?
@@ -696,39 +696,6 @@ enum PricingType {
 }
 
 // hiring astrologer process
-// model NewAstrologer {
-//   id String @id @default(uuid())
-
-//   name        String
-//   phoneNumber String
-//   gender      String
-//   skills String[]
-//   experience  Int
-
-//   //  INTERVIEW
-//   interviewStatus InterviewStatus @default(PENDING)
-
-//   //  INTERVIEWER RELATION
-//   interviewerId String?
-//   interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
-
-//   //  CREATED BY / OWNER (staff)
-//   staffId String?
-//   staff   Staff?  @relation("StaffRelation", fields: [staffId], references: [id])
-
-//   interviewDate DateTime?
-//   interviewTime String?
-//   round         Int?
-
-//   //  DOCUMENTS
-//   documentStatus DocumentStatus @default(PENDING)
-
-//   //  APPROVAL
-//   approvalStatus ApprovalStatus @default(PENDING)
-
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
 
 enum InterviewStatus {
   PENDING
@@ -751,45 +718,38 @@ enum ApprovalStatus {
 
 // new astrologer application 
 model AstrologerApplication {
-  id String @id @default(uuid())
+  id                   String            @id @default(uuid())
+  name                 String
+  phoneNumber          String            @unique
+  email                String?           @unique
+  dob                  DateTime
+  gender               Gender
+  languages            String[]
+  skills               String[]
+  experience           Int
+  about                String?
+  address              String
+  pincode              String?
+  applicationStatus    ApplicationStatus @default(PENDING)
+  interviewStatus      InterviewStatus   @default(PENDING)
+  documentStatus       DocumentStatus    @default(PENDING)
+  approvalStatus       ApprovalStatus    @default(PENDING)
+  interviewerId        String?
+  interviewer          Staff?            @relation("InterviewerRelation", fields: [interviewerId], references: [id])
+  interviewDate        DateTime?
+  interviewTime        String?
+  round                Int?
+  interviewRemarks     String?
+  interviewTakenAt     DateTime?
+  interviewScheduledAt DateTime?
+  staffId              String?
+  staff                Staff?            @relation("StaffRelation", fields: [staffId], references: [id])
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  astrologerId         String?
+  astrologer           Astrologer?       @relation(fields: [astrologerId], references: [id])
 
-  // BASIC INFO
-  name        String
-  phoneNumber String   @unique
-  email       String?  @unique
-  dob         DateTime
-  gender      Gender
-  languages   String[]
-  skills      String[]
-  experience  Int
-  about       String?
-  address     String
-  pincode     String?
-
-  // WORKFLOW
-  applicationStatus ApplicationStatus @default(PENDING)
-  interviewStatus   InterviewStatus   @default(PENDING)
-  documentStatus    DocumentStatus    @default(PENDING)
-  approvalStatus    ApprovalStatus    @default(PENDING)
-
-  // INTERVIEW
-  interviewerId String?
-  interviewer   Staff?  @relation("InterviewerRelation", fields: [interviewerId], references: [id])
-
-  interviewDate    DateTime?
-  interviewTime    String?
-  round            Int?
-  interviewRemarks String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // RELATIONS
-  kyc          KycDetail?
-  astrologer   Astrologer? @relation(fields: [astrologerId], references: [id])
-  astrologerId String?
-  staff        Staff?      @relation("StaffRelation", fields: [staffId], references: [id])
-  staffId      String?
+  kycDetail KycDetail?
 
   @@index([applicationStatus])
   @@index([interviewStatus])
@@ -799,9 +759,9 @@ model AstrologerApplication {
 model KycDetail {
   id String @id @default(uuid())
 
-  // 🔗 relation
-  astrologerApplicationId String                @unique
-  application             AstrologerApplication @relation(fields: [astrologerApplicationId], references: [id])
+  //  relation
+  astrologerApplicationId String? @unique  
+  application AstrologerApplication? @relation(fields: [astrologerApplicationId], references: [id])
 
   // 🏦 BANK
   accountHolderName String?

@@ -3,7 +3,7 @@
 import { gql } from "graphql-tag";
 
 const typeDefs = gql`
-scalar JSON
+  scalar JSON
   scalar Upload
   enum Gender {
     MALE
@@ -119,10 +119,11 @@ scalar JSON
 
     address: AddressInput
 
+    bankDetails: BankDetailsInput
+    documents: DocumentsInput
+
     pricing: [PricingInput!]!
-
   }
-
 
   type Astrologer {
     id: ID!
@@ -245,8 +246,6 @@ scalar JSON
     currentPage: Int!
     totalPages: Int!
   }
-
- 
 
   input AddressInput {
     street: String!
@@ -651,11 +650,15 @@ scalar JSON
     documentStatus: DocumentStatus
     approvalStatus: ApprovalStatus
 
+    about: String
+    address: String
+    pincode: String
+
     interviewerId: String
     interviewDate: String
     interviewTime: String
     round: Int
-    kyc: KycDetail
+    kycDetail: KycDetail
 
     createdAt: String
   }
@@ -697,12 +700,12 @@ scalar JSON
   }
 
   type UploadResponse {
-  url: String
-  filename: String
-}
+    url: String
+    filename: String
+  }
 
-#--- docs & bank details -----#
- type KycDetail {
+  #--- docs & bank details -----#
+  type KycDetail {
     id: ID!
 
     accountHolderName: String
@@ -719,6 +722,36 @@ scalar JSON
 
     status: DocumentStatus
   }
+    input KycDetailInput {
+  accountHolderName: String
+  accountNumber: String
+  bankName: String
+  ifsc: String
+  branchName: String
+  panNumber: String
+
+  profileImage: String
+  aadhaarImage: String
+  panImage: String
+  passbookImage: String
+
+  status: DocumentStatus
+}
+
+  input BankDetailsInput {
+    accountHolderName: String
+    accountNumber: String
+    bankName: String
+    ifscCode: String
+    panCardNumber: String
+    branchName: String
+  }
+  input DocumentsInput {
+    profilePic: String
+    aadhaar: String
+    panCard: String
+    passbook: String
+  }
 
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
@@ -730,10 +763,12 @@ scalar JSON
     getFinalPrice(astrologerId: String!): FinalPrice
 
     #astrologer registration #
+    getApplicationById(id: String!): AstrologerApplication
+
     getMyInterviews: [AstrologerApplication]
- getApplication(id: ID!): AstrologerApplication
-  getApplications: [AstrologerApplication!]!
-    
+    getApplication(id: ID!): AstrologerApplication
+    getApplications: [AstrologerApplication!]!
+
     getPendingApplications: [AstrologerApplication]
     getInterviewers: [Staff]
 
@@ -765,8 +800,6 @@ scalar JSON
       page: Int
       limit: Int
     ): PaginatedInterviews!
-
- 
 
     getAstrologerListBySearch(
       searchInput: AstrologerSearchInput!
@@ -813,9 +846,7 @@ scalar JSON
   }
 
   type Mutation {
-
-  uploadImage(file: Upload!): UploadResponse
-
+    uploadImage(file: Upload!): UploadResponse
 
     createBanner(input: BannerInput!): Banner
     updateBanner(id: ID!, input: BannerInput!): Banner
@@ -900,8 +931,6 @@ scalar JSON
     ): Astrologer!
 
     deleteAstrologer(astrologerId: ID!): Boolean!
-
-    
 
     rejectAstrologer(
       astrologerId: ID!
@@ -990,7 +1019,7 @@ scalar JSON
       status: ApprovalStatus!
     ): AstrologerApplication
 
-   approveAstrologer(id: ID!): Astrologer!
+    approveAstrologer(id: ID!): Astrologer!
 
     updateInterviewResult(
       astrologerId: ID!
@@ -1012,25 +1041,11 @@ scalar JSON
     markOfferUsed(userId: String!): Boolean
 
     #---- Save bank details & docs -----#
-   saveAndVerifyKyc(
-      astrologerId: ID!
-
-      accountHolderName: String
-      accountNumber: String
-      bankName: String
-      ifsc: String
-      branchName: String
-      panNumber: String
-
-      profileImage: String
-      aadhaarImage: String
-      panImage: String
-      passbookImage: String
-
-      status: DocumentStatus!
-    ): KycDetail!
-
-      rejectKyc(astrologerId: ID!): KycDetail!
+saveAndVerifyKyc(
+  astrologerId: String!
+  input: KycDetailInput!
+): KycDetail
+rejectKyc(astrologerId: String!): KycDetail
   }
 `;
 
