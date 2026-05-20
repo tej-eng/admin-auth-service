@@ -1307,7 +1307,7 @@ export const resolvers = {
             contactNo: String(data.phoneNumber),
             password: data.password,
             experience: Number(data.experience),
-            aboutEnglish: data.aboutEnglish,
+            about: data.about,
 
             languages: data.languages,
             skills: data.expertise,

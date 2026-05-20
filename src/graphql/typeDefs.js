@@ -111,7 +111,7 @@ const typeDefs = gql`
     languages: [String!]!
     problems: [String!]!
 
-    aboutEnglish: String
+    about: String
 
     tags: String
     vtags: String
@@ -135,7 +135,7 @@ const typeDefs = gql`
     contactNo: String!
     experience: Int!
 
-    aboutEnglish: String
+    about: String
 
     languages: [String!]!
     skills: [String!]!
