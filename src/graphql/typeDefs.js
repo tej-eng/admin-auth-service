@@ -285,6 +285,8 @@ const typeDefs = gql`
     description: String
     price: Float!
     talktime: Int!
+    coins: Int!
+validityDays: Int!
     isActive: Boolean
   }
 
@@ -294,6 +296,8 @@ const typeDefs = gql`
     description: String
     price: Float!
     talktime: Int!
+    coins: Int!
+validityDays: Int!
     isActive: Boolean!
     createdAt: DateTime
     updatedAt: DateTime

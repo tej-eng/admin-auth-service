@@ -1630,13 +1630,15 @@ export const resolvers = {
 
       try {
         const pack = await prisma.rechargePack.create({
-          data: {
-            name: input.name,
-            description: input.description,
-            price: input.price,
-            talktime: input.talktime,
-            isActive: input.isActive ?? true,
-          },
+     data: {
+  name: input.name,
+  description: input.description,
+  price: input.price,
+  coins: input.coins,
+  talktime: input.talktime,
+  validityDays: input.validityDays,
+  isActive: input.isActive ?? true,
+},
         });
 
         return pack;
