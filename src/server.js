@@ -30,13 +30,20 @@ async function startServer() {
 
 
   app.use(
-    cors({
-      origin: true,
-      credentials: true,
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      allowedHeaders: ["Content-Type", "Authorization",  "apollo-require-preflight",],
-    })
-  );
+  cors({
+    origin: [
+      "http://localhost:7002",
+      
+    ],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "apollo-require-preflight",
+    ],
+  })
+);
   app.options("*", cors());
   app.use(express.json());
   app.use(cookieParser());
