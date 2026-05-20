@@ -11,11 +11,77 @@ import { DateTimeResolver } from "graphql-scalars";
 import { connectMongo } from "../config/mongo.js";
 
 import GraphQLUpload from "graphql-upload/GraphQLUpload.mjs";
+import GraphQLJSON from "graphql-type-json";
 import { generateSlug } from "../utils/slugify.js";
 import { generateAccessToken, generateRefreshToken } from "../config/jwt.js";
 
 const prisma = new PrismaClient();
+import fs from "fs";
+import path from "path";
 
+const handleUpload = async (file) => {
+  const { createReadStream, filename, mimetype } = await file;
+
+  const allowedTypes = [
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+
+  if (!allowedTypes.includes(mimetype)) {
+    throw new Error("Invalid file type");
+  }
+
+  const uploadDir = path.join(process.cwd(), "uploads");
+
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+  }
+
+  const ext = filename.split(".").pop();
+  const newFileName = `${Date.now()}-${Math.random()
+    .toString(36)
+    .substring(7)}.${ext}`;
+
+  const uploadPath = path.join(uploadDir, newFileName);
+
+  const stream = createReadStream();
+
+  const MAX_SIZE = 5 * 1024 * 1024;
+  let size = 0;
+
+  await new Promise((resolve, reject) => {
+    const out = fs.createWriteStream(uploadPath);
+
+    stream.on("data", (chunk) => {
+      size += chunk.length;
+      if (size > MAX_SIZE) {
+        stream.destroy();
+        out.destroy();
+        fs.unlink(uploadPath, () => {});
+        reject(new Error("File too large (max 5MB)"));
+      }
+    });
+
+    stream.pipe(out);
+
+    out.on("finish", resolve);
+    out.on("error", reject);
+    stream.on("error", reject);
+  });
+
+  const fileUrl = `https://dhwaniastro.com/v2/uploads/${newFileName}`;
+
+  return {
+    url: fileUrl,
+    filename: newFileName,
+    mimetype,
+  };
+};
 async function logGraphQLEvent(type, operation, userId = null, details = {}) {
   try {
     const db = await connectMongo();
@@ -36,17 +102,30 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
 async function checkPermission(context, requiredPermission) {
   const staff = context.user;
 
+  console.log("STAFF OBJECT:", staff); // 👈 here
+
   if (!staff || !staff.id) {
     throw new Error("Unauthorized");
   }
 
-  // 🔥 SUPER ADMIN
+  // SUPER ADMIN CHECK
+  console.log("ROLE:", staff.role); // 👈 here
+
   if (staff.role?.slug === "super-admin") {
     return true;
   }
 
+  const roleId = staff.roleId || staff.role?.id;
+
+  console.log("ROLE ID:", roleId); // 👈 here
+  console.log("REQUIRED:", requiredPermission); // 👈 here
+
+  if (!roleId) {
+    throw new Error("Unauthorized: Role missing");
+  }
+
   const rolePerms = await context.prisma.rolePermission.findMany({
-    where: { roleId: staff.roleId },
+    where: { roleId },
     include: { permission: true },
   });
 
@@ -59,6 +138,8 @@ async function checkPermission(context, requiredPermission) {
     ...rolePerms.map((r) => r.permission.name),
     ...staffPerms.map((s) => s.permission.name),
   ];
+
+  console.log("ALL PERMS:", allPermissions); // 👈 MOST IMPORTANT
 
   if (!allPermissions.includes(requiredPermission)) {
     throw new Error("Unauthorized: Missing permission");
@@ -102,6 +183,7 @@ const generateCRUDPermissions = async (module, prismaInstance) => {
 };
 
 export const resolvers = {
+  JSON: GraphQLJSON,
   Upload: GraphQLUpload,
   Query: {
     // ================= GET USERS (ADMIN ONLY) =================
@@ -320,45 +402,6 @@ export const resolvers = {
 
         const response = {
           data: interviews,
-          totalCount,
-          currentPage: safePage,
-          totalPages: Math.ceil(totalCount / safeLimit),
-        };
-
-        return response;
-      } catch (error) {
-        throw error;
-      }
-    },
-
-    getAstrologerDocuments: async (
-      _,
-      { astrologerId, page = 1, limit = 10 },
-      context,
-    ) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN") {
-          throw new Error("Admin only");
-        }
-
-        const safePage = Math.max(page, 1);
-        const safeLimit = Math.min(limit, 50);
-        const skip = (safePage - 1) * safeLimit;
-
-        const whereCondition = { astrologerId };
-
-        const [documents, totalCount] = await Promise.all([
-          prisma.astrologerDocument.findMany({
-            where: whereCondition,
-            skip,
-            take: safeLimit,
-            orderBy: { createdAt: "desc" },
-          }),
-          prisma.astrologerDocument.count({ where: whereCondition }),
-        ]);
-
-        const response = {
-          data: documents,
           totalCount,
           currentPage: safePage,
           totalPages: Math.ceil(totalCount / safeLimit),
@@ -889,7 +932,8 @@ export const resolvers = {
     },
 
     // banners
-    getBanners: async (_, __, context) => {4
+    getBanners: async (_, __, context) => {
+      4;
       const { prisma } = context;
       await checkPermission(context, "banners.read");
 
@@ -897,11 +941,169 @@ export const resolvers = {
         orderBy: { sortorder: "asc" },
       });
     },
+
+    // hiring astrologer
+
+    getInterviewers: async (_, __, { prisma }) => {
+      return prisma.staff.findMany({
+        where: {
+          role: {
+            slug: "interviewer",
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
+    },
+
+    getPendingApplications: async (_, __, { prisma }) => {
+      return await prisma.astrologerApplication.findMany({
+        where: {
+          status: "PENDING",
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
+
+    getApplications: (_, { status }, { prisma }) => {
+      return prisma.astrologerApplication.findMany({
+        where: status ? { applicationStatus: status } : {},
+      });
+    },
+
+    // pricing config
+    getFinalPrice: async (_, { astrologerId }, { prisma, userId }) => {
+      const config = await prisma.pricingConfig.findFirst();
+      await prisma.userOfferUsage.upsert({
+        where: { userId },
+        update: {
+          visitCount: { increment: 1 },
+        },
+        create: {
+          userId,
+          visitCount: 1,
+        },
+      });
+
+      const userUsage = await prisma.userOfferUsage.findUnique({
+        where: { userId },
+      });
+
+      const visitCount = userUsage?.visitCount || 0;
+
+      // 🧠 decision engine
+      if (visitCount === 0 && config?.isFirstOfferEnabled) {
+        return {
+          chatPrice: config.firstChatPrice,
+          callPrice: config.firstCallPrice,
+          isOfferApplied: true,
+        };
+      }
+
+      if (visitCount === 1 && config?.isSecondOfferEnabled) {
+        return {
+          chatPrice: config.secondChatPrice,
+          callPrice: config.secondCallPrice,
+          isOfferApplied: true,
+        };
+      }
+
+      // fallback → original astrologer price
+      const chat = await prisma.astrologerPricing.findFirst({
+        where: { astrologerId, type: "CHAT", isActive: true },
+      });
+
+      const call = await prisma.astrologerPricing.findFirst({
+        where: { astrologerId, type: "CALL", isActive: true },
+      });
+
+      return {
+        chatPrice: chat?.price || 0,
+        callPrice: call?.price || 0,
+        isOfferApplied: false,
+      };
+    },
+
+    getPricingConfig: async (_, __, { prisma }) => {
+      return await prisma.pricingConfig.findFirst();
+    },
+
+    getAdminPreviewPrice: async (_, __, { prisma }) => {
+      const config = await prisma.pricingConfig.findFirst();
+
+      return {
+        chatPrice: config?.isFirstOfferEnabled ? config.firstChatPrice : 50, // fallback
+
+        callPrice: config?.isFirstOfferEnabled ? config.firstCallPrice : 100,
+
+        isOfferApplied: config?.isFirstOfferEnabled || false,
+      };
+    },
+
+    getOfferAnalytics: async (_, __, { prisma }) => {
+      const totalUsers = await prisma.userOfferUsage.count();
+
+      const firstUsed = await prisma.userOfferUsage.count({
+        where: { usedFirst: true },
+      });
+
+      const secondUsed = await prisma.userOfferUsage.count({
+        where: { usedSecond: true },
+      });
+
+      return {
+        totalUsers,
+        firstUsed,
+        secondUsed,
+      };
+    },
+
+    getMyInterviews: async (_, __, { prisma, userId }) => {
+      return prisma.astrologerApplication.findMany({
+        where: {
+          interviewerId: userId,
+          interviewStatus: "SCHEDULED",
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
+
+    // get application for add astrologer
+    getApplicationById: async (_, { id }) => {
+      return await prisma.astrologerApplication.findUnique({
+        where: { id },
+        include: {
+          kycDetail: true,
+        },
+      });
+    },
+    
   },
 
   // *******************************************************************************************************************************
 
   Mutation: {
+    // upload image
+    uploadImage: async (_, { file }, context) => {
+      try {
+        if (!context.user) {
+          throw new Error("Unauthorized");
+        }
+
+        return await handleUpload(file);
+      } catch (error) {
+        console.error("uploadImage error:", error);
+        throw new Error(error.message || "Upload failed");
+      }
+    },
+
     // ================= ADMIN LOGIN =================
     loginStaff: async (_, { email, password }, { res }) => {
       const staff = await prisma.staff.findUnique({
@@ -1092,6 +1294,7 @@ export const resolvers = {
     // ================= ADD ASTROLOGER =================
     addAstrologer: async (_, { data }, context) => {
       const { prisma } = context;
+
       try {
         await checkPermission(context, "astrologer.create");
 
@@ -1113,14 +1316,17 @@ export const resolvers = {
             tags: data.tags,
             vtags: data.vtags,
 
-            callChatCharges: Number(data.charges.callChatCharges),
-            callChatOfferCharges: Number(data.charges.callChatOfferCharges),
-            callChatCommission: Number(data.charges.callChatCommission),
-            videocall_charges: Number(data.charges.videocall_charges),
-            audiocall_charges: Number(data.charges.audiocall_charges),
-            audiovideocall_offer_charges: Number(
-              data.charges.audiovideocall_offer_charges,
-            ),
+            pricing: {
+              create: data.pricing
+                .filter((p) => p.isActive)
+                .map((p) => ({
+                  type: p.type,
+                  price: Number(p.price),
+                  offerPrice: p.offerPrice ? Number(p.offerPrice) : null,
+                  commissionPercent: Number(p.commissionPercent),
+                  isActive: p.isActive,
+                })),
+            },
 
             addresses: {
               create: {
@@ -1132,33 +1338,68 @@ export const resolvers = {
               },
             },
 
-            documents: {
-              create: [
-                ...(data.documents?.aadhaar
-                  ? [{ type: "AADHAAR", fileUrl: data.documents.aadhaar }]
-                  : []),
-                ...(data.documents?.panCard
-                  ? [{ type: "PAN", fileUrl: data.documents.panCard }]
-                  : []),
-                ...(data.documents?.passbook
-                  ? [{ type: "PASSBOOK", fileUrl: data.documents.passbook }]
-                  : []),
-                ...(data.documents?.profilePic
-                  ? [{ type: "PROFILE", fileUrl: data.documents.profilePic }]
-                  : []),
-              ],
-            },
+            // ✅ FIX: Only create documents if present
+            documents: data.documents
+              ? {
+                  create: [
+                    ...(data.documents?.aadhaar
+                      ? [
+                          {
+                            documentType: "AADHAAR",
+                            documentUrl: data.documents.aadhaar,
+                          },
+                        ]
+                      : []),
 
-            bankDetails: {
-              create: {
-                accountHolderName: data.bankDetails.accountHolderName,
-                accountNumber: data.bankDetails.accountNumber,
-                bankName: data.bankDetails.bankName,
-                ifscCode: data.bankDetails.ifscCode,
-                panCardNumber: data.bankDetails.panCardNumber,
-                branchName: data.bankDetails.branchName,
-              },
-            },
+                    ...(data.documents?.panCard
+                      ? [
+                          {
+                            documentType: "PAN",
+                            documentUrl: data.documents.panCard,
+                          },
+                        ]
+                      : []),
+
+                    ...(data.documents?.passbook
+                      ? [
+                          {
+                            documentType: "PASSBOOK",
+                            documentUrl: data.documents.passbook,
+                          },
+                        ]
+                      : []),
+
+                    ...(data.documents?.profilePic
+                      ? [
+                          {
+                            documentType: "PROFILE",
+                            documentUrl: data.documents.profilePic,
+                          },
+                        ]
+                      : []),
+                  ],
+                }
+              : undefined,
+
+            // ✅ FIX: Move bankDetails → KYC
+            kyc: data.bankDetails
+              ? {
+                  create: {
+                    accountHolderName: data.bankDetails.accountHolderName,
+                    accountNumber: data.bankDetails.accountNumber,
+                    bankName: data.bankDetails.bankName,
+                    ifsc: data.bankDetails.ifscCode,
+                    panNumber: data.bankDetails.panCardNumber,
+                    branchName: data.bankDetails.branchName,
+
+                    ...(data.applicationId && {
+                      application: {
+                        connect: { id: data.applicationId },
+                      },
+                    }),
+                  },
+                }
+              : undefined,
 
             // optional audit
             // createdBy: context.user.id,
@@ -1172,7 +1413,6 @@ export const resolvers = {
         };
       } catch (error) {
         console.error("AddAstrologer Error:", error.message);
-
         throw new Error(error.message || "Failed to add astrologer");
       }
     },
@@ -1321,48 +1561,8 @@ export const resolvers = {
     },
 
     // ================= VERIFY DOCUMENT =================
-    verifyDocument: async (_, { documentId, status, remarks }, context) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN")
-          throw new Error("Admin only");
-
-        return await prisma.astrologerDocument.update({
-          where: { id: Number(documentId) },
-          data: {
-            status,
-            remarks,
-            verifiedBy: context.user.id,
-            verifiedAt: new Date(),
-          },
-        });
-      } catch (error) {
-        throw new Error(error.message || "Failed to verify document");
-      }
-    },
 
     // ================= SCHEDULE INTERVIEW =================
-    scheduleInterview: async (_, args, context) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN")
-          throw new Error("Admin only");
-
-        await prisma.astrologer.update({
-          where: { id: args.astrologerId },
-          data: { approvalStatus: "INTERVIEW" },
-        });
-
-        return await prisma.interview.create({
-          data: {
-            astrologerId: args.astrologerId,
-            roundNumber: args.roundNumber,
-            interviewerName: args.interviewerName,
-            scheduledAt: new Date(args.scheduledAt),
-          },
-        });
-      } catch (error) {
-        throw new Error(error.message || "Failed to schedule interview");
-      }
-    },
 
     // ================= REJECT ASTROLOGER =================
     rejectAstrologer: async (_, { astrologerId, stage, reason }, context) => {
@@ -1391,20 +1591,35 @@ export const resolvers = {
     },
 
     // ================= APPROVE ASTROLOGER =================
-    approveAstrologer: async (_, { astrologerId }, context) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN")
-          throw new Error("Admin only");
+    approveAstrologer: async (_, { id }) => {
+      const app = await prisma.astrologerApplication.findUnique({
+        where: { id },
+        include: { kyc: true },
+      });
 
-        await prisma.astrologer.update({
-          where: { id: astrologerId },
-          data: { approvalStatus: "APPROVED" },
-        });
+      if (!app) throw new Error("Application not found");
 
-        return true;
-      } catch (error) {
-        throw new Error(error.message || "Failed to approve astrologer");
-      }
+      // 🔥 create final astrologer
+      const astrologer = await prisma.astrologer.create({
+        data: {
+          name: app.name,
+          email: app.email,
+          contactNo: app.phoneNumber,
+          experience: app.experience,
+          languages: app.languages,
+          skills: app.skills,
+          profilePic: app.kyc?.profileImage,
+          approvalStatus: "APPROVED",
+        },
+      });
+
+      // update application
+      await prisma.astrologerApplication.update({
+        where: { id },
+        data: { approvalStatus: "APPROVED" },
+      });
+
+      return astrologer;
     },
 
     // Recharge packages ===============================
@@ -1872,6 +2087,7 @@ export const resolvers = {
       { name, email, password, departmentId, roleId, permissionIds },
       context,
     ) => {
+      console.log("CTX USERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR:", context.user);
       const { prisma } = context;
       try {
         await checkPermission(context, "staff.create");
@@ -2235,34 +2451,34 @@ export const resolvers = {
     },
 
     // banners
-createBanner: async (_, { input }, context) => {
-  const { prisma } = context;
-  await checkPermission(context, "banners.create");
+    createBanner: async (_, { input }, context) => {
+      const { prisma } = context;
+      await checkPermission(context, "banners.create");
 
-  return await prisma.banner.create({
-    data: {
-      heading: input.heading,
-      subheading: input.subheading,
-      slug: input.slug,
-      sortorder: input.sortorder,
-      bannerlink: input.bannerlink,
-      language: input.language,
-      imageUrl: input.imageUrl,
+      return await prisma.banner.create({
+        data: {
+          heading: input.heading,
+          subheading: input.subheading,
+          slug: input.slug,
+          sortorder: input.sortorder,
+          bannerlink: input.bannerlink,
+          language: input.language,
+          imageUrl: input.imageUrl,
+        },
+      });
     },
-  });
-},
 
-   updateBanner: async (_, { id, input }, context) => {
-  const { prisma } = context;
-  await checkPermission(context, "banners.update");
+    updateBanner: async (_, { id, input }, context) => {
+      const { prisma } = context;
+      await checkPermission(context, "banners.update");
 
-  return await prisma.banner.update({
-    where: { id },
-    data: {
-      ...input,
+      return await prisma.banner.update({
+        where: { id },
+        data: {
+          ...input,
+        },
+      });
     },
-  });
-},
 
     deleteBanner: async (_, { id }, context) => {
       const { prisma } = context;
@@ -2273,6 +2489,172 @@ createBanner: async (_, { input }, context) => {
       });
 
       return true;
+    },
+
+    // hiring astrologer
+    scheduleInterview: async (
+      _,
+      { astrologerId, interviewerId, interviewDate, interviewTime, round },
+      { prisma },
+    ) => {
+      return prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: {
+          interviewerId,
+          interviewDate: new Date(interviewDate).toISOString(), // ✅ ISO fix
+          interviewTime,
+          round,
+          interviewStatus: "SCHEDULED",
+
+          interviewScheduledAt: new Date(),
+        },
+      });
+    },
+    updateInterviewResult: async (
+      _,
+      { astrologerId, status, remarks },
+      { prisma },
+    ) => {
+      return prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: {
+          interviewStatus: status,
+          interviewRemarks: remarks,
+          interviewTakenAt: new Date(),
+        },
+      });
+    },
+
+    updateDocumentStatus: async (_, { astrologerId, status }, { prisma }) => {
+      return prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: { documentStatus: status },
+      });
+    },
+
+    updateApprovalStatus: async (_, { astrologerId, status }, { prisma }) => {
+      return prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: { approvalStatus: status },
+      });
+    },
+
+    approveAstrologer: async (_, { id }, { prisma, user }) => {
+      const application = await prisma.astrologerApplication.findUnique({
+        where: { id },
+      });
+
+      if (!application) throw new Error("Application not found");
+
+      // role check (important)
+      if (user.role !== "ADMIN") {
+        throw new Error("Not authorized");
+      }
+
+      const result = await prisma.$transaction([
+        prisma.astrologer.create({
+          data: {
+            name: application.name,
+            email: application.email,
+            phoneNumber: application.phoneNumber,
+            gender: application.gender,
+            languages: application.languages,
+            skills: application.skills,
+            experience: application.experience,
+            about: application.about,
+            applicationId: application.id,
+            approvedById: user.id,
+          },
+        }),
+
+        prisma.astrologerApplication.update({
+          where: { id },
+          data: {
+            approvalStatus: "APPROVED",
+            applicationStatus: "APPROVED",
+          },
+        }),
+      ]);
+
+      return result[1]; // updated application
+    },
+
+    // pricng config
+    updatePricingConfig: async (_, args, { prisma }) => {
+      const existing = await prisma.pricingConfig.findFirst();
+
+      if (existing) {
+        return await prisma.pricingConfig.update({
+          where: { id: existing.id },
+          data: args,
+        });
+      }
+
+      return await prisma.pricingConfig.create({
+        data: args,
+      });
+    },
+
+    markOfferUsed: async (_, __, { prisma, userId }) => {
+      await prisma.userOfferUsage.upsert({
+        where: { userId },
+        update: {
+          hasUsedFirstOffer: true,
+          usedAt: new Date(),
+        },
+        create: {
+          userId,
+          hasUsedFirstOffer: true,
+          usedAt: new Date(),
+        },
+      });
+
+      return true;
+    },
+
+    // docs and image verify
+    saveAndVerifyKyc: async (_, args, context) => {
+      if (!context.user) throw new Error("Unauthorized");
+
+      const { astrologerId, input } = args;
+
+      const kyc = await prisma.kycDetail.upsert({
+        where: {
+          astrologerApplicationId: astrologerId,
+        },
+        update: {
+          ...input,
+        },
+        create: {
+          astrologerApplicationId: astrologerId,
+          ...input,
+        },
+      });
+
+      await prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: {
+          documentStatus: input.status,
+        },
+      });
+
+      return kyc;
+    },
+
+    rejectKyc: async (_, { astrologerId }, context) => {
+      if (!context.user) throw new Error("Unauthorized");
+
+      const kyc = await prisma.kycDetail.update({
+        where: { astrologerApplicationId: astrologerId },
+        data: { status: "REJECTED" },
+      });
+
+      await prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: { documentStatus: "REJECTED" },
+      });
+
+      return kyc;
     },
   },
 };

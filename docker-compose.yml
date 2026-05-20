@@ -7,11 +7,10 @@ services:
       - .env
     ports:
       - "8008:8008"
+
     networks:
       - dhwaniastro-net
 
-    mem_limit: 50m       
-    memswap_limit: 50m    
 
 networks:
   dhwaniastro-net:

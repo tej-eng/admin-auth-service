@@ -6,26 +6,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Seeding started...");
 
-  // ================= ROLE =================
-  const role = await prisma.role.upsert({
-    where: { slug: "super-admin" },
-    update: {},
-    create: {
-      name: "SUPER_ADMIN",
-      slug: "super-admin",
-    },
-  });
-
   // ================= DEPARTMENT =================
   const department = await prisma.department.upsert({
-    where: { slug: "admin-department" },
+    where: { slug: "super-admin-department" },
     update: {},
     create: {
-      name: "Admin Department",
-      slug: "admin-department",
+      name: "Super Admin Department",
+      slug: "super-admin-department",
     },
   });
 
+  // ================= MODULES =================
   const modulesData = [
     { name: "Roles", slug: "roles", section: "privilege" },
     { name: "Permissions", slug: "permissions", section: "privilege" },
@@ -42,6 +33,7 @@ async function main() {
     });
   }
 
+  // ================= PERMISSIONS =================
   const actions = ["create", "read", "update", "delete"];
   const modules = await prisma.module.findMany();
 
@@ -49,7 +41,6 @@ async function main() {
     for (const action of actions) {
       const name = `${mod.slug}.${action}`;
 
-      // 1. create or get permission
       const permission = await prisma.permission.upsert({
         where: { name },
         update: {},
@@ -59,7 +50,6 @@ async function main() {
         },
       });
 
-      // 2. ensure module link exists
       const existingLink = await prisma.modulePermission.findFirst({
         where: {
           moduleId: mod.id,
@@ -78,16 +68,28 @@ async function main() {
     }
   }
 
+  // ================= SUPER ADMIN ROLE =================
+  const superAdminRole = await prisma.role.upsert({
+    where: { slug: "super-admin" },
+    update: {},
+    create: {
+      name: "SUPER_ADMIN",
+      slug: "super-admin",
+    },
+  });
+
+  // ================= ASSIGN ALL PERMISSIONS =================
   const allPermissions = await prisma.permission.findMany();
 
   await prisma.rolePermission.createMany({
     data: allPermissions.map((perm) => ({
-      roleId: role.id,
+      roleId: superAdminRole.id,
       permissionId: perm.id,
     })),
     skipDuplicates: true,
   });
 
+  // ================= SUPER ADMIN STAFF =================
   const hashedPassword = await bcrypt.hash("123456", 10);
 
   await prisma.staff.upsert({
@@ -99,12 +101,12 @@ async function main() {
       name: "Super Admin",
       email: "admin@dhwaniastro.com",
       password: hashedPassword,
-      roleId: role.id,
+      roleId: superAdminRole.id,
       departmentId: department.id,
     },
   });
 
-  console.log("Seed Done ✅");
+  console.log("Seed Done ✅ (Super Admin Created)");
 }
 
 main()

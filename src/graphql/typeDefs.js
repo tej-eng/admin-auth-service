@@ -1,7 +1,9 @@
 // src/graphql/typeDefs.js
+
 import { gql } from "graphql-tag";
 
 const typeDefs = gql`
+  scalar JSON
   scalar Upload
   enum Gender {
     MALE
@@ -42,9 +44,10 @@ const typeDefs = gql`
   }
 
   enum DocumentType {
-    ID_PROOF
-    CERTIFICATE
-    EXPERIENCE_PROOF
+    AADHAAR
+    PAN
+    PASSBOOK
+    PROFILE
   }
 
   enum SortOrder {
@@ -87,22 +90,13 @@ const typeDefs = gql`
     updatedAt: DateTime
   }
 
-  input ChargesInput {
-    callChatCharges: Float
-    callChatOfferCharges: Float
-    callChatCommission: Float
-    videocall_charges: Float
-    audiocall_charges: Float
-    audiovideocall_offer_charges: Float
-  }
-
-  input BankDetailsInput {
-    accountHolderName: String!
-    accountNumber: String!
-    bankName: String!
-    ifscCode: String!
-    panCardNumber: String!
-    branchName: String!
+  #--------------------------------------#
+  input PricingInput {
+    type: PricingType!
+    price: Float!
+    offerPrice: Float
+    commissionPercent: Float
+    isActive: Boolean!
   }
 
   input AddAstrologerInput {
@@ -111,7 +105,6 @@ const typeDefs = gql`
     gender: Gender!
     email: String!
     phoneNumber: String!
-    password: String!
     experience: Int!
 
     expertise: [String!]!
@@ -124,15 +117,11 @@ const typeDefs = gql`
     vtags: String
 
     address: AddressInput
-    charges: ChargesInput
+
     bankDetails: BankDetailsInput
-    documents: AstrologerDocumentsInput
-  }
-  input AstrologerDocumentsInput {
-    aadhaar: String
-    panCard: String
-    passbook: String
-    profilePic: String
+    documents: DocumentsInput
+
+    pricing: [PricingInput!]!
   }
 
   type Astrologer {
@@ -152,12 +141,7 @@ const typeDefs = gql`
     skills: [String!]!
     problems: [String!]!
 
-    callChatCharges: Float
-    callChatOfferCharges: Float
-    callChatCommission: Float
-    videocall_charges: Float
-    audiocall_charges: Float
-    audiovideocall_offer_charges: Float
+    pricing: [AstrologerPricing!]!
 
     tags: String
     vtags: String
@@ -167,7 +151,6 @@ const typeDefs = gql`
     addresses: [Address!]!
     experiences: [ExperiencePlatform!]!
     interviews: [Interview!]!
-    documents: [AstrologerDocument!]!
 
     createdAt: DateTime
     updatedAt: DateTime
@@ -193,16 +176,6 @@ const typeDefs = gql`
     scheduledAt: String
     status: InterviewStatus
     remarks: String
-  }
-
-  type AstrologerDocument {
-    id: ID!
-    documentType: DocumentType
-    documentUrl: String
-    status: DocumentStatus
-    remarks: String
-    verifiedBy: String
-    verifiedAt: String
   }
 
   type AstrologerRejectionHistory {
@@ -268,13 +241,6 @@ const typeDefs = gql`
 
   type PaginatedInterviews {
     data: [Interview!]!
-    totalCount: Int!
-    currentPage: Int!
-    totalPages: Int!
-  }
-
-  type PaginatedDocuments {
-    data: [AstrologerDocument!]!
     totalCount: Int!
     currentPage: Int!
     totalPages: Int!
@@ -608,36 +574,206 @@ const typeDefs = gql`
     answer: String
   }
 
- #---------------- baneers --------# 
+  #---------------- baneers --------#
   type Banner {
-  id: ID!
-  heading: String!
-  subheading: String
-  slug: String!
-  sortorder: Int
-  bannerlink: String
-  language: String
-  imageUrl: String 
-  status: Boolean
-  createdAt: String
-  updatedAt: String
-}
+    id: ID!
+    heading: String!
+    subheading: String
+    slug: String!
+    sortorder: Int
+    bannerlink: String
+    language: String
+    imageUrl: String
+    status: Boolean
+    createdAt: String
+    updatedAt: String
+  }
 
-input BannerInput {
-  heading: String!
-  subheading: String
-  slug: String!
-  sortorder: Int
-  bannerlink: String
-  language: String
-  imageUrl: String 
-}
+  input BannerInput {
+    heading: String!
+    subheading: String
+    slug: String!
+    sortorder: Int
+    bannerlink: String
+    language: String
+    imageUrl: String
+  }
 
+  #-------------------- pricing --------------#
+  enum PricingType {
+    CHAT
+    CALL
+    VIDEO
+    AUDIO
+  }
+  type AstrologerPricing {
+    id: ID!
+    type: PricingType!
+    price: Float!
+    offerPrice: Float
+    commissionPercent: Float
+    isActive: Boolean!
+  }
 
+  #-------------------------astrologer hirirng-------------------#
+  enum InterviewStatus {
+    PENDING
+    SCHEDULED
+    PASSED
+    REJECTED
+  }
+
+  enum DocumentStatus {
+    PENDING
+    VERIFIED
+    REJECTED
+  }
+
+  enum ApprovalStatus {
+    PENDING
+    APPROVED
+    REJECTED
+  }
+  type AstrologerApplication {
+    id: ID!
+    name: String
+    phoneNumber: String
+    email: String
+    gender: String
+    skills: [String]
+    languages: [String]
+    problems: [String]
+
+    experience: Int
+    applicationStatus: String!
+    interviewStatus: String
+    interviewRemarks: String
+    documentStatus: DocumentStatus
+    approvalStatus: ApprovalStatus
+
+    about: String
+    address: String
+    pincode: String
+
+    interviewerId: String
+    interviewDate: String
+    interviewTime: String
+    round: Int
+    kycDetail: KycDetail
+
+    createdAt: String
+  }
+
+  # pricing config #
+  enum OfferType {
+    FREE
+    ONE_RUPEE
+    ORIGINAL
+  }
+
+  type PricingConfig {
+    id: ID!
+
+    isFirstOfferEnabled: Boolean
+    firstChatPrice: Int
+    firstCallPrice: Int
+
+    isSecondOfferEnabled: Boolean
+    secondChatPrice: Int
+    secondCallPrice: Int
+  }
+
+  type UserOfferUsage {
+    userId: String!
+    hasUsedFirstOffer: Boolean!
+  }
+
+  type FinalPrice {
+    chatPrice: Int
+    callPrice: Int
+    isOfferApplied: Boolean
+  }
+
+  type OfferAnalytics {
+    totalUsers: Int
+    firstUsed: Int
+    secondUsed: Int
+  }
+
+  type UploadResponse {
+    url: String
+    filename: String
+  }
+
+  #--- docs & bank details -----#
+  type KycDetail {
+    id: ID!
+
+    accountHolderName: String
+    accountNumber: String
+    bankName: String
+    ifsc: String
+    branchName: String
+    panNumber: String
+
+    profileImage: String
+    aadhaarImage: String
+    panImage: String
+    passbookImage: String
+
+    status: DocumentStatus
+  }
+  input KycDetailInput {
+    accountHolderName: String
+    accountNumber: String
+    bankName: String
+    ifsc: String
+    branchName: String
+    panNumber: String
+
+    profileImage: String
+    aadhaarImage: String
+    panImage: String
+    passbookImage: String
+
+    status: DocumentStatus
+  }
+
+  input BankDetailsInput {
+    accountHolderName: String
+    accountNumber: String
+    bankName: String
+    ifscCode: String
+    panCardNumber: String
+    branchName: String
+  }
+  input DocumentsInput {
+    profilePic: String
+    aadhaar: String
+    panCard: String
+    passbook: String
+  }
 
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
-  getBanners: [Banner]
+    #pricing config #
+    getOfferAnalytics: OfferAnalytics
+
+    getPricingConfig: PricingConfig
+    getAdminPreviewPrice: FinalPrice
+    getFinalPrice(astrologerId: String!): FinalPrice
+
+    #astrologer registration #
+    getApplicationById(id: String!): AstrologerApplication
+
+    getMyInterviews: [AstrologerApplication]
+    getApplication(id: ID!): AstrologerApplication
+    getApplications: [AstrologerApplication!]!
+
+    getPendingApplications: [AstrologerApplication]
+    getInterviewers: [Staff]
+
+    getBanners: [Banner]
 
     faqs: [Faq!]!
     faq(id: ID!): Faq
@@ -665,12 +801,6 @@ input BannerInput {
       page: Int
       limit: Int
     ): PaginatedInterviews!
-
-    getAstrologerDocuments(
-      astrologerId: String!
-      page: Int
-      limit: Int
-    ): PaginatedDocuments!
 
     getAstrologerListBySearch(
       searchInput: AstrologerSearchInput!
@@ -717,9 +847,11 @@ input BannerInput {
   }
 
   type Mutation {
-   createBanner(input: BannerInput!): Banner
-   updateBanner(id: ID!, input: BannerInput!): Banner
-   deleteBanner(id: ID!): Boolean
+    uploadImage(file: Upload!): UploadResponse
+
+    createBanner(input: BannerInput!): Banner
+    updateBanner(id: ID!, input: BannerInput!): Banner
+    deleteBanner(id: ID!): Boolean
 
     createFaq(input: CreateFaqInput!): Faq!
     updateFaq(id: ID!, input: UpdateFaqInput!): Faq!
@@ -801,26 +933,12 @@ input BannerInput {
 
     deleteAstrologer(astrologerId: ID!): Boolean!
 
-    scheduleInterview(
-      astrologerId: ID!
-      roundNumber: Int!
-      interviewerName: String!
-      scheduledAt: String!
-    ): Interview
-
-    verifyDocument(
-      documentId: ID!
-      status: DocumentStatus!
-      remarks: String
-    ): AstrologerDocument
-
     rejectAstrologer(
       astrologerId: ID!
       stage: String!
       reason: String!
     ): Boolean
 
-    approveAstrologer(astrologerId: ID!): Boolean
     createRechargePack(input: RechargePackInput!): RechargePack!
     updateRechargePack(id: ID!, input: UpdateRechargePackInput!): RechargePack!
     deleteRechargePack(id: ID!): String!
@@ -877,6 +995,55 @@ input BannerInput {
     ): Staff!
 
     deleteStaff(staffId: ID!): Boolean!
+
+    #---------------hiring astrologer mutation-------------------#
+    scheduleInterview(
+      astrologerId: ID!
+      interviewerId: String!
+      interviewDate: String!
+      interviewTime: String!
+      round: Int!
+    ): AstrologerApplication
+
+    updateInterviewStatus(
+      astrologerId: ID!
+      status: InterviewStatus!
+    ): AstrologerApplication
+
+    updateDocumentStatus(
+      astrologerId: ID!
+      status: DocumentStatus!
+    ): AstrologerApplication
+
+    updateApprovalStatus(
+      astrologerId: ID!
+      status: ApprovalStatus!
+    ): AstrologerApplication
+
+    approveAstrologer(id: ID!): Astrologer!
+
+    updateInterviewResult(
+      astrologerId: ID!
+      status: String!
+      remarks: String
+    ): AstrologerApplication
+
+    # pricing config mutation #
+    updatePricingConfig(
+      isFirstOfferEnabled: Boolean
+      firstChatPrice: Int
+      firstCallPrice: Int
+
+      isSecondOfferEnabled: Boolean
+      secondChatPrice: Int
+      secondCallPrice: Int
+    ): PricingConfig
+
+    markOfferUsed(userId: String!): Boolean
+
+    #---- Save bank details & docs -----#
+    saveAndVerifyKyc(astrologerId: String!, input: KycDetailInput!): KycDetail
+    rejectKyc(astrologerId: String!): KycDetail
   }
 `;
 
