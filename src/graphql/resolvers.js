@@ -1382,7 +1382,7 @@ export const resolvers = {
               : undefined,
 
             // ✅ FIX: Move bankDetails → KYC
-            kyc: data.bankDetails
+            kycDetail: data.bankDetails
               ? {
                   create: {
                     accountHolderName: data.bankDetails.accountHolderName,
