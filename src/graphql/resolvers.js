@@ -62,7 +62,7 @@ const handleUpload = async (file) => {
       if (size > MAX_SIZE) {
         stream.destroy();
         out.destroy();
-        fs.unlink(uploadPath, () => { });
+        fs.unlink(uploadPath, () => {});
         reject(new Error("File too large (max 5MB)"));
       }
     });
@@ -230,11 +230,11 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { mobile: { contains: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { mobile: { contains: query } },
+              ],
+            }
           : {};
 
         const [users, totalCount] = await Promise.all([
@@ -296,12 +296,12 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { skills: { has: query } },
-              { languages: { has: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { skills: { has: query } },
+                { languages: { has: query } },
+              ],
+            }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -412,8 +412,6 @@ export const resolvers = {
         throw error;
       }
     },
-
-
 
     getRegisteredAstrologers: async (_, { page = 1, limit = 10 }, context) => {
       try {
@@ -1077,8 +1075,7 @@ export const resolvers = {
       });
     },
 
-
-    // get application for add astrologer 
+    // get application for add astrologer
     getApplicationById: async (_, { id }) => {
       return await prisma.astrologerApplication.findUnique({
         where: { id },
@@ -1087,6 +1084,7 @@ export const resolvers = {
         },
       });
     },
+    
   },
 
   // *******************************************************************************************************************************
@@ -1100,7 +1098,6 @@ export const resolvers = {
         }
 
         return await handleUpload(file);
-
       } catch (error) {
         console.error("uploadImage error:", error);
         throw new Error(error.message || "Upload failed");
@@ -1344,64 +1341,64 @@ export const resolvers = {
             // ✅ FIX: Only create documents if present
             documents: data.documents
               ? {
-                create: [
-                  ...(data.documents?.aadhaar
-                    ? [
-                      {
-                        documentType: "AADHAAR",
-                        documentUrl: data.documents.aadhaar,
-                      },
-                    ]
-                    : []),
+                  create: [
+                    ...(data.documents?.aadhaar
+                      ? [
+                          {
+                            documentType: "AADHAAR",
+                            documentUrl: data.documents.aadhaar,
+                          },
+                        ]
+                      : []),
 
-                  ...(data.documents?.panCard
-                    ? [
-                      {
-                        documentType: "PAN",
-                        documentUrl: data.documents.panCard,
-                      },
-                    ]
-                    : []),
+                    ...(data.documents?.panCard
+                      ? [
+                          {
+                            documentType: "PAN",
+                            documentUrl: data.documents.panCard,
+                          },
+                        ]
+                      : []),
 
-                  ...(data.documents?.passbook
-                    ? [
-                      {
-                        documentType: "PASSBOOK",
-                        documentUrl: data.documents.passbook,
-                      },
-                    ]
-                    : []),
+                    ...(data.documents?.passbook
+                      ? [
+                          {
+                            documentType: "PASSBOOK",
+                            documentUrl: data.documents.passbook,
+                          },
+                        ]
+                      : []),
 
-                  ...(data.documents?.profilePic
-                    ? [
-                      {
-                        documentType: "PROFILE",
-                        documentUrl: data.documents.profilePic,
-                      },
-                    ]
-                    : []),
-                ],
-              }
+                    ...(data.documents?.profilePic
+                      ? [
+                          {
+                            documentType: "PROFILE",
+                            documentUrl: data.documents.profilePic,
+                          },
+                        ]
+                      : []),
+                  ],
+                }
               : undefined,
 
             // ✅ FIX: Move bankDetails → KYC
             kyc: data.bankDetails
               ? {
-                create: {
-                  accountHolderName: data.bankDetails.accountHolderName,
-                  accountNumber: data.bankDetails.accountNumber,
-                  bankName: data.bankDetails.bankName,
-                  ifsc: data.bankDetails.ifscCode,       
-                  panNumber: data.bankDetails.panCardNumber,
-                  branchName: data.bankDetails.branchName,
+                  create: {
+                    accountHolderName: data.bankDetails.accountHolderName,
+                    accountNumber: data.bankDetails.accountNumber,
+                    bankName: data.bankDetails.bankName,
+                    ifsc: data.bankDetails.ifscCode,
+                    panNumber: data.bankDetails.panCardNumber,
+                    branchName: data.bankDetails.branchName,
 
-                  ...(data.applicationId && {
-                    application: {
-                      connect: { id: data.applicationId },
-                    },
-                  }),
-                },
-              }
+                    ...(data.applicationId && {
+                      application: {
+                        connect: { id: data.applicationId },
+                      },
+                    }),
+                  },
+                }
               : undefined,
 
             // optional audit
@@ -2615,35 +2612,34 @@ export const resolvers = {
       return true;
     },
 
+    // docs and image verify
+    saveAndVerifyKyc: async (_, args, context) => {
+      if (!context.user) throw new Error("Unauthorized");
 
-    // docs and image verify 
-saveAndVerifyKyc: async (_, args, context) => {
-  if (!context.user) throw new Error("Unauthorized");
+      const { astrologerId, input } = args;
 
-  const { astrologerId, input } = args;
+      const kyc = await prisma.kycDetail.upsert({
+        where: {
+          astrologerApplicationId: astrologerId,
+        },
+        update: {
+          ...input,
+        },
+        create: {
+          astrologerApplicationId: astrologerId,
+          ...input,
+        },
+      });
 
-  const kyc = await prisma.kycDetail.upsert({
-    where: {
-      astrologerApplicationId: astrologerId,
+      await prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: {
+          documentStatus: input.status,
+        },
+      });
+
+      return kyc;
     },
-    update: {
-      ...input,
-    },
-    create: {
-      astrologerApplicationId: astrologerId,
-      ...input,
-    },
-  });
-
-  await prisma.astrologerApplication.update({
-    where: { id: astrologerId },
-    data: {
-      documentStatus: input.status,
-    },
-  });
-
-  return kyc;
-},
 
     rejectKyc: async (_, { astrologerId }, context) => {
       if (!context.user) throw new Error("Unauthorized");

@@ -105,7 +105,6 @@ const typeDefs = gql`
     gender: Gender!
     email: String!
     phoneNumber: String!
-    password: String!
     experience: Int!
 
     expertise: [String!]!
@@ -643,6 +642,8 @@ const typeDefs = gql`
     gender: String
     skills: [String]
     languages: [String]
+    problems: [String]
+
     experience: Int
     applicationStatus: String!
     interviewStatus: String
@@ -722,21 +723,21 @@ const typeDefs = gql`
 
     status: DocumentStatus
   }
-    input KycDetailInput {
-  accountHolderName: String
-  accountNumber: String
-  bankName: String
-  ifsc: String
-  branchName: String
-  panNumber: String
+  input KycDetailInput {
+    accountHolderName: String
+    accountNumber: String
+    bankName: String
+    ifsc: String
+    branchName: String
+    panNumber: String
 
-  profileImage: String
-  aadhaarImage: String
-  panImage: String
-  passbookImage: String
+    profileImage: String
+    aadhaarImage: String
+    panImage: String
+    passbookImage: String
 
-  status: DocumentStatus
-}
+    status: DocumentStatus
+  }
 
   input BankDetailsInput {
     accountHolderName: String
@@ -1041,11 +1042,8 @@ const typeDefs = gql`
     markOfferUsed(userId: String!): Boolean
 
     #---- Save bank details & docs -----#
-saveAndVerifyKyc(
-  astrologerId: String!
-  input: KycDetailInput!
-): KycDetail
-rejectKyc(astrologerId: String!): KycDetail
+    saveAndVerifyKyc(astrologerId: String!, input: KycDetailInput!): KycDetail
+    rejectKyc(astrologerId: String!): KycDetail
   }
 `;
 
