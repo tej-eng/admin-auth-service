@@ -12,7 +12,7 @@ export const generateAccessToken = (staff) => {
   console.log("🔐 [SIGN] SECRET:", process.env.JWT_SECRET);
 
   const token = jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "1d",
   });
 
   console.log("🔐 [SIGN] TOKEN:", token);
