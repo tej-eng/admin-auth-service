@@ -33,8 +33,7 @@ async function startServer() {
   cors({
     origin: [
       "http://localhost:7002",
-      "adminpanel-deploy.vercel.app",
-      
+      "https://adminpanel-deploy.vercel.app",
     ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
