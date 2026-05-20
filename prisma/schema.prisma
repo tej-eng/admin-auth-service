@@ -210,9 +210,9 @@ model Intake {
 model Astrologer {
   id String @id @default(uuid())
 
-  profilePic  String
+  profilePic  String?
   name        String
-  dateOfBirth DateTime
+  dateOfBirth DateTime?
   gender      Gender
   displayName String
 
