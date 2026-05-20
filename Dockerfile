@@ -14,6 +14,6 @@ COPY . .
 # generate prisma client
 RUN npx prisma generate --schema=./prisma/schema.prisma
 
-EXPOSE 8008
+EXPOSE 8005
 
 CMD ["node", "src/server.js"]

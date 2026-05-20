@@ -93,7 +93,7 @@ app.use(graphqlUploadExpress({ maxFileSize: 10000000, maxFiles: 5 }));
     })
   );
 
-  const PORT = process.env.PORT ||8006;
+  const PORT = process.env.PORT ||8005;
   app.listen(PORT, () => {
     console.log(`🚀 Server running at http://localhost:${PORT}/graphql`);
   });
