@@ -875,8 +875,8 @@ model KycDetail {
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
-  astrologerId String     @unique
-  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+  astrologerId String?     @unique
+  astrologer   Astrologer? @relation(fields: [astrologerId], references: [id])
 }
 
 model Notification {
