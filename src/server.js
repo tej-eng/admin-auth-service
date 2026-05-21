@@ -52,10 +52,12 @@ async function startServer() {
   // ✅ static folder
   // app.use("/uploads", express.static("uploads"));
 
-app.use(
-  "/uploads",
-  express.static(path.join(__dirname, "/home/dhwaniastro/nodeapps/admin-auth-service/uploads"))
-);
+const uploadRoot = path.join(process.cwd(), "uploads");
+console.log("Serving static files from:", uploadRoot);
+
+// Serve both ways for safety
+app.use("/uploads", express.static(uploadRoot));
+app.use("/adminAuth/uploads", express.static(uploadRoot));
 
   // ✅ REST upload
   app.use("/api", uploadRoutes);

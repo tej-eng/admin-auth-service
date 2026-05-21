@@ -20,68 +20,75 @@ import fs from "fs";
 import path from "path";
 
 const handleUpload = async (file) => {
-  const { createReadStream, filename, mimetype } = await file;
+  try {
+    const { createReadStream, filename, mimetype } = await file;
 
-  const allowedTypes = [
-    "image/png",
-    "image/jpeg",
-    "image/jpg",
-    "image/webp",
-    "application/pdf",
-    "application/msword",
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  ];
+    console.log("=== UPLOAD START ===");
+    console.log("Original Filename:", filename);
+    console.log("Mimetype:", mimetype);
+    console.log("CWD:", process.cwd());
 
-  if (!allowedTypes.includes(mimetype)) {
-    throw new Error("Invalid file type");
-  }
+    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "application/pdf"];
+    if (!allowedTypes.includes(mimetype)) {
+      throw new Error("Invalid file type");
+    }
 
-  const uploadDir = path.join(process.cwd(), "uploads");
+    const UPLOAD_ROOT = path.join(process.cwd(), "uploads");
+    const DOCUMENTS_DIR = path.join(UPLOAD_ROOT, "documents");
 
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
+    console.log("Upload Root:", UPLOAD_ROOT);
+    console.log("Documents Dir:", DOCUMENTS_DIR);
 
-  const ext = filename.split(".").pop();
-  const newFileName = `${Date.now()}-${Math.random()
-    .toString(36)
-    .substring(7)}.${ext}`;
+    if (!fs.existsSync(DOCUMENTS_DIR)) {
+      fs.mkdirSync(DOCUMENTS_DIR, { recursive: true });
+      console.log("Created documents directory");
+    }
 
-  const uploadPath = path.join(uploadDir, newFileName);
-  console.log("Upload pathhhhhhhhhhhhhhhhhhhhhhhh:", uploadPath);
+    const ext = path.extname(filename) || ".jpg";
+    const newFileName = `${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`;
 
-  const stream = createReadStream();
+    const uploadPath = path.join(DOCUMENTS_DIR, newFileName);
+    console.log("Saving file to:", uploadPath);
 
-  const MAX_SIZE = 5 * 1024 * 1024;
-  let size = 0;
-
-  await new Promise((resolve, reject) => {
+    const stream = createReadStream();
     const out = fs.createWriteStream(uploadPath);
 
-    stream.on("data", (chunk) => {
-      size += chunk.length;
-      if (size > MAX_SIZE) {
-        stream.destroy();
-        out.destroy();
-        fs.unlink(uploadPath, () => {});
-        reject(new Error("File too large (max 5MB)"));
-      }
+    let size = 0;
+    const MAX_SIZE = 5 * 1024 * 1024;
+
+    await new Promise((resolve, reject) => {
+      stream.on("data", (chunk) => {
+        size += chunk.length;
+        if (size > MAX_SIZE) {
+          stream.destroy();
+          out.destroy();
+          fs.unlink(uploadPath, () => {});
+          reject(new Error("File too large (max 5MB)"));
+        }
+      });
+
+      stream.pipe(out);
+
+      out.on("finish", resolve);
+      out.on("error", reject);
+      stream.on("error", reject);
     });
 
-    stream.pipe(out);
+    const publicUrl = `/adminAuth/uploads/documents/${newFileName}`;
 
-    out.on("finish", resolve);
-    out.on("error", reject);
-    stream.on("error", reject);
-  });
+    console.log("✅ Upload Success:", publicUrl);
+    console.log("=== UPLOAD END ===");
 
-  const fileUrl = `https://dhwaniastro.com/adminAuth/uploads/${newFileName}`;
-
-  return {
-    url: fileUrl,
-    filename: newFileName,
-    mimetype,
-  };
+    return {
+      url: publicUrl,
+      filename: newFileName,
+      mimetype,
+    };
+  } catch (error) {
+    console.error("❌ Upload Error:", error.message);
+    console.error(error.stack);
+    throw new Error(error.message || "Upload failed");
+  }
 };
 async function logGraphQLEvent(type, operation, userId = null, details = {}) {
   try {
