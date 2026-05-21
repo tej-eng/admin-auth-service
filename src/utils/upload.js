@@ -1,20 +1,34 @@
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const getUploadPath = (type = "") => {
+  return path.join(
+    __dirname,
+    "..",
+    "uploads",
+    type
+  );
+};
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    let uploadPath = "uploads/";
+    let uploadPath = getUploadPath();
+
+    console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",uploadPath);
+    
 
     if (req.originalUrl.includes("upload-banner")) {
-      uploadPath = "uploads/banners/";
+      uploadPath = getUploadPath("banners");
     } else if (req.originalUrl.includes("upload-documents")) {
-      uploadPath = "uploads/documents/";
+      uploadPath = getUploadPath("documents");
     } else if (req.originalUrl.includes("upload-profile")) {
-      uploadPath = "uploads/profile/";
+      uploadPath = getUploadPath("profile");
     }
-
 
     fs.mkdirSync(uploadPath, { recursive: true });
 
@@ -22,15 +36,19 @@ const storage = multer.diskStorage({
   },
 
   filename: function (req, file, cb) {
-    const uniqueName =
-      Date.now() + "-" + file.originalname.replace(/\s/g, "_");
+    const cleanName = file.originalname
+      .replace(/\s+/g, "_")
+      .replace(/[()]/g, "");
+
+    const uniqueName = `${Date.now()}-${cleanName}`;
+
     cb(null, uniqueName);
   },
 });
 
-
 const fileFilter = (req, file, cb) => {
   const allowedTypes = /jpg|jpeg|png|pdf/;
+
   const ext = path.extname(file.originalname).toLowerCase();
 
   if (allowedTypes.test(ext)) {
@@ -40,11 +58,12 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 2 * 1024 * 1024 },
+  limits: {
+    fileSize: 2 * 1024 * 1024,
+  },
 });
 
 export { upload };
