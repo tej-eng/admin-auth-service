@@ -32,7 +32,7 @@ router.post(
           ? `/adminAuth/uploads/documents/${files.passbook[0].filename}`
           : null,
       };
-
+      console.log("Upload response:dddddddddddddddddddd", response);
       return res.json(response);
     } catch (err) {
       console.error(err);
