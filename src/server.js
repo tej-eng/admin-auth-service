@@ -54,7 +54,7 @@ async function startServer() {
 
 app.use(
   "/uploads",
-  express.static(path.join(__dirname, "uploads"))
+  express.static(path.join(__dirname, "/home/dhwaniastro/nodeapps/admin-auth-service/uploads"))
 );
 
   // ✅ REST upload
