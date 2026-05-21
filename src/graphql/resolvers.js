@@ -48,6 +48,7 @@ const handleUpload = async (file) => {
     .substring(7)}.${ext}`;
 
   const uploadPath = path.join(uploadDir, newFileName);
+  console.log("Upload pathhhhhhhhhhhhhhhhhhhhhhhh:", uploadPath);
 
   const stream = createReadStream();
 
