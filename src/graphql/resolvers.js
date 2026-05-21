@@ -74,7 +74,7 @@ const handleUpload = async (file) => {
     stream.on("error", reject);
   });
 
-  const fileUrl = `https://dhwaniastro.com/v2/uploads/${newFileName}`;
+  const fileUrl = `https://dhwaniastro.com/adminAuth/uploads/${newFileName}`;
 
   return {
     url: fileUrl,
