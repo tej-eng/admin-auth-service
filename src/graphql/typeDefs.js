@@ -758,7 +758,7 @@ validityDays: Int!
     passbook: String
   }
 
-  type WalletTransaction {
+ type WalletTransaction {
   id: ID!
 
   userWalletId: ID
@@ -773,11 +773,20 @@ validityDays: Int!
   amount: Float
   description: String
 
+  userWallet: UserWallet
+
   createdAt: DateTime!
 }
-type WalletTransactionList {
-  data: [WalletTransaction!]!
-  totalCount: Int!
+
+type UserWallet {
+  id: ID!
+  userId: ID!
+  coins: Int!
+
+  user: User
+
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
