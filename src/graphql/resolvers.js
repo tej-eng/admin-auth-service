@@ -1452,6 +1452,7 @@ export const resolvers = {
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
       try {
+        console.log("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUU",context.user);
         if (
           !context.user ||
           !["SUPER_ADMIN", "MANAGER"].includes(context.user.role)
