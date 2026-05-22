@@ -788,6 +788,10 @@ type UserWallet {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+  type WalletTransactionList {
+  data: [WalletTransaction!]!
+  totalCount: Int!
+}
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
     #pricing config #
