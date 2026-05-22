@@ -283,7 +283,7 @@ model AstrologerApproved {
 model Address {
   id           Int        @id @default(autoincrement())
   astrologerId String
-  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   street  String
   city    String
@@ -299,7 +299,7 @@ model Address {
 model ExperiencePlatform {
   id           Int        @id @default(autoincrement())
   astrologerId String
-  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   platformName String
   yearsWorked  Int
@@ -311,7 +311,7 @@ model ExperiencePlatform {
 model Interview {
   id           Int        @id @default(autoincrement())
   astrologerId String
-  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   roundNumber     Int
   interviewerName String
@@ -331,7 +331,7 @@ model Interview {
 model AstrologerDocument {
   id           Int        @id @default(autoincrement())
   astrologerId String
-  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   documentType DocumentType
   documentUrl  String
@@ -350,7 +350,7 @@ model AstrologerDocument {
 model AstrologerRejectionHistory {
   id           Int        @id @default(autoincrement())
   astrologerId String
-  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   stage      RejectionStage
   reason     String
