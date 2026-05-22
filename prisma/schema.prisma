@@ -167,7 +167,7 @@ model Review {
   user   User   @relation(fields: [userId], references: [id])
 
   astrologerId String
-  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   sessionId String?  @unique
   session   Session? @relation(fields: [sessionId], references: [id])
@@ -201,7 +201,7 @@ model Intake {
   createdAt    DateTime @default(now())
 
   user       User       @relation(fields: [userId], references: [id])
-  astrologer Astrologer @relation(fields: [astrologerId], references: [id])
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([astrologerId])
@@ -685,7 +685,7 @@ model Session {
   user   User   @relation(fields: [userId], references: [id])
 
   astrologerId String
-  astrologer   Astrologer @relation(fields: [astrologerId], references: [id])
+ astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   type   SessionType
   status SessionStatus
@@ -925,7 +925,7 @@ model AstrologerPricing {
   commissionPercent Float?
   isActive          Boolean     @default(true)
 
-  astrologer Astrologer @relation(fields: [astrologerId], references: [id])
+ astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   @@unique([astrologerId, type])
 }
