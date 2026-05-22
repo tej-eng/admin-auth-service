@@ -558,29 +558,88 @@ export const resolvers = {
     },
 
 
-  getUserWalletTransactions: async (_, { userId, page = 1, limit = 20 }) => {
+  getUserWalletTransactions: async (
+  _,
+  {
+    userId,
+    page = 1,
+    limit = 20,
+    type,
+    amount,
+    mobile,
+  }
+) => {
   try {
+    let finalUserId = userId;
+
+    // search user by mobile number
+    if (mobile) {
+      const user = await prisma.user.findFirst({
+        where: {
+          mobile: {
+            contains: mobile,
+            mode: "insensitive",
+          },
+        },
+      });
+
+      if (!user) {
+        throw new Error("User not found with this mobile number");
+      }
+
+      finalUserId = user.id;
+    }
+
+    if (!finalUserId) {
+      throw new Error("userId or mobile is required");
+    }
+
+    // get wallet
     const wallet = await prisma.userWallet.findUnique({
-      where: { userId },
+      where: { userId: finalUserId },
     });
 
-    if (!wallet) throw new Error("Wallet not found");
+    if (!wallet) {
+      throw new Error("Wallet not found");
+    }
+
+    // dynamic filters
+    const whereClause = {
+      userWalletId: wallet.id,
+
+      ...(type && {
+        type: {
+          contains: type,
+          mode: "insensitive",
+        },
+      }),
+
+      ...(amount && {
+        amount: Number(amount),
+      }),
+    };
 
     const [data, totalCount] = await Promise.all([
       prisma.walletTransaction.findMany({
-        where: { userWalletId: wallet.id },
-        orderBy: { createdAt: "desc" },
+        where: whereClause,
+        orderBy: {
+          createdAt: "desc",
+        },
         skip: (page - 1) * limit,
         take: limit,
       }),
+
       prisma.walletTransaction.count({
-        where: { userWalletId: wallet.id },
+        where: whereClause,
       }),
     ]);
 
-    return { data, totalCount };
+    return {
+      data,
+      totalCount,
+    };
   } catch (err) {
-    console.error(err);
+    console.error("getUserWalletTransactions error:", err);
     throw new Error("Failed to fetch transactions");
   }
 },
