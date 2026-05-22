@@ -557,18 +557,6 @@ export const resolvers = {
       });
     },
 
-    getWallets: async () => {
-      try {
-        const wallets = await prisma.wallet.findMany({
-          where: { isActive: true },
-          orderBy: { createdAt: "desc" },
-        });
-        return wallets;
-      } catch (error) {
-        console.error("getWallets error:", error);
-        throw new Error("Failed to fetch wallets");
-      }
-    },
 
   getUserWalletTransactions: async (_, { userId, page = 1, limit = 20 }) => {
   try {
