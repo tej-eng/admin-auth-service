@@ -570,22 +570,32 @@ export const resolvers = {
       }
     },
 
-    getUserWallet: async (_, { userId }) => {
-      try {
-        const userWallet = await prisma.userWallet.findUnique({
-          where: { userId },
-        });
+  getUserWalletTransactions: async (_, { userId, page = 1, limit = 20 }) => {
+  try {
+    const wallet = await prisma.userWallet.findUnique({
+      where: { userId },
+    });
 
-        if (!userWallet) {
-          throw new Error("User wallet not found");
-        }
+    if (!wallet) throw new Error("Wallet not found");
 
-        return userWallet;
-      } catch (error) {
-        console.error("getUserWallet error:", error);
-        throw new Error("Failed to fetch user wallet");
-      }
-    },
+    const [data, totalCount] = await Promise.all([
+      prisma.walletTransaction.findMany({
+        where: { userWalletId: wallet.id },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.walletTransaction.count({
+        where: { userWalletId: wallet.id },
+      }),
+    ]);
+
+    return { data, totalCount };
+  } catch (err) {
+    console.error(err);
+    throw new Error("Failed to fetch transactions");
+  }
+},
 
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {

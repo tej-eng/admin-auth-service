@@ -758,6 +758,27 @@ validityDays: Int!
     passbook: String
   }
 
+  type WalletTransaction {
+  id: ID!
+
+  userWalletId: ID
+  astrologerWalletId: ID
+
+  rechargePackId: ID
+  sessionId: ID
+  paymentId: ID
+
+  type: String!
+  coins: Int!
+  amount: Float
+  description: String
+
+  createdAt: DateTime!
+}
+type WalletTransactionList {
+  data: [WalletTransaction!]!
+  totalCount: Int!
+}
   #-----------------------------END Wallet MANAGEMENT-----------------#
   type Query {
     #pricing config #
@@ -825,8 +846,8 @@ validityDays: Int!
 
     getRechargePacks: [RechargePack!]!
 
-    getWallets: [Wallet!]!
     getUserWallet(userId: ID!): UserWallet
+    getUserWalletTransactions(userId: ID!): WalletTransactionList!
   }
   input UpdateAstrologerInput {
     name: String
