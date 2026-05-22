@@ -847,14 +847,15 @@ type WalletTransactionList {
     getRechargePacks: [RechargePack!]!
 
     getUserWallet(userId: ID!): UserWallet
-     getUserWalletTransactions(
-    userId: ID
+   
+  getUserWalletTransactions(
     page: Int
     limit: Int
     type: String
     amount: Float
     mobile: String
   ): WalletTransactionList!
+
   }
   input UpdateAstrologerInput {
     name: String

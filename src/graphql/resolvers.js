@@ -557,11 +557,9 @@ export const resolvers = {
       });
     },
 
-
-  getUserWalletTransactions: async (
+getUserWalletTransactions: async (
   _,
   {
-    userId,
     page = 1,
     limit = 20,
     type,
@@ -570,62 +568,81 @@ export const resolvers = {
   }
 ) => {
   try {
-    let finalUserId = userId;
+    const skip = (page - 1) * limit;
 
-    // search user by mobile number
+    // dynamic where clause
+    const whereClause = {};
+
+    // filter by transaction type
+    if (type) {
+      whereClause.type = {
+        contains: type,
+        mode: "insensitive",
+      };
+    }
+
+    // filter by amount
+    if (amount) {
+      whereClause.amount = Number(amount);
+    }
+
+    // filter by mobile
     if (mobile) {
-      const user = await prisma.user.findFirst({
+      const users = await prisma.user.findMany({
         where: {
           mobile: {
             contains: mobile,
             mode: "insensitive",
           },
         },
+        select: {
+          id: true,
+        },
       });
 
-      if (!user) {
-        throw new Error("User not found with this mobile number");
-      }
+      const userIds = users.map((u) => u.id);
 
-      finalUserId = user.id;
-    }
-
-    if (!finalUserId) {
-      throw new Error("userId or mobile is required");
-    }
-
-    // get wallet
-    const wallet = await prisma.userWallet.findUnique({
-      where: { userId: finalUserId },
-    });
-
-    if (!wallet) {
-      throw new Error("Wallet not found");
-    }
-
-    // dynamic filters
-    const whereClause = {
-      userWalletId: wallet.id,
-
-      ...(type && {
-        type: {
-          contains: type,
-          mode: "insensitive",
+      const wallets = await prisma.userWallet.findMany({
+        where: {
+          userId: {
+            in: userIds,
+          },
         },
-      }),
+        select: {
+          id: true,
+        },
+      });
 
-      ...(amount && {
-        amount: Number(amount),
-      }),
-    };
+      const walletIds = wallets.map((w) => w.id);
+
+      whereClause.userWalletId = {
+        in: walletIds,
+      };
+    }
 
     const [data, totalCount] = await Promise.all([
       prisma.walletTransaction.findMany({
         where: whereClause,
+
+        include: {
+          userWallet: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  mobile: true,
+                },
+              },
+            },
+          },
+        },
+
         orderBy: {
           createdAt: "desc",
         },
-        skip: (page - 1) * limit,
+
+        skip,
         take: limit,
       }),
 
@@ -643,7 +660,6 @@ export const resolvers = {
     throw new Error("Failed to fetch transactions");
   }
 },
-
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;
