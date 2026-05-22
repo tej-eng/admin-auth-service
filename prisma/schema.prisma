@@ -617,7 +617,6 @@ model AstrologerWallet {
   withdrawals    Withdrawal[]
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
-
   transactions WalletTransaction[]
 
   @@index([astrologerId])
