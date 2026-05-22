@@ -22,12 +22,6 @@ import path from "path";
 const handleUpload = async (file) => {
   try {
     const { createReadStream, filename, mimetype } = await file;
-
-    console.log("=== UPLOAD START ===");
-    console.log("Original Filename:", filename);
-    console.log("Mimetype:", mimetype);
-    console.log("CWD:", process.cwd());
-
     const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "application/pdf"];
     if (!allowedTypes.includes(mimetype)) {
       throw new Error("Invalid file type");
@@ -76,7 +70,7 @@ const handleUpload = async (file) => {
 
     const publicUrl = `/adminAuth/uploads/documents/${newFileName}`;
 
-    console.log("✅ Upload Success:", publicUrl);
+    console.log("Upload Success:", publicUrl);
     console.log("=== UPLOAD END ===");
 
     return {
@@ -85,7 +79,7 @@ const handleUpload = async (file) => {
       mimetype,
     };
   } catch (error) {
-    console.error("❌ Upload Error:", error.message);
+    console.error(" Upload Error:", error.message);
     console.error(error.stack);
     throw new Error(error.message || "Upload failed");
   }
@@ -652,7 +646,7 @@ export const resolvers = {
 
       const where = {
         isDeleted: false,
-        ...(type && { type }), // 🔥 key line
+        ...(type && { type }), 
       };
 
       const [permissions, totalCount] = await Promise.all([
@@ -751,7 +745,7 @@ export const resolvers = {
         include: { role: true },
       });
 
-      // 🔥 SUPER ADMIN BYPASS (CRITICAL FIX)
+      //  SUPER ADMIN BYPASS (CRITICAL FIX)
       if (fullUser.role?.slug === "super-admin") {
         const modules = await prisma.module.findMany({
           where: { isDeleted: false, isActive: true },
@@ -898,7 +892,7 @@ export const resolvers = {
     getGifts: async (_, __, context) => {
       const { prisma } = context;
 
-      await checkPermission(context, "gifts.read"); // ✅ FIXED
+      await checkPermission(context, "gifts.read"); 
 
       return prisma.gift.findMany({
         orderBy: { createdAt: "desc" },
@@ -1304,6 +1298,12 @@ export const resolvers = {
       const { prisma } = context;
 
       try {
+        console.log("addAstrologer called", {
+          requestedBy: context?.user?.id,
+          role: context?.user?.role,
+          data,
+          timestamp: new Date().toISOString(),
+        });
         await checkPermission(context, "astrologer.create");
 
         const astrologer = await prisma.astrologer.create({
@@ -1346,7 +1346,7 @@ export const resolvers = {
               },
             },
 
-            // ✅ FIX: Only create documents if present
+            // FIX: Only create documents if present
             documents: data.documents
               ? {
                   create: [
@@ -1389,7 +1389,7 @@ export const resolvers = {
                 }
               : undefined,
 
-            // ✅ FIX: Move bankDetails → KYC
+            // FIX: Move bankDetails → KYC
             kycDetail: data.bankDetails
               ? {
                   create: {
@@ -1607,7 +1607,7 @@ export const resolvers = {
 
       if (!app) throw new Error("Application not found");
 
-      // 🔥 create final astrologer
+      //  create final astrologer
       const astrologer = await prisma.astrologer.create({
         data: {
           name: app.name,
@@ -1804,11 +1804,11 @@ export const resolvers = {
           throw new Error("Module not found");
         }
 
-        // 🔥 normalize values if provided
+        //  normalize values if provided
         const normalizedSlug = slug?.trim().toLowerCase();
         const normalizedSection = section?.trim().toLowerCase();
 
-        // 🔥 check slug uniqueness (if changed)
+        //  check slug uniqueness (if changed)
         if (normalizedSlug && normalizedSlug !== moduleExists.slug) {
           const existingSlug = await prisma.module.findUnique({
             where: { slug: normalizedSlug },
@@ -1971,7 +1971,7 @@ export const resolvers = {
         where: { id: permissionId },
       });
 
-      // ❌ SYSTEM ko edit nahi karne dena
+      // SYSTEM ko edit nahi karne dena
       if (existing.type === "SYSTEM") {
         throw new Error("System permissions cannot be updated");
       }
@@ -2013,7 +2013,7 @@ export const resolvers = {
         where: { id: permissionId },
       });
 
-      // ❌ SYSTEM delete block
+      //  SYSTEM delete block
       if (existing.type === "SYSTEM") {
         throw new Error("System permissions cannot be deleted");
       }
@@ -2331,7 +2331,7 @@ export const resolvers = {
           slug: input.slug,
           type: input.type,
 
-          // ✅ FIXED
+          //  FIXED
           categoryId: input.type === "CATEGORY" ? input.categoryId : null,
 
           image: input.image,
@@ -2359,7 +2359,7 @@ export const resolvers = {
     },
 
     updateGift: async (_, { id, input }, context) => {
-      await checkPermission(context, "gifts.update"); // ✅ FIXED
+      await checkPermission(context, "gifts.update"); //  FIXED
 
       return await context.prisma.gift.update({
         where: { id },
@@ -2372,7 +2372,7 @@ export const resolvers = {
       });
     },
     deleteGift: async (_, { id }, context) => {
-      await checkPermission(context, "gifts.delete"); // ✅ FIXED
+      await checkPermission(context, "gifts.delete"); //  FIXED
 
       await context.prisma.gift.delete({
         where: { id },
@@ -2511,7 +2511,7 @@ export const resolvers = {
         where: { id: astrologerId },
         data: {
           interviewerId,
-          interviewDate: new Date(interviewDate).toISOString(), // ✅ ISO fix
+          interviewDate: new Date(interviewDate).toISOString(), // ISO fix
           interviewTime,
           round,
           interviewStatus: "SCHEDULED",
