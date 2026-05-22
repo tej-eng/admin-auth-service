@@ -1455,7 +1455,7 @@ export const resolvers = {
         console.log("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUU",context.user);
         if (
           !context.user ||
-          !["SUPER_ADMIN", "MANAGER"].includes(context.user.role)
+          !["SUPER_ADMIN", "MANAGER"].includes(context.user.role?.name)
         )
           throw new Error("Not authorized");
 
@@ -1478,7 +1478,7 @@ export const resolvers = {
     // ================= UPDATE USER =================
     updateUser: async (_, { userId, data }, context) => {
       try {
-        if (!context.user || context.user.role !== "ADMIN") {
+        if (!context.user || context.user.role?.name !== "ADMIN") {
           throw new Error("Admin only");
         }
 
