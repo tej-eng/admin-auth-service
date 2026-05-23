@@ -569,18 +569,14 @@ getUserWalletTransactions: async (
   try {
     const skip = (page - 1) * limit;
 
-    // Base filter
+    // Only USER wallet transactions
     const whereClause = {
-      // IMPORTANT:
-      // Only fetch USER wallet transactions
-      userWallet: {
-        userId: {
-          not: null,
-        },
+      userWalletId: {
+        not: null,
       },
     };
 
-    // Filter by transaction type
+    // Filter by type
     if (type) {
       whereClause.type = {
         contains: type,
@@ -593,14 +589,12 @@ getUserWalletTransactions: async (
       whereClause.amount = Number(amount);
     }
 
-    // Filter by user mobile
+    // Filter by mobile
     if (mobile) {
       whereClause.userWallet = {
-        ...whereClause.userWallet,
         user: {
           mobile: {
             contains: mobile,
-            mode: "insensitive",
           },
         },
       };
