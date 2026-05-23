@@ -912,9 +912,7 @@ getAstrologerWalletTransactions(
   page: Int
   limit: Int
   type: String
-  amount: Float
   contactNo: String
-  astrologerName: String
   filterType: String
   startDate: String
   endDate: String

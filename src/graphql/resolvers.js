@@ -698,9 +698,7 @@ getAstrologerWalletTransactions: async (
     page = 1,
     limit = 20,
     type,
-    amount,
     contactNo,
-    astrologerName,
     filterType,
     startDate,
     endDate,
@@ -709,43 +707,31 @@ getAstrologerWalletTransactions: async (
   try {
     const skip = (page - 1) * limit;
 
-    // Only astrologer transactions
+    // Only astrologer wallet transactions
     const whereClause = {
       astrologerWalletId: {
         not: null,
       },
     };
 
-    // Type filter
+    // =========================
+    // TYPE FILTER
+    // =========================
     if (type) {
       whereClause.type = type.toUpperCase();
     }
 
-    // Amount filter
-    if (amount) {
-      whereClause.amount = Number(amount);
-    }
-
-    // Astrologer filters
-    if (contactNo || astrologerName) {
+    // =========================
+    // PHONE FILTER
+    // =========================
+    if (contactNo) {
       whereClause.astrologerWallet = {
-        astrologer: {},
+        astrologer: {
+          contactNo: {
+            contains: contactNo,
+          },
+        },
       };
-
-      // Contact number filter
-      if (contactNo) {
-        whereClause.astrologerWallet.astrologer.contactNo = {
-          contains: contactNo,
-        };
-      }
-
-      // Name filter
-      if (astrologerName) {
-        whereClause.astrologerWallet.astrologer.name = {
-          contains: astrologerName,
-          mode: "insensitive",
-        };
-      }
     }
 
     // =========================
@@ -754,7 +740,7 @@ getAstrologerWalletTransactions: async (
 
     const now = new Date();
 
-    // WEEK
+    // WEEK FILTER
     if (filterType === "WEEK") {
       const weekStart = new Date();
       weekStart.setDate(now.getDate() - 7);
@@ -765,7 +751,7 @@ getAstrologerWalletTransactions: async (
       };
     }
 
-    // MONTH
+    // MONTH FILTER
     if (filterType === "MONTH") {
       const monthStart = new Date();
       monthStart.setMonth(now.getMonth() - 1);
@@ -776,7 +762,7 @@ getAstrologerWalletTransactions: async (
       };
     }
 
-    // YEAR
+    // YEAR FILTER
     if (filterType === "YEAR") {
       const yearStart = new Date();
       yearStart.setFullYear(now.getFullYear() - 1);
@@ -787,7 +773,7 @@ getAstrologerWalletTransactions: async (
       };
     }
 
-    // CUSTOM
+    // CUSTOM DATE FILTER
     if (
       filterType === "CUSTOM" &&
       startDate &&
