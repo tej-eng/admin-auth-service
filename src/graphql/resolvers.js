@@ -634,7 +634,6 @@ getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
       query,
       mobile,
       astrologerName,
-      type,
       status,
       filterType,
       startDate,
@@ -648,9 +647,13 @@ getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
 
     const skip = (safePage - 1) * safeLimit;
 
-    const where = {};
+    // ---------------- WHERE CONDITION ----------------
 
-    // ---------------- SEARCH FILTER ----------------
+    const where = {
+      type: "CHAT", // ONLY CHAT DATA
+    };
+
+    // ---------------- USER SEARCH FILTER ----------------
 
     const userFilters = [];
 
@@ -695,12 +698,6 @@ getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
       };
     }
 
-    // ---------------- TYPE FILTER ----------------
-
-    if (type) {
-      where.type = type;
-    }
-
     // ---------------- STATUS FILTER ----------------
 
     if (status) {
@@ -713,8 +710,6 @@ getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
     let end;
 
     if (filterType) {
-      const now = new Date();
-
       switch (filterType) {
         case "TODAY":
           start = new Date();
@@ -770,8 +765,22 @@ getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
         where,
 
         include: {
-          user: true,
-          astrologer: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              mobile: true,
+              countryCode: true,
+            },
+          },
+
+          astrologer: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true,
+            },
+          },
         },
 
         orderBy: {
@@ -802,31 +811,36 @@ getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
     const formattedData = sessions.map((session) => ({
       sessionId: session.id,
 
-      userId: session.user?.id,
-      userName: session.user?.name,
-      mobile: session.user?.mobile,
+      userId: session.user?.id || null,
+      userName: session.user?.name || "",
+      mobile: session.user?.mobile || "",
 
-      astrologerId: session.astrologer?.id,
-      astrologerName: session.astrologer?.name,
+      astrologerId: session.astrologer?.id || null,
+      astrologerName:
+        session.astrologer?.displayName ||
+        session.astrologer?.name ||
+        "",
 
       type: session.type,
       status: session.status,
 
-      ratePerMin: session.ratePerMin,
+      ratePerMin: session.ratePerMin || 0,
 
-      durationSec: session.durationSec,
+      durationSec: session.durationSec || 0,
 
-      coinsDeducted: session.coinsDeducted,
+      coinsDeducted: session.coinsDeducted || 0,
 
-      coinsEarned: session.coinsEarned,
+      coinsEarned: session.coinsEarned || 0,
 
-      commission: session.commission,
+      commission: session.commission || 0,
 
       startedAt: session.startedAt,
       endedAt: session.endedAt,
 
       createdAt: session.createdAt,
     }));
+
+    // ---------------- RESPONSE ----------------
 
     return {
       data: formattedData,
@@ -838,13 +852,13 @@ getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
       totalPages: Math.ceil(totalCount / safeLimit),
 
       totalCoinsDeducted:
-        aggregate._sum.coinsDeducted || 0,
+        aggregate?._sum?.coinsDeducted || 0,
 
       totalCoinsEarned:
-        aggregate._sum.coinsEarned || 0,
+        aggregate?._sum?.coinsEarned || 0,
 
       totalCommission:
-        aggregate._sum.commission || 0,
+        aggregate?._sum?.commission || 0,
     };
   } catch (error) {
     console.error("getUsersChatHistory error:", error);
