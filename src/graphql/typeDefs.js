@@ -913,6 +913,7 @@ getAstrologerWalletTransactions(
   limit: Int
   type: String
   contactNo: String
+  amount: Float
   filterType: String
   startDate: String
   endDate: String

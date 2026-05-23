@@ -698,6 +698,7 @@ getAstrologerWalletTransactions: async (
     page = 1,
     limit = 20,
     type,
+    amount,
     contactNo,
     filterType,
     startDate,
@@ -707,7 +708,9 @@ getAstrologerWalletTransactions: async (
   try {
     const skip = (page - 1) * limit;
 
-    // Only astrologer wallet transactions
+    // =========================
+    // BASE FILTER (ONLY ASTROLOGER)
+    // =========================
     const whereClause = {
       astrologerWalletId: {
         not: null,
@@ -715,14 +718,21 @@ getAstrologerWalletTransactions: async (
     };
 
     // =========================
-    // TYPE FILTER
+    // TYPE FILTER (ENUM SAFE)
     // =========================
     if (type) {
       whereClause.type = type.toUpperCase();
     }
 
     // =========================
-    // PHONE FILTER
+    // AMOUNT FILTER
+    // =========================
+    if (amount) {
+      whereClause.amount = Number(amount);
+    }
+
+    // =========================
+    // PHONE NUMBER FILTER
     // =========================
     if (contactNo) {
       whereClause.astrologerWallet = {
@@ -737,10 +747,9 @@ getAstrologerWalletTransactions: async (
     // =========================
     // DATE FILTERS
     // =========================
-
     const now = new Date();
 
-    // WEEK FILTER
+    // WEEK
     if (filterType === "WEEK") {
       const weekStart = new Date();
       weekStart.setDate(now.getDate() - 7);
@@ -751,7 +760,7 @@ getAstrologerWalletTransactions: async (
       };
     }
 
-    // MONTH FILTER
+    // MONTH
     if (filterType === "MONTH") {
       const monthStart = new Date();
       monthStart.setMonth(now.getMonth() - 1);
@@ -762,7 +771,7 @@ getAstrologerWalletTransactions: async (
       };
     }
 
-    // YEAR FILTER
+    // YEAR
     if (filterType === "YEAR") {
       const yearStart = new Date();
       yearStart.setFullYear(now.getFullYear() - 1);
@@ -773,7 +782,7 @@ getAstrologerWalletTransactions: async (
       };
     }
 
-    // CUSTOM DATE FILTER
+    // CUSTOM DATE
     if (
       filterType === "CUSTOM" &&
       startDate &&
@@ -785,6 +794,9 @@ getAstrologerWalletTransactions: async (
       };
     }
 
+    // =========================
+    // QUERY DATA
+    // =========================
     const [data, totalCount] = await Promise.all([
       prisma.walletTransaction.findMany({
         where: whereClause,
@@ -827,7 +839,6 @@ getAstrologerWalletTransactions: async (
       "getAstrologerWalletTransactions error:",
       err
     );
-
     throw new Error(
       "Failed to fetch astrologer wallet transactions"
     );
