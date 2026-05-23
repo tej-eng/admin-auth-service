@@ -963,7 +963,63 @@ const typeDefs = gql`
     totalCommission: Float
   }
   #-------start of user chat history ---------#
-  #--------------------END of user chat history-----------------#
+
+  # ------------start for call-history---------------------------
+
+  input UserCallHistorySearchInput {
+    query: String
+    mobile: String
+    astrologerName: String
+    type: String
+    status: String
+
+    filterType: SessionFilterType
+
+    startDate: String
+    endDate: String
+
+    page: Int
+    limit: Int
+  }
+
+  type UserCallHistory {
+    sessionId: ID!
+
+    userId: ID!
+    userName: String
+    mobile: String
+
+    astrologerId: ID!
+    astrologerName: String
+
+    type: String
+    status: String
+
+    ratePerMin: Float
+    durationSec: Int
+
+    coinsDeducted: Float
+    coinsEarned: Float
+    commission: Float
+
+    startedAt: DateTime
+    endedAt: DateTime
+    createdAt: DateTime
+  }
+
+  type UserCallHistoryList {
+    data: [UserCallHistory!]!
+
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+
+    totalCoinsDeducted: Float
+    totalCoinsEarned: Float
+    totalCommission: Float
+  }
+  #-------start of user call history ---------#
+  #--------------------END of user call history-----------------#
   type Query {
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -1073,8 +1129,8 @@ const typeDefs = gql`
     ): UserChatHistoryList!
 
     getUserCallHistory(
-  searchInput: UserChatHistorySearchInput!
-): UserChatHistoryResponse!
+      searchInput: UserCallHistorySearchInput!
+    ): UserCallHistoryList!
   }
   input UpdateAstrologerInput {
     name: String
