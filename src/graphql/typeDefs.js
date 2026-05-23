@@ -229,13 +229,9 @@ const typeDefs = gql`
  input UserSearchInput {
   query: String
   mobile: String
-  filterType: String
+  filterType: String   # TODAY | WEEK | MONTH | YEAR | CUSTOM
   startDate: String
   endDate: String
-
-  minAmount: Int
-  maxAmount: Int
-
   page: Int
   limit: Int
 }

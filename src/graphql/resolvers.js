@@ -217,7 +217,7 @@ export const resolvers = {
       }
     },
 
-   getUsersListBySearch: async (_, { searchInput }) => {
+    getUsersListBySearch: async (_, { searchInput }) => {
   try {
     const {
       query,
@@ -225,8 +225,6 @@ export const resolvers = {
       filterType,
       startDate,
       endDate,
-      minAmount,
-      maxAmount,
       page = 1,
       limit = 10,
     } = searchInput;
@@ -235,11 +233,14 @@ export const resolvers = {
     const safeLimit = Math.min(limit, 50);
     const skip = (safePage - 1) * safeLimit;
 
+    // ----------------------------
+    // WHERE BASE
+    // ----------------------------
     const where = {};
 
-    // -------------------------
-    // NAME + MOBILE SEARCH
-    // -------------------------
+    // ----------------------------
+    // TEXT SEARCH (name + mobile)
+    // ----------------------------
     if (query) {
       where.OR = [
         { name: { contains: query, mode: "insensitive" } },
@@ -247,13 +248,16 @@ export const resolvers = {
       ];
     }
 
+    // ----------------------------
+    // DIRECT MOBILE FILTER
+    // ----------------------------
     if (mobile) {
       where.mobile = { contains: mobile };
     }
 
-    // -------------------------
-    // DATE FILTER
-    // -------------------------
+    // ----------------------------
+    // DATE FILTER LOGIC
+    // ----------------------------
     if (filterType) {
       const now = new Date();
       let start, end;
@@ -288,34 +292,28 @@ export const resolvers = {
           break;
       }
 
-      if (start || end) {
-        where.createdAt = {};
-        if (start) where.createdAt.gte = start;
-        if (end) where.createdAt.lte = end;
+      if (start && end) {
+        where.createdAt = {
+          gte: start,
+          lte: end,
+        };
+      } else if (start) {
+        where.createdAt = {
+          gte: start,
+        };
+      } else if (end) {
+        where.createdAt = {
+          lte: end,
+        };
       }
     }
 
-    // -------------------------
-    // WALLET AMOUNT FILTER (NEW)
-    // -------------------------
-    if (minAmount !== undefined || maxAmount !== undefined) {
-      where.userWallet = {
-        coins: {
-          ...(minAmount !== undefined && { gte: minAmount }),
-          ...(maxAmount !== undefined && { lte: maxAmount }),
-        },
-      };
-    }
-
-    // -------------------------
-    // QUERY DB
-    // -------------------------
+    // ----------------------------
+    // QUERY
+    // ----------------------------
     const [users, totalCount] = await Promise.all([
       prisma.user.findMany({
         where,
-        include: {
-          userWallet: true, // IMPORTANT for amount filter + response
-        },
         skip,
         take: safeLimit,
         orderBy: { createdAt: "desc" },
