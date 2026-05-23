@@ -869,8 +869,11 @@ type AstrologerWalletTransactionList {
 }
   #---END FOR ALL WALLET TRANSACTIONS-----------------#
   #-----------------------------START of astrologer earnings-----------------#
-  input AstrologerEarningSearchInput {
+input AstrologerEarningSearchInput {
   query: String
+  email: String
+  contactNo: String
+
   filterType: String
 
   startDate: String

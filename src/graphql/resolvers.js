@@ -407,10 +407,12 @@ getUsersListBySearch: async (_, { searchInput }) => {
       }
     },
 
-  getAstrologerEarnings: async (_, { searchInput }) => {
+ getAstrologerEarnings: async (_, { searchInput }) => {
   try {
     const {
       query,
+      email,
+      contactNo,
       filterType,
       startDate,
       endDate,
@@ -418,20 +420,34 @@ getUsersListBySearch: async (_, { searchInput }) => {
       limit = 10,
     } = searchInput;
 
+    // ---------------- PAGINATION ----------------
+
     const safePage = Math.max(page, 1);
+
     const safeLimit = Math.min(limit, 50);
 
     const skip = (safePage - 1) * safeLimit;
 
+    // ---------------- WHERE ----------------
+
     const where = {};
 
-    // ---------------- SEARCH ----------------
+    // ---------------- SEARCH FILTER ----------------
+
+    const andConditions = [];
 
     if (query) {
-      where.astrologer = {
+      andConditions.push({
         OR: [
           {
             name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+
+          {
+            email: {
               contains: query,
               mode: "insensitive",
             },
@@ -443,6 +459,29 @@ getUsersListBySearch: async (_, { searchInput }) => {
             },
           },
         ],
+      });
+    }
+
+    if (email) {
+      andConditions.push({
+        email: {
+          contains: email,
+          mode: "insensitive",
+        },
+      });
+    }
+
+    if (contactNo) {
+      andConditions.push({
+        contactNo: {
+          contains: contactNo,
+        },
+      });
+    }
+
+    if (andConditions.length > 0) {
+      where.astrologer = {
+        AND: andConditions,
       };
     }
 
@@ -486,12 +525,16 @@ getUsersListBySearch: async (_, { searchInput }) => {
 
       where.createdAt = {};
 
-      if (start) where.createdAt.gte = start;
+      if (start) {
+        where.createdAt.gte = start;
+      }
 
-      if (end) where.createdAt.lte = end;
+      if (end) {
+        where.createdAt.lte = end;
+      }
     }
 
-    // ---------------- FETCH ----------------
+    // ---------------- FETCH WALLET DATA ----------------
 
     const [wallets, totalCount] = await Promise.all([
       prisma.astrologerWallet.findMany({
@@ -512,6 +555,7 @@ getUsersListBySearch: async (_, { searchInput }) => {
         },
 
         skip,
+
         take: safeLimit,
       }),
 
@@ -520,49 +564,57 @@ getUsersListBySearch: async (_, { searchInput }) => {
       }),
     ]);
 
-    // ---------------- CALCULATIONS ----------------
+    // ---------------- DATE HELPERS ----------------
 
     const todayStart = new Date();
+
     todayStart.setHours(0, 0, 0, 0);
 
     const monthStart = new Date();
+
     monthStart.setDate(1);
+
     monthStart.setHours(0, 0, 0, 0);
+
+    // ---------------- RESPONSE ----------------
 
     const enrichedData = wallets.map((wallet) => {
       const transactions = wallet.transactions || [];
 
-      // TOTAL SESSION EARNINGS
+      // ---------------- TOTAL SESSION EARNINGS ----------------
+
       const totalSessionEarnings = transactions.reduce((sum, tx) => {
-        return sum + (tx.amount || 0);
+        return sum + Number(tx.amount || 0);
       }, 0);
 
-      // TODAY EARNINGS
+      // ---------------- TODAY EARNINGS ----------------
+
       const todayEarnings = transactions
         .filter((tx) => {
           return new Date(tx.createdAt) >= todayStart;
         })
         .reduce((sum, tx) => {
-          return sum + (tx.amount || 0);
+          return sum + Number(tx.amount || 0);
         }, 0);
 
-      // MONTHLY EARNINGS
+      // ---------------- MONTHLY EARNINGS ----------------
+
       const monthlyEarnings = transactions
         .filter((tx) => {
           return new Date(tx.createdAt) >= monthStart;
         })
         .reduce((sum, tx) => {
-          return sum + (tx.amount || 0);
+          return sum + Number(tx.amount || 0);
         }, 0);
 
       return {
         astrologerId: wallet.astrologer?.id,
 
-        astrologerName: wallet.astrologer?.name,
+        astrologerName: wallet.astrologer?.name || "",
 
-        email: wallet.astrologer?.email,
+        email: wallet.astrologer?.email || "",
 
-        contactNo: wallet.astrologer?.contactNo,
+        contactNo: wallet.astrologer?.contactNo || "",
 
         balanceCoins: wallet.balanceCoins || 0,
 
@@ -579,6 +631,8 @@ getUsersListBySearch: async (_, { searchInput }) => {
         createdAt: wallet.createdAt,
       };
     });
+
+    // ---------------- RETURN ----------------
 
     return {
       data: enrichedData,
