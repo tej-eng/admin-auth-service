@@ -222,13 +222,6 @@ const typeDefs = gql`
     totalPages: Int!
   }
 
-  type PaginatedUsers {
-    data: [User!]!
-    totalCount: Int!
-    currentPage: Int!
-    totalPages: Int!
-  }
-
  input UserSearchInput {
   query: String
   mobile: String
@@ -907,6 +900,70 @@ type AstrologerEarningList {
   totalPages: Int!
 }
   #------end of astrologer earnings-----------------#
+  # -------------------- TYPES --------------------
+
+enum SessionFilterType {
+  TODAY
+  WEEK
+  MONTH
+  YEAR
+  CUSTOM
+}
+
+input UserChatHistorySearchInput {
+  query: String
+  mobile: String
+  astrologerName: String
+  type: String
+  status: String
+
+  filterType: SessionFilterType
+
+  startDate: String
+  endDate: String
+
+  page: Int
+  limit: Int
+}
+
+type UserChatHistory {
+  sessionId: ID!
+
+  userId: ID!
+  userName: String
+  mobile: String
+
+  astrologerId: ID!
+  astrologerName: String
+
+  type: String
+  status: String
+
+  ratePerMin: Float
+  durationSec: Int
+
+  coinsDeducted: Float
+  coinsEarned: Float
+  commission: Float
+
+  startedAt: DateTime
+  endedAt: DateTime
+  createdAt: DateTime
+}
+
+type UserChatHistoryList {
+  data: [UserChatHistory!]!
+
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+
+  totalCoinsDeducted: Float
+  totalCoinsEarned: Float
+  totalCommission: Float
+}
+  #-------start of user chat history ---------#
+  #--------------------END of user chat history-----------------#
   type Query {
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -943,7 +1000,6 @@ type AstrologerEarningList {
     getModulesPaginated(page: Int, limit: Int): ModulePagination!
     getModulesBySection(section: String!): [Module!]!
     getMyAccess: [ModuleAccess!]!
-    getUsersDetails(page: Int, limit: Int): PaginatedUsers!
     getUsersListBySearch(searchInput: UserSearchInput!): UserList!
 
     getPendingAstrologers(page: Int, limit: Int): PaginatedAstrologers!
@@ -1011,6 +1067,10 @@ getAllWalletTransactions(
 getAstrologerEarnings(
   searchInput: AstrologerEarningSearchInput!
 ): AstrologerEarningList!
+
+getUsersChatHistory(
+  searchInput: UserChatHistorySearchInput!
+): UserChatHistoryList!
 
   }
   input UpdateAstrologerInput {

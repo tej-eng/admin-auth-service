@@ -22,7 +22,13 @@ import path from "path";
 const handleUpload = async (file) => {
   try {
     const { createReadStream, filename, mimetype } = await file;
-    const allowedTypes = ["image/png", "image/jpeg", "image/jpg", "image/webp", "application/pdf"];
+    const allowedTypes = [
+      "image/png",
+      "image/jpeg",
+      "image/jpg",
+      "image/webp",
+      "application/pdf",
+    ];
     if (!allowedTypes.includes(mimetype)) {
       throw new Error("Invalid file type");
     }
@@ -188,155 +194,126 @@ export const resolvers = {
   JSON: GraphQLJSON,
   Upload: GraphQLUpload,
   Query: {
-    // ================= GET USERS (ADMIN ONLY) =================
-    getUsersDetails: async (_, { page = 1, limit = 10 }, context) => {
+    getUsersListBySearch: async (_, { searchInput }) => {
       try {
-        if (!context.user || context.user.role.name !== "ADMIN") {
-          throw new Error("Admin only");
+        const {
+          query,
+          mobile,
+          filterType,
+          startDate,
+          endDate,
+          page = 1,
+          limit = 10,
+        } = searchInput;
+
+        const safePage = Math.max(page, 1);
+        const safeLimit = Math.min(limit, 50);
+        const skip = (safePage - 1) * safeLimit;
+
+        const where = {};
+
+        // ---------------- TEXT SEARCH ----------------
+        if (query) {
+          where.OR = [
+            {
+              name: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
+              mobile: {
+                contains: query,
+              },
+            },
+          ];
         }
 
-        const skip = (page - 1) * limit;
+        // ---------------- MOBILE FILTER ----------------
+        if (mobile) {
+          where.mobile = {
+            contains: mobile,
+          };
+        }
 
+        // ---------------- DATE FILTER ----------------
+        if (filterType) {
+          const now = new Date();
+          let start, end;
+
+          switch (filterType) {
+            case "TODAY":
+              start = new Date(now.setHours(0, 0, 0, 0));
+              end = new Date();
+              break;
+
+            case "WEEK":
+              start = new Date();
+              start.setDate(start.getDate() - 7);
+              end = new Date();
+              break;
+
+            case "MONTH":
+              start = new Date();
+              start.setMonth(start.getMonth() - 1);
+              end = new Date();
+              break;
+
+            case "YEAR":
+              start = new Date();
+              start.setFullYear(start.getFullYear() - 1);
+              end = new Date();
+              break;
+
+            case "CUSTOM":
+              start = startDate ? new Date(startDate) : undefined;
+              end = endDate ? new Date(endDate) : undefined;
+              break;
+          }
+
+          where.createdAt = {};
+
+          if (start) where.createdAt.gte = start;
+          if (end) where.createdAt.lte = end;
+        }
+
+        // ---------------- FETCH USERS ----------------
         const [users, totalCount] = await Promise.all([
           prisma.user.findMany({
+            where,
             skip,
-            take: limit,
-            orderBy: { createdAt: "desc" },
+            take: safeLimit,
+            orderBy: {
+              createdAt: "desc",
+            },
+
+            include: {
+              wallet: true,
+            },
           }),
-          prisma.user.count(),
+
+          prisma.user.count({ where }),
         ]);
 
+        // ---------------- FINAL RESPONSE ----------------
+        const enrichedUsers = users.map((user) => ({
+          ...user,
+
+          userCoins: user.wallet?.balanceCoins || 0,
+          lockedCoins: user.wallet?.lockedCoins || 0,
+        }));
+
         return {
-          data: users,
+          data: enrichedUsers,
           totalCount,
-          currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
+          currentPage: safePage,
+          totalPages: Math.ceil(totalCount / safeLimit),
         };
       } catch (error) {
-        throw error;
+        console.error("getUsersListBySearch error:", error);
+        throw new Error("Failed to fetch users");
       }
     },
-
-getUsersListBySearch: async (_, { searchInput }) => {
-  try {
-    const {
-      query,
-      mobile,
-      filterType,
-      startDate,
-      endDate,
-      page = 1,
-      limit = 10,
-    } = searchInput;
-
-    const safePage = Math.max(page, 1);
-    const safeLimit = Math.min(limit, 50);
-    const skip = (safePage - 1) * safeLimit;
-
-    const where = {};
-
-    // ---------------- TEXT SEARCH ----------------
-    if (query) {
-      where.OR = [
-        {
-          name: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-        {
-          mobile: {
-            contains: query,
-          },
-        },
-      ];
-    }
-
-    // ---------------- MOBILE FILTER ----------------
-    if (mobile) {
-      where.mobile = {
-        contains: mobile,
-      };
-    }
-
-    // ---------------- DATE FILTER ----------------
-    if (filterType) {
-      const now = new Date();
-      let start, end;
-
-      switch (filterType) {
-        case "TODAY":
-          start = new Date(now.setHours(0, 0, 0, 0));
-          end = new Date();
-          break;
-
-        case "WEEK":
-          start = new Date();
-          start.setDate(start.getDate() - 7);
-          end = new Date();
-          break;
-
-        case "MONTH":
-          start = new Date();
-          start.setMonth(start.getMonth() - 1);
-          end = new Date();
-          break;
-
-        case "YEAR":
-          start = new Date();
-          start.setFullYear(start.getFullYear() - 1);
-          end = new Date();
-          break;
-
-        case "CUSTOM":
-          start = startDate ? new Date(startDate) : undefined;
-          end = endDate ? new Date(endDate) : undefined;
-          break;
-      }
-
-      where.createdAt = {};
-
-      if (start) where.createdAt.gte = start;
-      if (end) where.createdAt.lte = end;
-    }
-
-    // ---------------- FETCH USERS ----------------
-    const [users, totalCount] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        skip,
-        take: safeLimit,
-        orderBy: {
-          createdAt: "desc",
-        },
-
-        include: {
-          wallet: true,
-        },
-      }),
-
-      prisma.user.count({ where }),
-    ]);
-
-    // ---------------- FINAL RESPONSE ----------------
-    const enrichedUsers = users.map((user) => ({
-      ...user,
-
-      userCoins: user.wallet?.balanceCoins || 0,
-      lockedCoins: user.wallet?.lockedCoins || 0,
-    }));
-
-    return {
-      data: enrichedUsers,
-      totalCount,
-      currentPage: safePage,
-      totalPages: Math.ceil(totalCount / safeLimit),
-    };
-  } catch (error) {
-    console.error("getUsersListBySearch error:", error);
-    throw new Error("Failed to fetch users");
-  }
-},
 
     getAstrologerListBySearch: async (_, { searchInput }, context) => {
       const { prisma } = context;
@@ -407,12 +384,258 @@ getUsersListBySearch: async (_, { searchInput }) => {
       }
     },
 
- getAstrologerEarnings: async (_, { searchInput }) => {
+    getAstrologerEarnings: async (_, { searchInput }) => {
+      try {
+        const {
+          query,
+          email,
+          contactNo,
+          filterType,
+          startDate,
+          endDate,
+          page = 1,
+          limit = 10,
+        } = searchInput;
+
+        // ---------------- PAGINATION ----------------
+
+        const safePage = Math.max(page, 1);
+
+        const safeLimit = Math.min(limit, 50);
+
+        const skip = (safePage - 1) * safeLimit;
+
+        // ---------------- WHERE ----------------
+
+        const where = {};
+
+        // ---------------- SEARCH FILTER ----------------
+
+        const andConditions = [];
+
+        if (query) {
+          andConditions.push({
+            OR: [
+              {
+                name: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+
+              {
+                email: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+
+              {
+                contactNo: {
+                  contains: query,
+                },
+              },
+            ],
+          });
+        }
+
+        if (email) {
+          andConditions.push({
+            email: {
+              contains: email,
+              mode: "insensitive",
+            },
+          });
+        }
+
+        if (contactNo) {
+          andConditions.push({
+            contactNo: {
+              contains: contactNo,
+            },
+          });
+        }
+
+        if (andConditions.length > 0) {
+          where.astrologer = {
+            AND: andConditions,
+          };
+        }
+
+        // ---------------- DATE FILTER ----------------
+
+        if (filterType) {
+          const now = new Date();
+
+          let start;
+          let end;
+
+          switch (filterType) {
+            case "TODAY":
+              start = new Date(now.setHours(0, 0, 0, 0));
+              end = new Date();
+              break;
+
+            case "WEEK":
+              start = new Date();
+              start.setDate(start.getDate() - 7);
+              end = new Date();
+              break;
+
+            case "MONTH":
+              start = new Date();
+              start.setMonth(start.getMonth() - 1);
+              end = new Date();
+              break;
+
+            case "YEAR":
+              start = new Date();
+              start.setFullYear(start.getFullYear() - 1);
+              end = new Date();
+              break;
+
+            case "CUSTOM":
+              start = startDate ? new Date(startDate) : undefined;
+              end = endDate ? new Date(endDate) : undefined;
+              break;
+          }
+
+          where.createdAt = {};
+
+          if (start) {
+            where.createdAt.gte = start;
+          }
+
+          if (end) {
+            where.createdAt.lte = end;
+          }
+        }
+
+        // ---------------- FETCH WALLET DATA ----------------
+
+        const [wallets, totalCount] = await Promise.all([
+          prisma.astrologerWallet.findMany({
+            where,
+
+            include: {
+              astrologer: true,
+
+              transactions: {
+                include: {
+                  session: true,
+                },
+              },
+            },
+
+            orderBy: {
+              createdAt: "desc",
+            },
+
+            skip,
+
+            take: safeLimit,
+          }),
+
+          prisma.astrologerWallet.count({
+            where,
+          }),
+        ]);
+
+        // ---------------- DATE HELPERS ----------------
+
+        const todayStart = new Date();
+
+        todayStart.setHours(0, 0, 0, 0);
+
+        const monthStart = new Date();
+
+        monthStart.setDate(1);
+
+        monthStart.setHours(0, 0, 0, 0);
+
+        // ---------------- RESPONSE ----------------
+
+        const enrichedData = wallets.map((wallet) => {
+          const transactions = wallet.transactions || [];
+
+          // ---------------- TOTAL SESSION EARNINGS ----------------
+
+          const totalSessionEarnings = transactions.reduce((sum, tx) => {
+            return sum + Number(tx.amount || 0);
+          }, 0);
+
+          // ---------------- TODAY EARNINGS ----------------
+
+          const todayEarnings = transactions
+            .filter((tx) => {
+              return new Date(tx.createdAt) >= todayStart;
+            })
+            .reduce((sum, tx) => {
+              return sum + Number(tx.amount || 0);
+            }, 0);
+
+          // ---------------- MONTHLY EARNINGS ----------------
+
+          const monthlyEarnings = transactions
+            .filter((tx) => {
+              return new Date(tx.createdAt) >= monthStart;
+            })
+            .reduce((sum, tx) => {
+              return sum + Number(tx.amount || 0);
+            }, 0);
+
+          return {
+            astrologerId: wallet.astrologer?.id,
+
+            astrologerName: wallet.astrologer?.name || "",
+
+            email: wallet.astrologer?.email || "",
+
+            contactNo: wallet.astrologer?.contactNo || "",
+
+            balanceCoins: wallet.balanceCoins || 0,
+
+            totalEarned: wallet.totalEarned || 0,
+
+            totalWithdrawn: wallet.totalWithdrawn || 0,
+
+            totalSessionEarnings,
+
+            monthlyEarnings,
+
+            todayEarnings,
+
+            createdAt: wallet.createdAt,
+          };
+        });
+
+        // ---------------- RETURN ----------------
+
+        return {
+          data: enrichedData,
+
+          totalCount,
+
+          currentPage: safePage,
+
+          totalPages: Math.ceil(totalCount / safeLimit),
+        };
+      } catch (error) {
+        console.error("getAstrologerEarnings error:", error);
+
+        throw new Error("Failed to fetch astrologer earnings");
+      }
+    },
+    // -------------------- RESOLVER --------------------
+
+getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
   try {
     const {
       query,
-      email,
-      contactNo,
+      mobile,
+      astrologerName,
+      type,
+      status,
       filterType,
       startDate,
       endDate,
@@ -420,100 +643,104 @@ getUsersListBySearch: async (_, { searchInput }) => {
       limit = 10,
     } = searchInput;
 
-    // ---------------- PAGINATION ----------------
-
     const safePage = Math.max(page, 1);
-
     const safeLimit = Math.min(limit, 50);
 
     const skip = (safePage - 1) * safeLimit;
-
-    // ---------------- WHERE ----------------
 
     const where = {};
 
     // ---------------- SEARCH FILTER ----------------
 
-    const andConditions = [];
+    const userFilters = [];
 
     if (query) {
-      andConditions.push({
-        OR: [
-          {
-            name: {
-              contains: query,
-              mode: "insensitive",
-            },
+      userFilters.push(
+        {
+          name: {
+            contains: query,
+            mode: "insensitive",
           },
+        },
+        {
+          mobile: {
+            contains: query,
+          },
+        }
+      );
+    }
 
-          {
-            email: {
-              contains: query,
-              mode: "insensitive",
-            },
-          },
-
-          {
-            contactNo: {
-              contains: query,
-            },
-          },
-        ],
+    if (mobile) {
+      userFilters.push({
+        mobile: {
+          contains: mobile,
+        },
       });
     }
 
-    if (email) {
-      andConditions.push({
-        email: {
-          contains: email,
+    if (userFilters.length > 0) {
+      where.user = {
+        OR: userFilters,
+      };
+    }
+
+    // ---------------- ASTROLOGER FILTER ----------------
+
+    if (astrologerName) {
+      where.astrologer = {
+        name: {
+          contains: astrologerName,
           mode: "insensitive",
         },
-      });
-    }
-
-    if (contactNo) {
-      andConditions.push({
-        contactNo: {
-          contains: contactNo,
-        },
-      });
-    }
-
-    if (andConditions.length > 0) {
-      where.astrologer = {
-        AND: andConditions,
       };
+    }
+
+    // ---------------- TYPE FILTER ----------------
+
+    if (type) {
+      where.type = type;
+    }
+
+    // ---------------- STATUS FILTER ----------------
+
+    if (status) {
+      where.status = status;
     }
 
     // ---------------- DATE FILTER ----------------
 
+    let start;
+    let end;
+
     if (filterType) {
       const now = new Date();
 
-      let start;
-      let end;
-
       switch (filterType) {
         case "TODAY":
-          start = new Date(now.setHours(0, 0, 0, 0));
+          start = new Date();
+          start.setHours(0, 0, 0, 0);
+
           end = new Date();
           break;
 
         case "WEEK":
           start = new Date();
           start.setDate(start.getDate() - 7);
+
           end = new Date();
           break;
 
         case "MONTH":
           start = new Date();
           start.setMonth(start.getMonth() - 1);
+
           end = new Date();
           break;
 
         case "YEAR":
           start = new Date();
           start.setFullYear(start.getFullYear() - 1);
+
           end = new Date();
           break;
 
@@ -522,7 +749,9 @@ getUsersListBySearch: async (_, { searchInput }) => {
           end = endDate ? new Date(endDate) : undefined;
           break;
       }
+    }
 
+    if (start || end) {
       where.createdAt = {};
 
       if (start) {
@@ -534,20 +763,15 @@ getUsersListBySearch: async (_, { searchInput }) => {
       }
     }
 
-    // ---------------- FETCH WALLET DATA ----------------
+    // ---------------- FETCH DATA ----------------
 
-    const [wallets, totalCount] = await Promise.all([
-      prisma.astrologerWallet.findMany({
+    const [sessions, totalCount, aggregate] = await Promise.all([
+      prisma.session.findMany({
         where,
 
         include: {
+          user: true,
           astrologer: true,
-
-          transactions: {
-            include: {
-              session: true,
-            },
-          },
         },
 
         orderBy: {
@@ -555,98 +779,77 @@ getUsersListBySearch: async (_, { searchInput }) => {
         },
 
         skip,
-
         take: safeLimit,
       }),
 
-      prisma.astrologerWallet.count({
+      prisma.session.count({
         where,
+      }),
+
+      prisma.session.aggregate({
+        where,
+
+        _sum: {
+          coinsDeducted: true,
+          coinsEarned: true,
+          commission: true,
+        },
       }),
     ]);
 
-    // ---------------- DATE HELPERS ----------------
+    // ---------------- FORMAT RESPONSE ----------------
 
-    const todayStart = new Date();
+    const formattedData = sessions.map((session) => ({
+      sessionId: session.id,
 
-    todayStart.setHours(0, 0, 0, 0);
+      userId: session.user?.id,
+      userName: session.user?.name,
+      mobile: session.user?.mobile,
 
-    const monthStart = new Date();
+      astrologerId: session.astrologer?.id,
+      astrologerName: session.astrologer?.name,
 
-    monthStart.setDate(1);
+      type: session.type,
+      status: session.status,
 
-    monthStart.setHours(0, 0, 0, 0);
+      ratePerMin: session.ratePerMin,
 
-    // ---------------- RESPONSE ----------------
+      durationSec: session.durationSec,
 
-    const enrichedData = wallets.map((wallet) => {
-      const transactions = wallet.transactions || [];
+      coinsDeducted: session.coinsDeducted,
 
-      // ---------------- TOTAL SESSION EARNINGS ----------------
+      coinsEarned: session.coinsEarned,
 
-      const totalSessionEarnings = transactions.reduce((sum, tx) => {
-        return sum + Number(tx.amount || 0);
-      }, 0);
+      commission: session.commission,
 
-      // ---------------- TODAY EARNINGS ----------------
+      startedAt: session.startedAt,
+      endedAt: session.endedAt,
 
-      const todayEarnings = transactions
-        .filter((tx) => {
-          return new Date(tx.createdAt) >= todayStart;
-        })
-        .reduce((sum, tx) => {
-          return sum + Number(tx.amount || 0);
-        }, 0);
-
-      // ---------------- MONTHLY EARNINGS ----------------
-
-      const monthlyEarnings = transactions
-        .filter((tx) => {
-          return new Date(tx.createdAt) >= monthStart;
-        })
-        .reduce((sum, tx) => {
-          return sum + Number(tx.amount || 0);
-        }, 0);
-
-      return {
-        astrologerId: wallet.astrologer?.id,
-
-        astrologerName: wallet.astrologer?.name || "",
-
-        email: wallet.astrologer?.email || "",
-
-        contactNo: wallet.astrologer?.contactNo || "",
-
-        balanceCoins: wallet.balanceCoins || 0,
-
-        totalEarned: wallet.totalEarned || 0,
-
-        totalWithdrawn: wallet.totalWithdrawn || 0,
-
-        totalSessionEarnings,
-
-        monthlyEarnings,
-
-        todayEarnings,
-
-        createdAt: wallet.createdAt,
-      };
-    });
-
-    // ---------------- RETURN ----------------
+      createdAt: session.createdAt,
+    }));
 
     return {
-      data: enrichedData,
+      data: formattedData,
 
       totalCount,
 
       currentPage: safePage,
 
       totalPages: Math.ceil(totalCount / safeLimit),
+
+      totalCoinsDeducted:
+        aggregate._sum.coinsDeducted || 0,
+
+      totalCoinsEarned:
+        aggregate._sum.coinsEarned || 0,
+
+      totalCommission:
+        aggregate._sum.commission || 0,
     };
   } catch (error) {
-    console.error("getAstrologerEarnings error:", error);
+    console.error("getUsersChatHistory error:", error);
 
-    throw new Error("Failed to fetch astrologer earnings");
+    throw new Error("Failed to fetch users chat history");
   }
 },
     // ================= GET PENDING ASTROLOGERS =================
@@ -876,448 +1079,435 @@ getUsersListBySearch: async (_, { searchInput }) => {
         orderBy: { createdAt: "desc" },
       });
     },
-getUserWalletTransactions: async (
-  _,
-  {
-    page = 1,
-    limit = 20,
-    type,
-    amount,
-    mobile,
-    filterType,
-    startDate,
-    endDate,
-  }
-) => {
-  try {
-    const skip = (page - 1) * limit;
-
-    // Only USER transactions
-    const whereClause = {
-      userWalletId: {
-        not: null,
+    getUserWalletTransactions: async (
+      _,
+      {
+        page = 1,
+        limit = 20,
+        type,
+        amount,
+        mobile,
+        filterType,
+        startDate,
+        endDate,
       },
-    };
+    ) => {
+      try {
+        const skip = (page - 1) * limit;
 
-    // Transaction type filter
-    if (type) {
-      whereClause.type = type.toUpperCase();
-    }
-
-    // Amount filter
-    if (amount) {
-      whereClause.amount = Number(amount);
-    }
-
-    // Mobile filter
-    if (mobile) {
-      whereClause.userWallet = {
-        user: {
-          mobile: {
-            contains: mobile,
+        // Only USER transactions
+        const whereClause = {
+          userWalletId: {
+            not: null,
           },
-        },
-      };
-    }
+        };
 
-    // =========================
-    // DATE FILTERS
-    // =========================
+        // Transaction type filter
+        if (type) {
+          whereClause.type = type.toUpperCase();
+        }
 
-    const now = new Date();
+        // Amount filter
+        if (amount) {
+          whereClause.amount = Number(amount);
+        }
 
-    // Weekly filter
-    if (filterType === "WEEK") {
-      const weekStart = new Date();
-      weekStart.setDate(now.getDate() - 7);
-
-      whereClause.createdAt = {
-        gte: weekStart,
-        lte: now,
-      };
-    }
-
-    // Monthly filter
-    if (filterType === "MONTH") {
-      const monthStart = new Date();
-      monthStart.setMonth(now.getMonth() - 1);
-
-      whereClause.createdAt = {
-        gte: monthStart,
-        lte: now,
-      };
-    }
-
-    // Yearly filter
-    if (filterType === "YEAR") {
-      const yearStart = new Date();
-      yearStart.setFullYear(now.getFullYear() - 1);
-
-      whereClause.createdAt = {
-        gte: yearStart,
-        lte: now,
-      };
-    }
-
-    // Custom date filter
-    if (
-      filterType === "CUSTOM" &&
-      startDate &&
-      endDate
-    ) {
-      whereClause.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
-    }
-
-    const [data, totalCount] = await Promise.all([
-      prisma.walletTransaction.findMany({
-        where: whereClause,
-
-        include: {
-          userWallet: {
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  mobile: true,
-                },
-              },
-            },
-          },
-        },
-
-        orderBy: {
-          createdAt: "desc",
-        },
-
-        skip,
-        take: limit,
-      }),
-
-      prisma.walletTransaction.count({
-        where: whereClause,
-      }),
-    ]);
-
-    return {
-      data,
-      totalCount,
-    };
-  } catch (err) {
-    console.error("getUserWalletTransactions error:", err);
-    throw new Error("Failed to fetch transactions");
-  }
-},
-
-getAstrologerWalletTransactions: async (
-  _,
-  {
-    page = 1,
-    limit = 20,
-    type,
-    amount,
-    contactNo,
-    filterType,
-    startDate,
-    endDate,
-  }
-) => {
-  try {
-    const skip = (page - 1) * limit;
-
-    // =========================
-    // BASE FILTER (ONLY ASTROLOGER)
-    // =========================
-    const whereClause = {
-      astrologerWalletId: {
-        not: null,
-      },
-    };
-
-    // =========================
-    // TYPE FILTER (ENUM SAFE)
-    // =========================
-    if (type) {
-      whereClause.type = type.toUpperCase();
-    }
-
-    // =========================
-    // AMOUNT FILTER
-    // =========================
-    if (amount) {
-      whereClause.amount = Number(amount);
-    }
-
-    // =========================
-    // PHONE NUMBER FILTER
-    // =========================
-    if (contactNo) {
-      whereClause.astrologerWallet = {
-        astrologer: {
-          contactNo: {
-            contains: contactNo,
-          },
-        },
-      };
-    }
-
-    // =========================
-    // DATE FILTERS
-    // =========================
-    const now = new Date();
-
-    // WEEK
-    if (filterType === "WEEK") {
-      const weekStart = new Date();
-      weekStart.setDate(now.getDate() - 7);
-
-      whereClause.createdAt = {
-        gte: weekStart,
-        lte: now,
-      };
-    }
-
-    // MONTH
-    if (filterType === "MONTH") {
-      const monthStart = new Date();
-      monthStart.setMonth(now.getMonth() - 1);
-
-      whereClause.createdAt = {
-        gte: monthStart,
-        lte: now,
-      };
-    }
-
-    // YEAR
-    if (filterType === "YEAR") {
-      const yearStart = new Date();
-      yearStart.setFullYear(now.getFullYear() - 1);
-
-      whereClause.createdAt = {
-        gte: yearStart,
-        lte: now,
-      };
-    }
-
-    // CUSTOM DATE
-    if (
-      filterType === "CUSTOM" &&
-      startDate &&
-      endDate
-    ) {
-      whereClause.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
-    }
-
-    // =========================
-    // QUERY DATA
-    // =========================
-    const [data, totalCount] = await Promise.all([
-      prisma.walletTransaction.findMany({
-        where: whereClause,
-
-        include: {
-          astrologerWallet: {
-            include: {
-              astrologer: {
-                select: {
-                  id: true,
-                  name: true,
-                  displayName: true,
-                  contactNo: true,
-                  email: true,
-                },
-              },
-            },
-          },
-        },
-
-        orderBy: {
-          createdAt: "desc",
-        },
-
-        skip,
-        take: limit,
-      }),
-
-      prisma.walletTransaction.count({
-        where: whereClause,
-      }),
-    ]);
-
-    return {
-      data,
-      totalCount,
-    };
-  } catch (err) {
-    console.error(
-      "getAstrologerWalletTransactions error:",
-      err
-    );
-    throw new Error(
-      "Failed to fetch astrologer wallet transactions"
-    );
-  }
-},
-
-getAllWalletTransactions: async (
-  _,
-  {
-    page = 1,
-    limit = 20,
-    type,
-    amount,
-    contactNo,
-    filterType,
-    startDate,
-    endDate,
-    source,
-  }
-) => {
-  try {
-    const skip = (page - 1) * limit;
-
-    const whereClause = {};
-
-    // ======================
-    // SOURCE FILTER (USER / ASTROLOGER / ALL)
-    // ======================
-    if (source === "USER") {
-      whereClause.userWalletId = { not: null };
-    }
-
-    if (source === "ASTROLOGER") {
-      whereClause.astrologerWalletId = { not: null };
-    }
-
-    // ======================
-    // TYPE FILTER
-    // ======================
-    if (type) {
-      whereClause.type = type.toUpperCase();
-    }
-
-    // ======================
-    // AMOUNT FILTER
-    // ======================
-    if (amount) {
-      whereClause.amount = Number(amount);
-    }
-
-    // ======================
-    // PHONE FILTER (USER + ASTROLOGER)
-    // ======================
-    if (contactNo) {
-      whereClause.OR = [
-        {
-          userWallet: {
+        // Mobile filter
+        if (mobile) {
+          whereClause.userWallet = {
             user: {
-              contactNo: {
-                contains: contactNo,
+              mobile: {
+                contains: mobile,
               },
             },
+          };
+        }
+
+        // =========================
+        // DATE FILTERS
+        // =========================
+
+        const now = new Date();
+
+        // Weekly filter
+        if (filterType === "WEEK") {
+          const weekStart = new Date();
+          weekStart.setDate(now.getDate() - 7);
+
+          whereClause.createdAt = {
+            gte: weekStart,
+            lte: now,
+          };
+        }
+
+        // Monthly filter
+        if (filterType === "MONTH") {
+          const monthStart = new Date();
+          monthStart.setMonth(now.getMonth() - 1);
+
+          whereClause.createdAt = {
+            gte: monthStart,
+            lte: now,
+          };
+        }
+
+        // Yearly filter
+        if (filterType === "YEAR") {
+          const yearStart = new Date();
+          yearStart.setFullYear(now.getFullYear() - 1);
+
+          whereClause.createdAt = {
+            gte: yearStart,
+            lte: now,
+          };
+        }
+
+        // Custom date filter
+        if (filterType === "CUSTOM" && startDate && endDate) {
+          whereClause.createdAt = {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
+          };
+        }
+
+        const [data, totalCount] = await Promise.all([
+          prisma.walletTransaction.findMany({
+            where: whereClause,
+
+            include: {
+              userWallet: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      mobile: true,
+                    },
+                  },
+                },
+              },
+            },
+
+            orderBy: {
+              createdAt: "desc",
+            },
+
+            skip,
+            take: limit,
+          }),
+
+          prisma.walletTransaction.count({
+            where: whereClause,
+          }),
+        ]);
+
+        return {
+          data,
+          totalCount,
+        };
+      } catch (err) {
+        console.error("getUserWalletTransactions error:", err);
+        throw new Error("Failed to fetch transactions");
+      }
+    },
+
+    getAstrologerWalletTransactions: async (
+      _,
+      {
+        page = 1,
+        limit = 20,
+        type,
+        amount,
+        contactNo,
+        filterType,
+        startDate,
+        endDate,
+      },
+    ) => {
+      try {
+        const skip = (page - 1) * limit;
+
+        // =========================
+        // BASE FILTER (ONLY ASTROLOGER)
+        // =========================
+        const whereClause = {
+          astrologerWalletId: {
+            not: null,
           },
-        },
-        {
-          astrologerWallet: {
+        };
+
+        // =========================
+        // TYPE FILTER (ENUM SAFE)
+        // =========================
+        if (type) {
+          whereClause.type = type.toUpperCase();
+        }
+
+        // =========================
+        // AMOUNT FILTER
+        // =========================
+        if (amount) {
+          whereClause.amount = Number(amount);
+        }
+
+        // =========================
+        // PHONE NUMBER FILTER
+        // =========================
+        if (contactNo) {
+          whereClause.astrologerWallet = {
             astrologer: {
               contactNo: {
                 contains: contactNo,
               },
             },
-          },
-        },
-      ];
-    }
+          };
+        }
 
-    // ======================
-    // DATE FILTERS
-    // ======================
-    const now = new Date();
+        // =========================
+        // DATE FILTERS
+        // =========================
+        const now = new Date();
 
-    if (filterType === "WEEK") {
-      const weekStart = new Date();
-      weekStart.setDate(now.getDate() - 7);
+        // WEEK
+        if (filterType === "WEEK") {
+          const weekStart = new Date();
+          weekStart.setDate(now.getDate() - 7);
 
-      whereClause.createdAt = { gte: weekStart, lte: now };
-    }
+          whereClause.createdAt = {
+            gte: weekStart,
+            lte: now,
+          };
+        }
 
-    if (filterType === "MONTH") {
-      const monthStart = new Date();
-      monthStart.setMonth(now.getMonth() - 1);
+        // MONTH
+        if (filterType === "MONTH") {
+          const monthStart = new Date();
+          monthStart.setMonth(now.getMonth() - 1);
 
-      whereClause.createdAt = { gte: monthStart, lte: now };
-    }
+          whereClause.createdAt = {
+            gte: monthStart,
+            lte: now,
+          };
+        }
 
-    if (filterType === "YEAR") {
-      const yearStart = new Date();
-      yearStart.setFullYear(now.getFullYear() - 1);
+        // YEAR
+        if (filterType === "YEAR") {
+          const yearStart = new Date();
+          yearStart.setFullYear(now.getFullYear() - 1);
 
-      whereClause.createdAt = { gte: yearStart, lte: now };
-    }
+          whereClause.createdAt = {
+            gte: yearStart,
+            lte: now,
+          };
+        }
 
-    if (filterType === "CUSTOM" && startDate && endDate) {
-      whereClause.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
-    }
+        // CUSTOM DATE
+        if (filterType === "CUSTOM" && startDate && endDate) {
+          whereClause.createdAt = {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
+          };
+        }
 
-    // ======================
-    // FETCH DATA
-    // ======================
-    const [data, totalCount] = await Promise.all([
-      prisma.walletTransaction.findMany({
-        where: whereClause,
+        // =========================
+        // QUERY DATA
+        // =========================
+        const [data, totalCount] = await Promise.all([
+          prisma.walletTransaction.findMany({
+            where: whereClause,
 
-        include: {
-          userWallet: {
             include: {
-              user: true,
+              astrologerWallet: {
+                include: {
+                  astrologer: {
+                    select: {
+                      id: true,
+                      name: true,
+                      displayName: true,
+                      contactNo: true,
+                      email: true,
+                    },
+                  },
+                },
+              },
             },
-          },
-          astrologerWallet: {
+
+            orderBy: {
+              createdAt: "desc",
+            },
+
+            skip,
+            take: limit,
+          }),
+
+          prisma.walletTransaction.count({
+            where: whereClause,
+          }),
+        ]);
+
+        return {
+          data,
+          totalCount,
+        };
+      } catch (err) {
+        console.error("getAstrologerWalletTransactions error:", err);
+        throw new Error("Failed to fetch astrologer wallet transactions");
+      }
+    },
+
+    getAllWalletTransactions: async (
+      _,
+      {
+        page = 1,
+        limit = 20,
+        type,
+        amount,
+        contactNo,
+        filterType,
+        startDate,
+        endDate,
+        source,
+      },
+    ) => {
+      try {
+        const skip = (page - 1) * limit;
+
+        const whereClause = {};
+
+        // ======================
+        // SOURCE FILTER (USER / ASTROLOGER / ALL)
+        // ======================
+        if (source === "USER") {
+          whereClause.userWalletId = { not: null };
+        }
+
+        if (source === "ASTROLOGER") {
+          whereClause.astrologerWalletId = { not: null };
+        }
+
+        // ======================
+        // TYPE FILTER
+        // ======================
+        if (type) {
+          whereClause.type = type.toUpperCase();
+        }
+
+        // ======================
+        // AMOUNT FILTER
+        // ======================
+        if (amount) {
+          whereClause.amount = Number(amount);
+        }
+
+        // ======================
+        // PHONE FILTER (USER + ASTROLOGER)
+        // ======================
+        if (contactNo) {
+          whereClause.OR = [
+            {
+              userWallet: {
+                user: {
+                  contactNo: {
+                    contains: contactNo,
+                  },
+                },
+              },
+            },
+            {
+              astrologerWallet: {
+                astrologer: {
+                  contactNo: {
+                    contains: contactNo,
+                  },
+                },
+              },
+            },
+          ];
+        }
+
+        // ======================
+        // DATE FILTERS
+        // ======================
+        const now = new Date();
+
+        if (filterType === "WEEK") {
+          const weekStart = new Date();
+          weekStart.setDate(now.getDate() - 7);
+
+          whereClause.createdAt = { gte: weekStart, lte: now };
+        }
+
+        if (filterType === "MONTH") {
+          const monthStart = new Date();
+          monthStart.setMonth(now.getMonth() - 1);
+
+          whereClause.createdAt = { gte: monthStart, lte: now };
+        }
+
+        if (filterType === "YEAR") {
+          const yearStart = new Date();
+          yearStart.setFullYear(now.getFullYear() - 1);
+
+          whereClause.createdAt = { gte: yearStart, lte: now };
+        }
+
+        if (filterType === "CUSTOM" && startDate && endDate) {
+          whereClause.createdAt = {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
+          };
+        }
+
+        // ======================
+        // FETCH DATA
+        // ======================
+        const [data, totalCount] = await Promise.all([
+          prisma.walletTransaction.findMany({
+            where: whereClause,
+
             include: {
-              astrologer: true,
+              userWallet: {
+                include: {
+                  user: true,
+                },
+              },
+              astrologerWallet: {
+                include: {
+                  astrologer: true,
+                },
+              },
             },
-          },
-        },
 
-        orderBy: {
-          createdAt: "desc",
-        },
+            orderBy: {
+              createdAt: "desc",
+            },
 
-        skip,
-        take: limit,
-      }),
+            skip,
+            take: limit,
+          }),
 
-      prisma.walletTransaction.count({
-        where: whereClause,
-      }),
-    ]);
+          prisma.walletTransaction.count({
+            where: whereClause,
+          }),
+        ]);
 
-    // ======================
-    // ADD SOURCE FIELD
-    // ======================
-    const formattedData = data.map((tx) => ({
-      ...tx,
-      source: tx.userWalletId ? "USER" : "ASTROLOGER",
-    }));
+        // ======================
+        // ADD SOURCE FIELD
+        // ======================
+        const formattedData = data.map((tx) => ({
+          ...tx,
+          source: tx.userWalletId ? "USER" : "ASTROLOGER",
+        }));
 
-    return {
-      data: formattedData,
-      totalCount,
-    };
-  } catch (err) {
-    console.error("getAllWalletTransactions error:", err);
-    throw new Error("Failed to fetch wallet transactions");
-  }
-},
+        return {
+          data: formattedData,
+          totalCount,
+        };
+      } catch (err) {
+        console.error("getAllWalletTransactions error:", err);
+        throw new Error("Failed to fetch wallet transactions");
+      }
+    },
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;
@@ -1377,7 +1567,7 @@ getAllWalletTransactions: async (
 
       const where = {
         isDeleted: false,
-        ...(type && { type }), 
+        ...(type && { type }),
       };
 
       const [permissions, totalCount] = await Promise.all([
@@ -1623,7 +1813,7 @@ getAllWalletTransactions: async (
     getGifts: async (_, __, context) => {
       const { prisma } = context;
 
-      await checkPermission(context, "gifts.read"); 
+      await checkPermission(context, "gifts.read");
 
       return prisma.gift.findMany({
         orderBy: { createdAt: "desc" },
@@ -1817,7 +2007,6 @@ getAllWalletTransactions: async (
         },
       });
     },
-    
   },
 
   // *******************************************************************************************************************************
@@ -2183,7 +2372,7 @@ getAllWalletTransactions: async (
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
       try {
-        console.log("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUU",context.user);
+        console.log("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", context.user);
         if (
           !context.user ||
           !["SUPER_ADMIN", "MANAGER"].includes(context.user.role?.name)
@@ -2370,15 +2559,15 @@ getAllWalletTransactions: async (
 
       try {
         const pack = await prisma.rechargePack.create({
-     data: {
-  name: input.name,
-  description: input.description,
-  price: input.price,
-  coins: input.coins,
-  talktime: input.talktime,
-  validityDays: input.validityDays,
-  isActive: input.isActive ?? true,
-},
+          data: {
+            name: input.name,
+            description: input.description,
+            price: input.price,
+            coins: input.coins,
+            talktime: input.talktime,
+            validityDays: input.validityDays,
+            isActive: input.isActive ?? true,
+          },
         });
 
         return pack;
