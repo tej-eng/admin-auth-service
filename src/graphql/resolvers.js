@@ -866,6 +866,245 @@ getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
     throw new Error("Failed to fetch users chat history");
   }
 },
+
+getUserCallHistory: async (_, { searchInput }, { prisma }) => {
+  try {
+    const {
+      query,
+      mobile,
+      astrologerName,
+      status,
+      filterType,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = searchInput;
+
+    const safePage = Math.max(page, 1);
+    const safeLimit = Math.min(limit, 50);
+
+    const skip = (safePage - 1) * safeLimit;
+
+    // ---------------- WHERE CONDITION ----------------
+
+    const where = {
+      type: "CALL", // ONLY CALL DATA
+    };
+
+    // ---------------- USER SEARCH FILTER ----------------
+
+    const userFilters = [];
+
+    if (query) {
+      userFilters.push(
+        {
+          name: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          mobile: {
+            contains: query,
+          },
+        }
+      );
+    }
+
+    if (mobile) {
+      userFilters.push({
+        mobile: {
+          contains: mobile,
+        },
+      });
+    }
+
+    if (userFilters.length > 0) {
+      where.user = {
+        OR: userFilters,
+      };
+    }
+
+    // ---------------- ASTROLOGER FILTER ----------------
+
+    if (astrologerName) {
+      where.astrologer = {
+        name: {
+          contains: astrologerName,
+          mode: "insensitive",
+        },
+      };
+    }
+
+    // ---------------- STATUS FILTER ----------------
+
+    if (status) {
+      where.status = status;
+    }
+
+    // ---------------- DATE FILTER ----------------
+
+    let start;
+    let end;
+
+    if (filterType) {
+      switch (filterType) {
+        case "TODAY":
+          start = new Date();
+          start.setHours(0, 0, 0, 0);
+
+          end = new Date();
+          break;
+
+        case "WEEK":
+          start = new Date();
+          start.setDate(start.getDate() - 7);
+
+          end = new Date();
+          break;
+
+        case "MONTH":
+          start = new Date();
+          start.setMonth(start.getMonth() - 1);
+
+          end = new Date();
+          break;
+
+        case "YEAR":
+          start = new Date();
+          start.setFullYear(start.getFullYear() - 1);
+
+          end = new Date();
+          break;
+
+        case "CUSTOM":
+          start = startDate ? new Date(startDate) : undefined;
+          end = endDate ? new Date(endDate) : undefined;
+          break;
+      }
+    }
+
+    if (start || end) {
+      where.createdAt = {};
+
+      if (start) {
+        where.createdAt.gte = start;
+      }
+
+      if (end) {
+        where.createdAt.lte = end;
+      }
+    }
+
+    // ---------------- FETCH DATA ----------------
+
+    const [sessions, totalCount, aggregate] = await Promise.all([
+      prisma.session.findMany({
+        where,
+
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              mobile: true,
+              countryCode: true,
+            },
+          },
+
+          astrologer: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: safeLimit,
+      }),
+
+      prisma.session.count({
+        where,
+      }),
+
+      prisma.session.aggregate({
+        where,
+
+        _sum: {
+          coinsDeducted: true,
+          coinsEarned: true,
+          commission: true,
+        },
+      }),
+    ]);
+
+    // ---------------- FORMAT RESPONSE ----------------
+
+    const formattedData = sessions.map((session) => ({
+      sessionId: session.id,
+
+      userId: session.user?.id || null,
+      userName: session.user?.name || "",
+      mobile: session.user?.mobile || "",
+
+      astrologerId: session.astrologer?.id || null,
+      astrologerName:
+        session.astrologer?.displayName ||
+        session.astrologer?.name ||
+        "",
+
+      type: session.type,
+      status: session.status,
+
+      ratePerMin: session.ratePerMin || 0,
+
+      durationSec: session.durationSec || 0,
+
+      coinsDeducted: session.coinsDeducted || 0,
+
+      coinsEarned: session.coinsEarned || 0,
+
+      commission: session.commission || 0,
+
+      startedAt: session.startedAt,
+      endedAt: session.endedAt,
+
+      createdAt: session.createdAt,
+    }));
+
+    // ---------------- RESPONSE ----------------
+
+    return {
+      data: formattedData,
+
+      totalCount,
+
+      currentPage: safePage,
+
+      totalPages: Math.ceil(totalCount / safeLimit),
+
+      totalCoinsDeducted:
+        aggregate?._sum?.coinsDeducted || 0,
+
+      totalCoinsEarned:
+        aggregate?._sum?.coinsEarned || 0,
+
+      totalCommission:
+        aggregate?._sum?.commission || 0,
+    };
+  } catch (error) {
+    console.error("getUserCallHistory error:", error);
+
+    throw new Error("Failed to fetch user call history");
+  }
+},
     // ================= GET PENDING ASTROLOGERS =================
     getPendingAstrologers: async (_, { page = 1, limit = 10 }, context) => {
       try {

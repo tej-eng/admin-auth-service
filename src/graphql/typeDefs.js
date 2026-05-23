@@ -222,15 +222,15 @@ const typeDefs = gql`
     totalPages: Int!
   }
 
- input UserSearchInput {
-  query: String
-  mobile: String
-  filterType: String   # TODAY | WEEK | MONTH | YEAR | CUSTOM
-  startDate: String
-  endDate: String
-  page: Int
-  limit: Int
-}
+  input UserSearchInput {
+    query: String
+    mobile: String
+    filterType: String # TODAY | WEEK | MONTH | YEAR | CUSTOM
+    startDate: String
+    endDate: String
+    page: Int
+    limit: Int
+  }
 
   type UserList {
     data: [User!]!
@@ -286,7 +286,7 @@ const typeDefs = gql`
     price: Float!
     talktime: Int!
     coins: Int!
-validityDays: Int!
+    validityDays: Int!
     isActive: Boolean
   }
 
@@ -297,7 +297,7 @@ validityDays: Int!
     price: Float!
     talktime: Int!
     coins: Int!
-validityDays: Int!
+    validityDays: Int!
     isActive: Boolean!
     createdAt: DateTime
     updatedAt: DateTime
@@ -359,16 +359,16 @@ validityDays: Int!
     updatedAt: DateTime!
   }
 
- type UserWallet {
-  id: ID!
-  userId: ID!
+  type UserWallet {
+    id: ID!
+    userId: ID!
 
-  balanceCoins: Float!
-  lockedCoins: Float!
+    balanceCoins: Float!
+    lockedCoins: Float!
 
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
 
   #------ module -------#
   type Module {
@@ -761,207 +761,207 @@ validityDays: Int!
     passbook: String
   }
 
- type WalletTransaction {
-  id: ID!
+  type WalletTransaction {
+    id: ID!
 
-  userWalletId: ID
-  astrologerWalletId: ID
+    userWalletId: ID
+    astrologerWalletId: ID
 
-  rechargePackId: ID
-  sessionId: ID
-  paymentId: ID
+    rechargePackId: ID
+    sessionId: ID
+    paymentId: ID
 
-  type: String!
-  coins: Int!
-  amount: Float
-  description: String
+    type: String!
+    coins: Int!
+    amount: Float
+    description: String
 
-  userWallet: UserWallet
+    userWallet: UserWallet
 
-  createdAt: DateTime!
-}
+    createdAt: DateTime!
+  }
 
-type UserWallet {
-  id: ID!
-  userId: ID!
-  coins: Int!
+  type UserWallet {
+    id: ID!
+    userId: ID!
+    coins: Int!
 
-  user: User
+    user: User
 
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
   type WalletTransactionList {
-  data: [WalletTransaction!]!
-  totalCount: Int!
-}
+    data: [WalletTransaction!]!
+    totalCount: Int!
+  }
   #-----------------------------END Wallet MANAGEMENT-----------------#
   #-----------------------START for astrologer walet-----------------#
   type AstrologerWallet {
-  id: ID!
-  astrologerId: ID!
-  balanceCoins: Int
-  lockedCoins: Int
+    id: ID!
+    astrologerId: ID!
+    balanceCoins: Int
+    lockedCoins: Int
 
-  astrologer: Astrologer
+    astrologer: Astrologer
 
-  createdAt: DateTime!
-  updatedAt: DateTime!
-}
+    createdAt: DateTime!
+    updatedAt: DateTime!
+  }
 
-type AstrologerWalletTransaction {
-  id: ID!
+  type AstrologerWalletTransaction {
+    id: ID!
 
-  astrologerWalletId: ID
+    astrologerWalletId: ID
 
-  sessionId: ID
-  paymentId: ID
+    sessionId: ID
+    paymentId: ID
 
-  type: String!
-  coins: Int!
-  amount: Float
-  description: String
+    type: String!
+    coins: Int!
+    amount: Float
+    description: String
 
-  astrologerWallet: AstrologerWallet
+    astrologerWallet: AstrologerWallet
 
-  createdAt: DateTime!
-}
+    createdAt: DateTime!
+  }
 
-type AstrologerWalletTransactionList {
-  data: [AstrologerWalletTransaction!]!
-  totalCount: Int!
-}
+  type AstrologerWalletTransactionList {
+    data: [AstrologerWalletTransaction!]!
+    totalCount: Int!
+  }
   #------------------End of astrologer wallet-----------------#
   #------START FOR ALL WALLET TRANSACTIONS-----------------#
 
   enum WalletSource {
-  USER
-  ASTROLOGER
-}
+    USER
+    ASTROLOGER
+  }
   type WalletTransaction {
-  id: ID!
+    id: ID!
 
-  userWalletId: ID
-  astrologerWalletId: ID
+    userWalletId: ID
+    astrologerWalletId: ID
 
-  rechargePackId: ID
-  sessionId: ID
-  paymentId: ID
+    rechargePackId: ID
+    sessionId: ID
+    paymentId: ID
 
-  type: String!
-  coins: Int!
-  amount: Float
-  description: String
+    type: String!
+    coins: Int!
+    amount: Float
+    description: String
 
-  userWallet: UserWallet
-  astrologerWallet: AstrologerWallet
+    userWallet: UserWallet
+    astrologerWallet: AstrologerWallet
 
-  source: WalletSource
+    source: WalletSource
 
-  createdAt: DateTime!
-}
+    createdAt: DateTime!
+  }
   #---END FOR ALL WALLET TRANSACTIONS-----------------#
   #-----------------------------START of astrologer earnings-----------------#
-input AstrologerEarningSearchInput {
-  query: String
-  email: String
-  contactNo: String
+  input AstrologerEarningSearchInput {
+    query: String
+    email: String
+    contactNo: String
 
-  filterType: String
+    filterType: String
 
-  startDate: String
-  endDate: String
+    startDate: String
+    endDate: String
 
-  page: Int
-  limit: Int
-}
+    page: Int
+    limit: Int
+  }
 
-type AstrologerEarning {
-  astrologerId: ID!
-  astrologerName: String!
-  email: String
-  contactNo: String
+  type AstrologerEarning {
+    astrologerId: ID!
+    astrologerName: String!
+    email: String
+    contactNo: String
 
-  balanceCoins: Float
-  totalEarned: Float
-  totalWithdrawn: Float
+    balanceCoins: Float
+    totalEarned: Float
+    totalWithdrawn: Float
 
-  totalSessionEarnings: Float
-  monthlyEarnings: Float
-  todayEarnings: Float
+    totalSessionEarnings: Float
+    monthlyEarnings: Float
+    todayEarnings: Float
 
-  createdAt: DateTime
-}
+    createdAt: DateTime
+  }
 
-type AstrologerEarningList {
-  data: [AstrologerEarning!]!
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
-}
+  type AstrologerEarningList {
+    data: [AstrologerEarning!]!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+  }
   #------end of astrologer earnings-----------------#
   # -------------------- TYPES --------------------
 
-enum SessionFilterType {
-  TODAY
-  WEEK
-  MONTH
-  YEAR
-  CUSTOM
-}
+  enum SessionFilterType {
+    TODAY
+    WEEK
+    MONTH
+    YEAR
+    CUSTOM
+  }
 
-input UserChatHistorySearchInput {
-  query: String
-  mobile: String
-  astrologerName: String
-  type: String
-  status: String
+  input UserChatHistorySearchInput {
+    query: String
+    mobile: String
+    astrologerName: String
+    type: String
+    status: String
 
-  filterType: SessionFilterType
+    filterType: SessionFilterType
 
-  startDate: String
-  endDate: String
+    startDate: String
+    endDate: String
 
-  page: Int
-  limit: Int
-}
+    page: Int
+    limit: Int
+  }
 
-type UserChatHistory {
-  sessionId: ID!
+  type UserChatHistory {
+    sessionId: ID!
 
-  userId: ID!
-  userName: String
-  mobile: String
+    userId: ID!
+    userName: String
+    mobile: String
 
-  astrologerId: ID!
-  astrologerName: String
+    astrologerId: ID!
+    astrologerName: String
 
-  type: String
-  status: String
+    type: String
+    status: String
 
-  ratePerMin: Float
-  durationSec: Int
+    ratePerMin: Float
+    durationSec: Int
 
-  coinsDeducted: Float
-  coinsEarned: Float
-  commission: Float
+    coinsDeducted: Float
+    coinsEarned: Float
+    commission: Float
 
-  startedAt: DateTime
-  endedAt: DateTime
-  createdAt: DateTime
-}
+    startedAt: DateTime
+    endedAt: DateTime
+    createdAt: DateTime
+  }
 
-type UserChatHistoryList {
-  data: [UserChatHistory!]!
+  type UserChatHistoryList {
+    data: [UserChatHistory!]!
 
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
 
-  totalCoinsDeducted: Float
-  totalCoinsEarned: Float
-  totalCommission: Float
-}
+    totalCoinsDeducted: Float
+    totalCoinsEarned: Float
+    totalCommission: Float
+  }
   #-------start of user chat history ---------#
   #--------------------END of user chat history-----------------#
   type Query {
@@ -1029,49 +1029,52 @@ type UserChatHistoryList {
 
     getRechargePacks: [RechargePack!]!
 
- getUserWallet(userId: ID!): UserWallet
-   
- getUserWalletTransactions(
-  page: Int
-  limit: Int
-  type: String
-  amount: Float
-  mobile: String
-  filterType: String
-  startDate: String
-  endDate: String
-): WalletTransactionList!
+    getUserWallet(userId: ID!): UserWallet
 
-getAstrologerWalletTransactions(
-  page: Int
-  limit: Int
-  type: String
-  contactNo: String
-  amount: Float
-  filterType: String
-  startDate: String
-  endDate: String
-): AstrologerWalletTransactionList!
-getAllWalletTransactions(
-  page: Int
-  limit: Int
-  type: String
-  amount: Float
-  contactNo: String
-  filterType: String
-  startDate: String
-  endDate: String
-  source: String
-): WalletTransactionList!
+    getUserWalletTransactions(
+      page: Int
+      limit: Int
+      type: String
+      amount: Float
+      mobile: String
+      filterType: String
+      startDate: String
+      endDate: String
+    ): WalletTransactionList!
 
-getAstrologerEarnings(
-  searchInput: AstrologerEarningSearchInput!
-): AstrologerEarningList!
+    getAstrologerWalletTransactions(
+      page: Int
+      limit: Int
+      type: String
+      contactNo: String
+      amount: Float
+      filterType: String
+      startDate: String
+      endDate: String
+    ): AstrologerWalletTransactionList!
+    getAllWalletTransactions(
+      page: Int
+      limit: Int
+      type: String
+      amount: Float
+      contactNo: String
+      filterType: String
+      startDate: String
+      endDate: String
+      source: String
+    ): WalletTransactionList!
 
-getUsersChatHistory(
+    getAstrologerEarnings(
+      searchInput: AstrologerEarningSearchInput!
+    ): AstrologerEarningList!
+
+    getUsersChatHistory(
+      searchInput: UserChatHistorySearchInput!
+    ): UserChatHistoryList!
+
+    getUserCallHistory(
   searchInput: UserChatHistorySearchInput!
-): UserChatHistoryList!
-
+): UserChatHistoryResponse!
   }
   input UpdateAstrologerInput {
     name: String
