@@ -556,7 +556,6 @@ export const resolvers = {
         orderBy: { createdAt: "desc" },
       });
     },
-
 getUserWalletTransactions: async (
   _,
   {
@@ -570,10 +569,18 @@ getUserWalletTransactions: async (
   try {
     const skip = (page - 1) * limit;
 
-    // dynamic where clause
-    const whereClause = {};
+    // Base filter
+    const whereClause = {
+      // IMPORTANT:
+      // Only fetch USER wallet transactions
+      userWallet: {
+        userId: {
+          not: null,
+        },
+      },
+    };
 
-    // filter by transaction type
+    // Filter by transaction type
     if (type) {
       whereClause.type = {
         contains: type,
@@ -581,42 +588,21 @@ getUserWalletTransactions: async (
       };
     }
 
-    // filter by amount
+    // Filter by amount
     if (amount) {
       whereClause.amount = Number(amount);
     }
 
-    // filter by mobile
+    // Filter by user mobile
     if (mobile) {
-      const users = await prisma.user.findMany({
-        where: {
+      whereClause.userWallet = {
+        ...whereClause.userWallet,
+        user: {
           mobile: {
             contains: mobile,
             mode: "insensitive",
           },
         },
-        select: {
-          id: true,
-        },
-      });
-
-      const userIds = users.map((u) => u.id);
-
-      const wallets = await prisma.userWallet.findMany({
-        where: {
-          userId: {
-            in: userIds,
-          },
-        },
-        select: {
-          id: true,
-        },
-      });
-
-      const walletIds = wallets.map((w) => w.id);
-
-      whereClause.userWalletId = {
-        in: walletIds,
       };
     }
 
