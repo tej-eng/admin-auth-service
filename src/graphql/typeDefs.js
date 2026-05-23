@@ -861,13 +861,16 @@ type UserWallet {
 
     getUserWallet(userId: ID!): UserWallet
    
-  getUserWalletTransactions(
-    page: Int
-    limit: Int
-    type: String
-    amount: Float
-    mobile: String
-  ): WalletTransactionList!
+ getUserWalletTransactions(
+  page: Int
+  limit: Int
+  type: String
+  amount: Float
+  mobile: String
+  filterType: String
+  startDate: String
+  endDate: String
+): WalletTransactionList!
 
   }
   input UpdateAstrologerInput {

@@ -564,28 +564,32 @@ getUserWalletTransactions: async (
     type,
     amount,
     mobile,
+    filterType,
+    startDate,
+    endDate,
   }
 ) => {
   try {
     const skip = (page - 1) * limit;
 
-    // Only USER wallet transactions
+    // Only USER transactions
     const whereClause = {
       userWalletId: {
         not: null,
       },
     };
 
-   if (type) {
+    // Transaction type filter
+    if (type) {
       whereClause.type = type.toUpperCase();
     }
 
-    // Filter by amount
+    // Amount filter
     if (amount) {
       whereClause.amount = Number(amount);
     }
 
-    // Filter by mobile
+    // Mobile filter
     if (mobile) {
       whereClause.userWallet = {
         user: {
@@ -593,6 +597,57 @@ getUserWalletTransactions: async (
             contains: mobile,
           },
         },
+      };
+    }
+
+    // =========================
+    // DATE FILTERS
+    // =========================
+
+    const now = new Date();
+
+    // Weekly filter
+    if (filterType === "WEEK") {
+      const weekStart = new Date();
+      weekStart.setDate(now.getDate() - 7);
+
+      whereClause.createdAt = {
+        gte: weekStart,
+        lte: now,
+      };
+    }
+
+    // Monthly filter
+    if (filterType === "MONTH") {
+      const monthStart = new Date();
+      monthStart.setMonth(now.getMonth() - 1);
+
+      whereClause.createdAt = {
+        gte: monthStart,
+        lte: now,
+      };
+    }
+
+    // Yearly filter
+    if (filterType === "YEAR") {
+      const yearStart = new Date();
+      yearStart.setFullYear(now.getFullYear() - 1);
+
+      whereClause.createdAt = {
+        gte: yearStart,
+        lte: now,
+      };
+    }
+
+    // Custom date filter
+    if (
+      filterType === "CUSTOM" &&
+      startDate &&
+      endDate
+    ) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
       };
     }
 
