@@ -868,6 +868,20 @@ type AstrologerWalletTransactionList {
   createdAt: DateTime!
 }
   #---END FOR ALL WALLET TRANSACTIONS-----------------#
+  #-----------------------------START of astrologer earnings-----------------#
+  type AstrologerEarning {
+  astrologerId: ID!
+  astrologerName: String!
+  email: String
+  contactNo: String
+
+  balanceCoins: Float
+  totalEarned: Float
+  totalWithdrawn: Float
+
+  createdAt: DateTime
+}
+  #------end of astrologer earnings-----------------#
   type Query {
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -968,6 +982,8 @@ getAllWalletTransactions(
   endDate: String
   source: String
 ): WalletTransactionList!
+
+getAstrologerEarnings: [AstrologerEarning!]!
 
   }
   input UpdateAstrologerInput {

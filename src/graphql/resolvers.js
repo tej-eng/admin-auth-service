@@ -407,6 +407,36 @@ getUsersListBySearch: async (_, { searchInput }) => {
       }
     },
 
+    getAstrologerEarnings: async () => {
+  try {
+    const wallets = await prisma.astrologerWallet.findMany({
+      include: {
+        astrologer: true,
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return wallets.map((wallet) => ({
+      astrologerId: wallet.astrologer?.id,
+      astrologerName: wallet.astrologer?.name,
+      email: wallet.astrologer?.email,
+      contactNo: wallet.astrologer?.contactNo,
+
+      balanceCoins: wallet.balanceCoins || 0,
+      totalEarned: wallet.totalEarned || 0,
+      totalWithdrawn: wallet.totalWithdrawn || 0,
+
+      createdAt: wallet.createdAt,
+    }));
+  } catch (error) {
+    console.error("getAstrologerEarnings error:", error);
+    throw new Error("Failed to fetch astrologer earnings");
+  }
+},
+
     // ================= GET PENDING ASTROLOGERS =================
     getPendingAstrologers: async (_, { page = 1, limit = 10 }, context) => {
       try {
