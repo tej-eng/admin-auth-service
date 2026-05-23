@@ -227,10 +227,14 @@ const typeDefs = gql`
   }
 
   input UserSearchInput {
-    query: String
-    page: Int
-    limit: Int
-  }
+  query: String
+  mobile: String
+  filterType: String   # TODAY | WEEK | MONTH | YEAR | CUSTOM
+  startDate: String
+  endDate: String
+  page: Int
+  limit: Int
+}
 
   type UserList {
     data: [User!]!

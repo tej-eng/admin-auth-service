@@ -217,48 +217,122 @@ export const resolvers = {
       }
     },
 
-    getUsersListBySearch: async (_, { searchInput }, context) => {
-      try {
-        if (!context.user || context.user.role !== "ADMIN") {
-          throw new Error("Admin only");
-        }
+    getUsersListBySearch: async (_, { searchInput }) => {
+  try {
+    const {
+      query,
+      mobile,
+      filterType,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = searchInput;
 
-        const { query, page = 1, limit = 10 } = searchInput;
+    const safePage = Math.max(page, 1);
+    const safeLimit = Math.min(limit, 50);
+    const skip = (safePage - 1) * safeLimit;
 
-        const safePage = Math.max(page, 1);
-        const safeLimit = Math.min(limit, 50);
+    // ----------------------------
+    // WHERE BASE
+    // ----------------------------
+    const where = {};
 
-        const skip = (safePage - 1) * safeLimit;
+    // ----------------------------
+    // TEXT SEARCH (name + mobile)
+    // ----------------------------
+    if (query) {
+      where.OR = [
+        { name: { contains: query, mode: "insensitive" } },
+        { mobile: { contains: query } },
+      ];
+    }
 
-        const where = query
-          ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { mobile: { contains: query } },
-              ],
-            }
-          : {};
+    // ----------------------------
+    // DIRECT MOBILE FILTER
+    // ----------------------------
+    if (mobile) {
+      where.mobile = { contains: mobile };
+    }
 
-        const [users, totalCount] = await Promise.all([
-          prisma.user.findMany({
-            where,
-            skip,
-            take: safeLimit,
-            orderBy: { createdAt: "desc" },
-          }),
-          prisma.user.count({ where }),
-        ]);
+    // ----------------------------
+    // DATE FILTER LOGIC
+    // ----------------------------
+    if (filterType) {
+      const now = new Date();
+      let start, end;
 
-        return {
-          data: users,
-          totalCount,
-          currentPage: safePage,
-          totalPages: Math.ceil(totalCount / safeLimit),
-        };
-      } catch (error) {
-        throw error;
+      switch (filterType) {
+        case "TODAY":
+          start = new Date(now.setHours(0, 0, 0, 0));
+          end = new Date();
+          break;
+
+        case "WEEK":
+          start = new Date();
+          start.setDate(start.getDate() - 7);
+          end = new Date();
+          break;
+
+        case "MONTH":
+          start = new Date();
+          start.setMonth(start.getMonth() - 1);
+          end = new Date();
+          break;
+
+        case "YEAR":
+          start = new Date();
+          start.setFullYear(start.getFullYear() - 1);
+          end = new Date();
+          break;
+
+        case "CUSTOM":
+          start = startDate ? new Date(startDate) : undefined;
+          end = endDate ? new Date(endDate) : undefined;
+          break;
       }
-    },
+
+      if (start && end) {
+        where.createdAt = {
+          gte: start,
+          lte: end,
+        };
+      } else if (start) {
+        where.createdAt = {
+          gte: start,
+        };
+      } else if (end) {
+        where.createdAt = {
+          lte: end,
+        };
+      }
+    }
+
+    // ----------------------------
+    // QUERY
+    // ----------------------------
+    const [users, totalCount] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip,
+        take: safeLimit,
+        orderBy: { createdAt: "desc" },
+      }),
+
+      prisma.user.count({ where }),
+    ]);
+
+    return {
+      data: users,
+      totalCount,
+      currentPage: safePage,
+      totalPages: Math.ceil(totalCount / safeLimit),
+    };
+  } catch (error) {
+    console.error("getUsersListBySearch error:", error);
+    throw new Error("Failed to fetch users");
+  }
+},
 
     getAstrologerListBySearch: async (_, { searchInput }, context) => {
       const { prisma } = context;
