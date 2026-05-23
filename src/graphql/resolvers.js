@@ -1761,6 +1761,241 @@ getUserCallHistory: async (_, { searchInput }, { prisma }) => {
         throw new Error("Failed to fetch wallet transactions");
       }
     },
+    getUserReviews: async (_, { searchInput }, { prisma }) => {
+  try {
+    const {
+      query,
+      userName,
+      astrologerName,
+      rating,
+      filterType,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = searchInput;
+
+    const safePage = Math.max(page, 1);
+    const safeLimit = Math.min(limit, 50);
+
+    const skip = (safePage - 1) * safeLimit;
+
+    // ---------------- WHERE CONDITION ----------------
+
+    const where = {};
+
+    // ---------------- SEARCH FILTER ----------------
+
+    const orFilters = [];
+
+    if (query) {
+      orFilters.push(
+        {
+          userName: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          astroName: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          comment: {
+            contains: query,
+            mode: "insensitive",
+          },
+        }
+      );
+    }
+
+    if (orFilters.length > 0) {
+      where.OR = orFilters;
+    }
+
+    // ---------------- USER FILTER ----------------
+
+    if (userName) {
+      where.userName = {
+        contains: userName,
+        mode: "insensitive",
+      };
+    }
+
+    // ---------------- ASTROLOGER FILTER ----------------
+
+    if (astrologerName) {
+      where.astroName = {
+        contains: astrologerName,
+        mode: "insensitive",
+      };
+    }
+
+    // ---------------- RATING FILTER ----------------
+
+    if (rating) {
+      where.rating = Number(rating);
+    }
+
+    // ---------------- DATE FILTER ----------------
+
+    let start;
+    let end;
+
+    if (filterType) {
+      switch (filterType) {
+        case "TODAY":
+          start = new Date();
+          start.setHours(0, 0, 0, 0);
+
+          end = new Date();
+          break;
+
+        case "WEEK":
+          start = new Date();
+          start.setDate(start.getDate() - 7);
+
+          end = new Date();
+          break;
+
+        case "MONTH":
+          start = new Date();
+          start.setMonth(start.getMonth() - 1);
+
+          end = new Date();
+          break;
+
+        case "YEAR":
+          start = new Date();
+          start.setFullYear(start.getFullYear() - 1);
+
+          end = new Date();
+          break;
+
+        case "CUSTOM":
+          start = startDate ? new Date(startDate) : undefined;
+          end = endDate ? new Date(endDate) : undefined;
+          break;
+      }
+    }
+
+    if (start || end) {
+      where.createdAt = {};
+
+      if (start) {
+        where.createdAt.gte = start;
+      }
+
+      if (end) {
+        where.createdAt.lte = end;
+      }
+    }
+
+    // ---------------- FETCH DATA ----------------
+
+    const [reviews, totalCount, aggregate] = await Promise.all([
+      prisma.review.findMany({
+        where,
+
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              mobile: true,
+            },
+          },
+
+          astrologer: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true,
+            },
+          },
+
+          session: {
+            select: {
+              id: true,
+              type: true,
+              status: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: safeLimit,
+      }),
+
+      prisma.review.count({
+        where,
+      }),
+
+      prisma.review.aggregate({
+        where,
+
+        _avg: {
+          rating: true,
+        },
+      }),
+    ]);
+
+    // ---------------- FORMAT RESPONSE ----------------
+
+    const formattedData = reviews.map((review) => ({
+      reviewId: review.id,
+
+      sessionId: review.session?.id || null,
+
+      userId: review.user?.id || null,
+      userName: review.userName || review.user?.name || "",
+      mobile: review.user?.mobile || "",
+
+      astrologerId: review.astrologer?.id || null,
+
+      astrologerName:
+        review.astroName ||
+        review.astrologer?.displayName ||
+        review.astrologer?.name ||
+        "",
+
+      sessionType: review.session?.type || "",
+
+      sessionStatus: review.session?.status || "",
+
+      rating: review.rating,
+
+      comment: review.comment || "",
+
+      createdAt: review.createdAt,
+    }));
+
+    // ---------------- RESPONSE ----------------
+
+    return {
+      data: formattedData,
+
+      totalCount,
+
+      currentPage: safePage,
+
+      totalPages: Math.ceil(totalCount / safeLimit),
+
+      averageRating:
+        aggregate?._avg?.rating || 0,
+    };
+  } catch (error) {
+    console.error("getUserReviews error:", error);
+
+    throw new Error("Failed to fetch user reviews");
+  }
+},
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;

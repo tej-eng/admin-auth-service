@@ -1020,6 +1020,54 @@ const typeDefs = gql`
   }
   #-------start of user call history ---------#
   #--------------------END of user call history-----------------#
+  #-----start of user reviews ---------#
+  input UserReviewSearchInput {
+  query: String
+  userName: String
+  astrologerName: String
+  rating: Int
+
+  filterType: SessionFilterType
+
+  startDate: String
+  endDate: String
+
+  page: Int
+  limit: Int
+}
+
+type UserReview {
+  reviewId: ID!
+
+  sessionId: ID
+
+  userId: ID
+  userName: String
+  mobile: String
+
+  astrologerId: ID
+  astrologerName: String
+
+  sessionType: String
+  sessionStatus: String
+
+  rating: Int
+
+  comment: String
+
+  createdAt: DateTime
+}
+
+type UserReviewList {
+  data: [UserReview!]!
+
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+
+  averageRating: Float
+}
+  #-------END of user reviews ---------#
   type Query {
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -1131,6 +1179,10 @@ const typeDefs = gql`
     getUserCallHistory(
       searchInput: UserCallHistorySearchInput!
     ): UserCallHistoryList!
+
+    getUserReviews(
+  searchInput: UserReviewSearchInput!
+): UserReviewList!
   }
   input UpdateAstrologerInput {
     name: String
