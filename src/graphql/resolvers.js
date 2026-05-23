@@ -576,12 +576,8 @@ getUserWalletTransactions: async (
       },
     };
 
-    // Filter by type
-    if (type) {
-      whereClause.type = {
-        contains: type,
-        mode: "insensitive",
-      };
+   if (type) {
+      whereClause.type = type.toUpperCase();
     }
 
     // Filter by amount
