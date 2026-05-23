@@ -226,12 +226,16 @@ const typeDefs = gql`
     totalPages: Int!
   }
 
-  input UserSearchInput {
+ input UserSearchInput {
   query: String
   mobile: String
-  filterType: String   # TODAY | WEEK | MONTH | YEAR | CUSTOM
+  filterType: String
   startDate: String
   endDate: String
+
+  minAmount: Int
+  maxAmount: Int
+
   page: Int
   limit: Int
 }
