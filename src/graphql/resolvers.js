@@ -691,6 +691,162 @@ getUserWalletTransactions: async (
     throw new Error("Failed to fetch transactions");
   }
 },
+
+getAstrologerWalletTransactions: async (
+  _,
+  {
+    page = 1,
+    limit = 20,
+    type,
+    amount,
+    contactNo,
+    astrologerName,
+    filterType,
+    startDate,
+    endDate,
+  }
+) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    // Only astrologer transactions
+    const whereClause = {
+      astrologerWalletId: {
+        not: null,
+      },
+    };
+
+    // Type filter
+    if (type) {
+      whereClause.type = type.toUpperCase();
+    }
+
+    // Amount filter
+    if (amount) {
+      whereClause.amount = Number(amount);
+    }
+
+    // Astrologer filters
+    if (contactNo || astrologerName) {
+      whereClause.astrologerWallet = {
+        astrologer: {},
+      };
+
+      // Contact number filter
+      if (contactNo) {
+        whereClause.astrologerWallet.astrologer.contactNo = {
+          contains: contactNo,
+        };
+      }
+
+      // Name filter
+      if (astrologerName) {
+        whereClause.astrologerWallet.astrologer.name = {
+          contains: astrologerName,
+          mode: "insensitive",
+        };
+      }
+    }
+
+    // =========================
+    // DATE FILTERS
+    // =========================
+
+    const now = new Date();
+
+    // WEEK
+    if (filterType === "WEEK") {
+      const weekStart = new Date();
+      weekStart.setDate(now.getDate() - 7);
+
+      whereClause.createdAt = {
+        gte: weekStart,
+        lte: now,
+      };
+    }
+
+    // MONTH
+    if (filterType === "MONTH") {
+      const monthStart = new Date();
+      monthStart.setMonth(now.getMonth() - 1);
+
+      whereClause.createdAt = {
+        gte: monthStart,
+        lte: now,
+      };
+    }
+
+    // YEAR
+    if (filterType === "YEAR") {
+      const yearStart = new Date();
+      yearStart.setFullYear(now.getFullYear() - 1);
+
+      whereClause.createdAt = {
+        gte: yearStart,
+        lte: now,
+      };
+    }
+
+    // CUSTOM
+    if (
+      filterType === "CUSTOM" &&
+      startDate &&
+      endDate
+    ) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
+    const [data, totalCount] = await Promise.all([
+      prisma.walletTransaction.findMany({
+        where: whereClause,
+
+        include: {
+          astrologerWallet: {
+            include: {
+              astrologer: {
+                select: {
+                  id: true,
+                  name: true,
+                  displayName: true,
+                  contactNo: true,
+                  email: true,
+                },
+              },
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: limit,
+      }),
+
+      prisma.walletTransaction.count({
+        where: whereClause,
+      }),
+    ]);
+
+    return {
+      data,
+      totalCount,
+    };
+  } catch (err) {
+    console.error(
+      "getAstrologerWalletTransactions error:",
+      err
+    );
+
+    throw new Error(
+      "Failed to fetch astrologer wallet transactions"
+    );
+  }
+},
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;

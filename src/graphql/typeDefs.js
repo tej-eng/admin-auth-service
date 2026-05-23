@@ -793,6 +793,42 @@ type UserWallet {
   totalCount: Int!
 }
   #-----------------------------END Wallet MANAGEMENT-----------------#
+  #-----------------------START for astrologer walet-----------------#
+  type AstrologerWallet {
+  id: ID!
+  astrologerId: ID!
+  balanceCoins: Int
+  lockedCoins: Int
+
+  astrologer: Astrologer
+
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type AstrologerWalletTransaction {
+  id: ID!
+
+  astrologerWalletId: ID
+
+  sessionId: ID
+  paymentId: ID
+
+  type: String!
+  coins: Int!
+  amount: Float
+  description: String
+
+  astrologerWallet: AstrologerWallet
+
+  createdAt: DateTime!
+}
+
+type AstrologerWalletTransactionList {
+  data: [AstrologerWalletTransaction!]!
+  totalCount: Int!
+}
+  #------------------End of astrologer wallet-----------------#
   type Query {
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -859,7 +895,7 @@ type UserWallet {
 
     getRechargePacks: [RechargePack!]!
 
-    getUserWallet(userId: ID!): UserWallet
+ getUserWallet(userId: ID!): UserWallet
    
  getUserWalletTransactions(
   page: Int
@@ -871,6 +907,18 @@ type UserWallet {
   startDate: String
   endDate: String
 ): WalletTransactionList!
+
+getAstrologerWalletTransactions(
+  page: Int
+  limit: Int
+  type: String
+  amount: Float
+  contactNo: String
+  astrologerName: String
+  filterType: String
+  startDate: String
+  endDate: String
+): AstrologerWalletTransactionList!
 
   }
   input UpdateAstrologerInput {
