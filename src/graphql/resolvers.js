@@ -407,36 +407,194 @@ getUsersListBySearch: async (_, { searchInput }) => {
       }
     },
 
-    getAstrologerEarnings: async () => {
+  getAstrologerEarnings: async (_, { searchInput }) => {
   try {
-    const wallets = await prisma.astrologerWallet.findMany({
-      include: {
-        astrologer: true,
-      },
+    const {
+      query,
+      filterType,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = searchInput;
 
-      orderBy: {
-        createdAt: "desc",
-      },
+    const safePage = Math.max(page, 1);
+    const safeLimit = Math.min(limit, 50);
+
+    const skip = (safePage - 1) * safeLimit;
+
+    const where = {};
+
+    // ---------------- SEARCH ----------------
+
+    if (query) {
+      where.astrologer = {
+        OR: [
+          {
+            name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+
+          {
+            contactNo: {
+              contains: query,
+            },
+          },
+        ],
+      };
+    }
+
+    // ---------------- DATE FILTER ----------------
+
+    if (filterType) {
+      const now = new Date();
+
+      let start;
+      let end;
+
+      switch (filterType) {
+        case "TODAY":
+          start = new Date(now.setHours(0, 0, 0, 0));
+          end = new Date();
+          break;
+
+        case "WEEK":
+          start = new Date();
+          start.setDate(start.getDate() - 7);
+          end = new Date();
+          break;
+
+        case "MONTH":
+          start = new Date();
+          start.setMonth(start.getMonth() - 1);
+          end = new Date();
+          break;
+
+        case "YEAR":
+          start = new Date();
+          start.setFullYear(start.getFullYear() - 1);
+          end = new Date();
+          break;
+
+        case "CUSTOM":
+          start = startDate ? new Date(startDate) : undefined;
+          end = endDate ? new Date(endDate) : undefined;
+          break;
+      }
+
+      where.createdAt = {};
+
+      if (start) where.createdAt.gte = start;
+
+      if (end) where.createdAt.lte = end;
+    }
+
+    // ---------------- FETCH ----------------
+
+    const [wallets, totalCount] = await Promise.all([
+      prisma.astrologerWallet.findMany({
+        where,
+
+        include: {
+          astrologer: true,
+
+          transactions: {
+            include: {
+              session: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: safeLimit,
+      }),
+
+      prisma.astrologerWallet.count({
+        where,
+      }),
+    ]);
+
+    // ---------------- CALCULATIONS ----------------
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+
+    const enrichedData = wallets.map((wallet) => {
+      const transactions = wallet.transactions || [];
+
+      // TOTAL SESSION EARNINGS
+      const totalSessionEarnings = transactions.reduce((sum, tx) => {
+        return sum + (tx.amount || 0);
+      }, 0);
+
+      // TODAY EARNINGS
+      const todayEarnings = transactions
+        .filter((tx) => {
+          return new Date(tx.createdAt) >= todayStart;
+        })
+        .reduce((sum, tx) => {
+          return sum + (tx.amount || 0);
+        }, 0);
+
+      // MONTHLY EARNINGS
+      const monthlyEarnings = transactions
+        .filter((tx) => {
+          return new Date(tx.createdAt) >= monthStart;
+        })
+        .reduce((sum, tx) => {
+          return sum + (tx.amount || 0);
+        }, 0);
+
+      return {
+        astrologerId: wallet.astrologer?.id,
+
+        astrologerName: wallet.astrologer?.name,
+
+        email: wallet.astrologer?.email,
+
+        contactNo: wallet.astrologer?.contactNo,
+
+        balanceCoins: wallet.balanceCoins || 0,
+
+        totalEarned: wallet.totalEarned || 0,
+
+        totalWithdrawn: wallet.totalWithdrawn || 0,
+
+        totalSessionEarnings,
+
+        monthlyEarnings,
+
+        todayEarnings,
+
+        createdAt: wallet.createdAt,
+      };
     });
 
-    return wallets.map((wallet) => ({
-      astrologerId: wallet.astrologer?.id,
-      astrologerName: wallet.astrologer?.name,
-      email: wallet.astrologer?.email,
-      contactNo: wallet.astrologer?.contactNo,
+    return {
+      data: enrichedData,
 
-      balanceCoins: wallet.balanceCoins || 0,
-      totalEarned: wallet.totalEarned || 0,
-      totalWithdrawn: wallet.totalWithdrawn || 0,
+      totalCount,
 
-      createdAt: wallet.createdAt,
-    }));
+      currentPage: safePage,
+
+      totalPages: Math.ceil(totalCount / safeLimit),
+    };
   } catch (error) {
     console.error("getAstrologerEarnings error:", error);
+
     throw new Error("Failed to fetch astrologer earnings");
   }
 },
-
     // ================= GET PENDING ASTROLOGERS =================
     getPendingAstrologers: async (_, { page = 1, limit = 10 }, context) => {
       try {

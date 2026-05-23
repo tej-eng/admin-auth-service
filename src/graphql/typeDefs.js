@@ -869,7 +869,18 @@ type AstrologerWalletTransactionList {
 }
   #---END FOR ALL WALLET TRANSACTIONS-----------------#
   #-----------------------------START of astrologer earnings-----------------#
-  type AstrologerEarning {
+  input AstrologerEarningSearchInput {
+  query: String
+  filterType: String
+
+  startDate: String
+  endDate: String
+
+  page: Int
+  limit: Int
+}
+
+type AstrologerEarning {
   astrologerId: ID!
   astrologerName: String!
   email: String
@@ -879,7 +890,18 @@ type AstrologerWalletTransactionList {
   totalEarned: Float
   totalWithdrawn: Float
 
+  totalSessionEarnings: Float
+  monthlyEarnings: Float
+  todayEarnings: Float
+
   createdAt: DateTime
+}
+
+type AstrologerEarningList {
+  data: [AstrologerEarning!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
 }
   #------end of astrologer earnings-----------------#
   type Query {
@@ -983,7 +1005,9 @@ getAllWalletTransactions(
   source: String
 ): WalletTransactionList!
 
-getAstrologerEarnings: [AstrologerEarning!]!
+getAstrologerEarnings(
+  searchInput: AstrologerEarningSearchInput!
+): AstrologerEarningList!
 
   }
   input UpdateAstrologerInput {
