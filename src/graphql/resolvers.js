@@ -217,7 +217,7 @@ export const resolvers = {
       }
     },
 
-    getUsersListBySearch: async (_, { searchInput }) => {
+   getUsersListBySearch: async (_, { searchInput }) => {
   try {
     const {
       query,
@@ -233,14 +233,9 @@ export const resolvers = {
     const safeLimit = Math.min(limit, 50);
     const skip = (safePage - 1) * safeLimit;
 
-    // ----------------------------
-    // WHERE BASE
-    // ----------------------------
     const where = {};
 
-    // ----------------------------
-    // TEXT SEARCH (name + mobile)
-    // ----------------------------
+    // ---------------- TEXT SEARCH ----------------
     if (query) {
       where.OR = [
         { name: { contains: query, mode: "insensitive" } },
@@ -248,16 +243,12 @@ export const resolvers = {
       ];
     }
 
-    // ----------------------------
-    // DIRECT MOBILE FILTER
-    // ----------------------------
+    // ---------------- MOBILE FILTER ----------------
     if (mobile) {
       where.mobile = { contains: mobile };
     }
 
-    // ----------------------------
-    // DATE FILTER LOGIC
-    // ----------------------------
+    // ---------------- DATE FILTER ----------------
     if (filterType) {
       const now = new Date();
       let start, end;
@@ -292,38 +283,50 @@ export const resolvers = {
           break;
       }
 
-      if (start && end) {
-        where.createdAt = {
-          gte: start,
-          lte: end,
-        };
-      } else if (start) {
-        where.createdAt = {
-          gte: start,
-        };
-      } else if (end) {
-        where.createdAt = {
-          lte: end,
-        };
-      }
+      where.createdAt = {};
+      if (start) where.createdAt.gte = start;
+      if (end) where.createdAt.lte = end;
     }
 
-    // ----------------------------
-    // QUERY
-    // ----------------------------
-    const [users, totalCount] = await Promise.all([
-      prisma.user.findMany({
-        where,
-        skip,
-        take: safeLimit,
-        orderBy: { createdAt: "desc" },
-      }),
+    // ---------------- FETCH USERS ----------------
+   const [users, totalCount] = await Promise.all([
+  prisma.user.findMany({
+    where,
+    skip,
+    take: safeLimit,
+    orderBy: { createdAt: "desc" },
 
-      prisma.user.count({ where }),
-    ]);
+    include: {
+      wallet: true,   // 👈 ADD THIS HERE
+    },
+  }),
+
+  prisma.user.count({ where }),
+]);
+
+    // ---------------- FETCH WALLET (IMPORTANT FIX) ----------------
+    const userIds = users.map((u) => u.id);
+
+    const wallets = await prisma.userWallet.findMany({
+      where: {
+        userId: { in: userIds },
+      },
+    });
+
+    const walletMap = {};
+    wallets.forEach((w) => {
+      walletMap[w.userId] = w;
+    });
+
+    // ---------------- ATTACH COINS ----------------
+    const enrichedUsers = users.map((user) => ({
+      ...user,
+      userCoins: walletMap[user.id]?.balanceCoins || 0,
+      lockedCoins: walletMap[user.id]?.lockedCoins || 0,
+    }));
 
     return {
-      data: users,
+      data: enrichedUsers,
       totalCount,
       currentPage: safePage,
       totalPages: Math.ceil(totalCount / safeLimit),

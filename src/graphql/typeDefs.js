@@ -88,6 +88,8 @@ const typeDefs = gql`
     isDeleted: Boolean
     createdAt: DateTime
     updatedAt: DateTime
+    userCoins: Int
+    lockedCoins: Int
   }
 
   #--------------------------------------#
