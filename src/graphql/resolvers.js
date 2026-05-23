@@ -217,7 +217,7 @@ export const resolvers = {
       }
     },
 
-   getUsersListBySearch: async (_, { searchInput }) => {
+getUsersListBySearch: async (_, { searchInput }) => {
   try {
     const {
       query,
@@ -238,14 +238,25 @@ export const resolvers = {
     // ---------------- TEXT SEARCH ----------------
     if (query) {
       where.OR = [
-        { name: { contains: query, mode: "insensitive" } },
-        { mobile: { contains: query } },
+        {
+          name: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          mobile: {
+            contains: query,
+          },
+        },
       ];
     }
 
     // ---------------- MOBILE FILTER ----------------
     if (mobile) {
-      where.mobile = { contains: mobile };
+      where.mobile = {
+        contains: mobile,
+      };
     }
 
     // ---------------- DATE FILTER ----------------
@@ -284,45 +295,35 @@ export const resolvers = {
       }
 
       where.createdAt = {};
+
       if (start) where.createdAt.gte = start;
       if (end) where.createdAt.lte = end;
     }
 
     // ---------------- FETCH USERS ----------------
-   const [users, totalCount] = await Promise.all([
-  prisma.user.findMany({
-    where,
-    skip,
-    take: safeLimit,
-    orderBy: { createdAt: "desc" },
+    const [users, totalCount] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip,
+        take: safeLimit,
+        orderBy: {
+          createdAt: "desc",
+        },
 
-    include: {
-      wallet: true,   // 👈 ADD THIS HERE
-    },
-  }),
+        include: {
+          wallet: true,
+        },
+      }),
 
-  prisma.user.count({ where }),
-]);
+      prisma.user.count({ where }),
+    ]);
 
-    // ---------------- FETCH WALLET (IMPORTANT FIX) ----------------
-    const userIds = users.map((u) => u.id);
-
-    const wallets = await prisma.userWallet.findMany({
-      where: {
-        userId: { in: userIds },
-      },
-    });
-
-    const walletMap = {};
-    wallets.forEach((w) => {
-      walletMap[w.userId] = w;
-    });
-
-    // ---------------- ATTACH COINS ----------------
+    // ---------------- FINAL RESPONSE ----------------
     const enrichedUsers = users.map((user) => ({
       ...user,
-      userCoins: walletMap[user.id]?.balanceCoins || 0,
-      lockedCoins: walletMap[user.id]?.lockedCoins || 0,
+
+      userCoins: user.wallet?.balanceCoins || 0,
+      lockedCoins: user.wallet?.lockedCoins || 0,
     }));
 
     return {

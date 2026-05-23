@@ -88,8 +88,9 @@ const typeDefs = gql`
     isDeleted: Boolean
     createdAt: DateTime
     updatedAt: DateTime
-    userCoins: Int
-    lockedCoins: Int
+    userCoins: Float
+    lockedCoins: Float
+    wallet: UserWallet
   }
 
   #--------------------------------------#
@@ -365,13 +366,16 @@ validityDays: Int!
     updatedAt: DateTime!
   }
 
-  type UserWallet {
-    id: ID!
-    userId: ID!
-    coins: Int!
-    createdAt: DateTime!
-    updatedAt: DateTime!
-  }
+ type UserWallet {
+  id: ID!
+  userId: ID!
+
+  balanceCoins: Float!
+  lockedCoins: Float!
+
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
 
   #------ module -------#
   type Module {
