@@ -844,6 +844,160 @@ getAstrologerWalletTransactions: async (
     );
   }
 },
+
+getAllWalletTransactions: async (
+  _,
+  {
+    page = 1,
+    limit = 20,
+    type,
+    amount,
+    contactNo,
+    filterType,
+    startDate,
+    endDate,
+    source,
+  }
+) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const whereClause = {};
+
+    // ======================
+    // SOURCE FILTER (USER / ASTROLOGER / ALL)
+    // ======================
+    if (source === "USER") {
+      whereClause.userWalletId = { not: null };
+    }
+
+    if (source === "ASTROLOGER") {
+      whereClause.astrologerWalletId = { not: null };
+    }
+
+    // ======================
+    // TYPE FILTER
+    // ======================
+    if (type) {
+      whereClause.type = type.toUpperCase();
+    }
+
+    // ======================
+    // AMOUNT FILTER
+    // ======================
+    if (amount) {
+      whereClause.amount = Number(amount);
+    }
+
+    // ======================
+    // PHONE FILTER (USER + ASTROLOGER)
+    // ======================
+    if (contactNo) {
+      whereClause.OR = [
+        {
+          userWallet: {
+            user: {
+              contactNo: {
+                contains: contactNo,
+              },
+            },
+          },
+        },
+        {
+          astrologerWallet: {
+            astrologer: {
+              contactNo: {
+                contains: contactNo,
+              },
+            },
+          },
+        },
+      ];
+    }
+
+    // ======================
+    // DATE FILTERS
+    // ======================
+    const now = new Date();
+
+    if (filterType === "WEEK") {
+      const weekStart = new Date();
+      weekStart.setDate(now.getDate() - 7);
+
+      whereClause.createdAt = { gte: weekStart, lte: now };
+    }
+
+    if (filterType === "MONTH") {
+      const monthStart = new Date();
+      monthStart.setMonth(now.getMonth() - 1);
+
+      whereClause.createdAt = { gte: monthStart, lte: now };
+    }
+
+    if (filterType === "YEAR") {
+      const yearStart = new Date();
+      yearStart.setFullYear(now.getFullYear() - 1);
+
+      whereClause.createdAt = { gte: yearStart, lte: now };
+    }
+
+    if (filterType === "CUSTOM" && startDate && endDate) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
+    // ======================
+    // FETCH DATA
+    // ======================
+    const [data, totalCount] = await Promise.all([
+      prisma.walletTransaction.findMany({
+        where: whereClause,
+
+        include: {
+          userWallet: {
+            include: {
+              user: true,
+            },
+          },
+          astrologerWallet: {
+            include: {
+              astrologer: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: limit,
+      }),
+
+      prisma.walletTransaction.count({
+        where: whereClause,
+      }),
+    ]);
+
+    // ======================
+    // ADD SOURCE FIELD
+    // ======================
+    const formattedData = data.map((tx) => ({
+      ...tx,
+      source: tx.userWalletId ? "USER" : "ASTROLOGER",
+    }));
+
+    return {
+      data: formattedData,
+      totalCount,
+    };
+  } catch (err) {
+    console.error("getAllWalletTransactions error:", err);
+    throw new Error("Failed to fetch wallet transactions");
+  }
+},
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;

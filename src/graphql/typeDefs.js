@@ -829,6 +829,35 @@ type AstrologerWalletTransactionList {
   totalCount: Int!
 }
   #------------------End of astrologer wallet-----------------#
+  #------START FOR ALL WALLET TRANSACTIONS-----------------#
+
+  enum WalletSource {
+  USER
+  ASTROLOGER
+}
+  type WalletTransaction {
+  id: ID!
+
+  userWalletId: ID
+  astrologerWalletId: ID
+
+  rechargePackId: ID
+  sessionId: ID
+  paymentId: ID
+
+  type: String!
+  coins: Int!
+  amount: Float
+  description: String
+
+  userWallet: UserWallet
+  astrologerWallet: AstrologerWallet
+
+  source: WalletSource
+
+  createdAt: DateTime!
+}
+  #---END FOR ALL WALLET TRANSACTIONS-----------------#
   type Query {
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -918,6 +947,17 @@ getAstrologerWalletTransactions(
   startDate: String
   endDate: String
 ): AstrologerWalletTransactionList!
+getAllWalletTransactions(
+  page: Int
+  limit: Int
+  type: String
+  amount: Float
+  contactNo: String
+  filterType: String
+  startDate: String
+  endDate: String
+  source: String
+): WalletTransactionList!
 
   }
   input UpdateAstrologerInput {
