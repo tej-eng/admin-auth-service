@@ -2232,6 +2232,228 @@ getFraudLogs: async (
     );
   }
 },
+getPaymentReports: async (
+  _,
+  {
+    searchInput: {
+      query,
+      status,
+      filterType,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 20,
+    },
+  },
+  { prisma }
+) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const whereClause = {};
+
+    // ======================
+    // STATUS FILTER
+    // ======================
+    if (status) {
+      whereClause.status = status;
+    }
+
+    // ======================
+    // SEARCH FILTER
+    // ======================
+    if (query) {
+      whereClause.OR = [
+        {
+          razorpayOrderId: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          user: {
+            name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+        },
+        {
+          user: {
+            mobile: {
+              contains: query,
+            },
+          },
+        },
+      ];
+    }
+
+    // ======================
+    // DATE FILTERS
+    // ======================
+    const now = new Date();
+
+    if (filterType === "TODAY") {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+
+      const end = new Date();
+      end.setHours(23, 59, 59, 999);
+
+      whereClause.createdAt = {
+        gte: start,
+        lte: end,
+      };
+    }
+
+    if (filterType === "WEEK") {
+      const weekStart = new Date();
+      weekStart.setDate(now.getDate() - 7);
+
+      whereClause.createdAt = {
+        gte: weekStart,
+        lte: now,
+      };
+    }
+
+    if (filterType === "MONTH") {
+      const monthStart = new Date();
+      monthStart.setMonth(now.getMonth() - 1);
+
+      whereClause.createdAt = {
+        gte: monthStart,
+        lte: now,
+      };
+    }
+
+    if (filterType === "YEAR") {
+      const yearStart = new Date();
+      yearStart.setFullYear(now.getFullYear() - 1);
+
+      whereClause.createdAt = {
+        gte: yearStart,
+        lte: now,
+      };
+    }
+
+    if (filterType === "CUSTOM" && startDate && endDate) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
+
+    // ======================
+    // FETCH DATA
+    // ======================
+    const [data, totalCount, totalStats, paidStats, failedStats] =
+      await Promise.all([
+        prisma.paymentOrder.findMany({
+          where: whereClause,
+
+          include: {
+            user: true,
+            rechargePack: true,
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+
+          skip,
+          take: limit,
+        }),
+
+        prisma.paymentOrder.count({
+          where: whereClause,
+        }),
+
+        prisma.paymentOrder.aggregate({
+          where: whereClause,
+
+          _sum: {
+            amount: true,
+            coins: true,
+          },
+        }),
+
+        prisma.paymentOrder.aggregate({
+          where: {
+            ...whereClause,
+            status: "PAID",
+          },
+
+          _sum: {
+            amount: true,
+          },
+
+          _count: true,
+        }),
+
+        prisma.paymentOrder.aggregate({
+          where: {
+            ...whereClause,
+            status: "FAILED",
+          },
+
+          _sum: {
+            amount: true,
+          },
+
+          _count: true,
+        }),
+      ]);
+
+    // ======================
+    // FORMAT DATA
+    // ======================
+    const formattedData = data.map((item) => ({
+      id: item.id,
+
+      userId: item.userId,
+      userName: item.user?.name || null,
+      mobile: item.user?.mobile || null,
+
+      rechargePackId: item.rechargePackId,
+      rechargePackName: item.rechargePack?.name || null,
+
+      razorpayOrderId: item.razorpayOrderId,
+
+      amount: item.amount,
+      coins: item.coins,
+
+      status: item.status,
+
+      createdAt: item.createdAt,
+      updatedAt: item.updatedAt,
+    }));
+
+    return {
+      data: formattedData,
+
+      totalCount,
+
+      currentPage: page,
+
+      totalPages: Math.ceil(totalCount / limit),
+
+      totalAmount: totalStats._sum.amount || 0,
+
+      totalCoins: totalStats._sum.coins || 0,
+
+      paidAmount: paidStats._sum.amount || 0,
+
+      failedAmount: failedStats._sum.amount || 0,
+
+      paidCount: paidStats._count || 0,
+
+      failedCount: failedStats._count || 0,
+    };
+  } catch (err) {
+    console.error("getPaymentReports error:", err);
+    throw new Error("Failed to fetch payment reports");
+  }
+},
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;

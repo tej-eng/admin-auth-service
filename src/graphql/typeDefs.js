@@ -1036,6 +1036,27 @@ const typeDefs = gql`
   limit: Int
 }
 
+ input UpdateAstrologerInput {
+    name: String
+    email: String
+    contactNo: String
+    dateOfBirth: String
+    gender: Gender
+    languages: [String!]
+    skills: [String!]
+    experience: Int
+    about: String
+  }
+
+  input UpdateUserInput {
+    name: String
+    mobile: String
+    gender: Gender
+    birthDate: DateTime
+    birthTime: String
+    occupation: String
+    isActive: Boolean
+  }
 type UserReview {
   reviewId: ID!
 
@@ -1141,6 +1162,63 @@ type FraudLogList {
   totalPages: Int!
 }
  #------end fraud LOGGING ---------------#
+ #--------------start of payment reports-----------------#
+ enum PaymentOrderStatus {
+  CREATED
+  PAID
+  FAILED
+}
+
+input PaymentReportSearchInput {
+  query: String
+  status: PaymentOrderStatus
+
+  filterType: SessionFilterType
+
+  startDate: String
+  endDate: String
+
+  page: Int
+  limit: Int
+}
+  type PaymentReport {
+  id: ID!
+
+  userId: ID!
+  userName: String
+  mobile: String
+
+  rechargePackId: ID
+  rechargePackName: String
+
+  razorpayOrderId: String
+
+  amount: Float
+  coins: Int
+
+  status: PaymentOrderStatus
+
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+type PaymentReportList {
+  data: [PaymentReport!]!
+
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+
+  totalAmount: Float!
+  totalCoins: Int!
+
+  paidAmount: Float!
+  failedAmount: Float!
+
+  paidCount: Int!
+  failedCount: Int!
+}
+ #-----END OF PAYMENT REPORTS-----------------#
   type Query {
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -1264,30 +1342,12 @@ getFraudLogs(
   searchInput: FraudLogSearchInput
 ): FraudLogList!
 
-
+getPaymentReports(
+  searchInput: PaymentReportSearchInput!
+): PaymentReportList!
 
   }
-  input UpdateAstrologerInput {
-    name: String
-    email: String
-    contactNo: String
-    dateOfBirth: String
-    gender: Gender
-    languages: [String!]
-    skills: [String!]
-    experience: Int
-    about: String
-  }
-
-  input UpdateUserInput {
-    name: String
-    mobile: String
-    gender: Gender
-    birthDate: DateTime
-    birthTime: String
-    occupation: String
-    isActive: Boolean
-  }
+ 
 
   type Mutation {
     uploadImage(file: Upload!): UploadResponse
