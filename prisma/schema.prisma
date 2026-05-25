@@ -701,7 +701,7 @@ model Session {
   messages      Message[]
   createdAt     DateTime            @default(now())
   transactions  WalletTransaction[]
-
+  fraudLogs FraudLog[] 
   @@index([userId])
   @@index([astrologerId])
   @@index([status])
