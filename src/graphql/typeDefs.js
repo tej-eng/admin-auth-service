@@ -1090,7 +1090,57 @@ type FraudFlagList {
   currentPage: Int!
   totalPages: Int!
 }
-  #-----END FRAUD FLAGGING ---------------#
+ #-----END FRAUD FLAGGING ---------------#
+ #----------start faud LOGGING ---------------#
+ enum FraudStatus {
+  PENDING
+  FRAUD
+  FINE
+}
+  type FraudLog {
+  id: ID!
+
+  orderId: String
+
+  sessionId: String
+
+  senderId: String
+  senderName: String
+
+  receiverId: String
+  receiverName: String
+
+  message: String
+
+  matchedKeywords: [String]
+
+  status: FraudStatus
+
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input FraudLogSearchInput {
+  query: String
+  status: FraudStatus
+
+  filterType: SessionFilterType
+
+  startDate: String
+  endDate: String
+
+  page: Int
+  limit: Int
+}
+
+type FraudLogList {
+  data: [FraudLog!]!
+
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
+ #------end fraud LOGGING ---------------#
   type Query {
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -1209,6 +1259,13 @@ type FraudFlagList {
 getFraudFlags(
   searchInput: FraudFlagSearchInput
 ): FraudFlagList!
+
+getFraudLogs(
+  searchInput: FraudLogSearchInput
+): FraudLogList!
+
+
+
   }
   input UpdateAstrologerInput {
     name: String
@@ -1437,6 +1494,12 @@ getFraudFlags(
 deleteFraudFlag(
   id: ID!
 ): Boolean!
+
+updateFraudLogStatus(
+  id: ID!
+  status: FraudStatus!
+): FraudLog!
+
   }
 `;
 

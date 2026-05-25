@@ -2058,6 +2058,180 @@ getFraudFlags: async (_, { searchInput }, { prisma }) => {
     );
   }
 },
+
+getFraudLogs: async (
+  _,
+  { searchInput },
+  { prisma }
+) => {
+  try {
+    const {
+      query,
+      status,
+      filterType,
+      startDate,
+      endDate,
+      page = 1,
+      limit = 10,
+    } = searchInput || {};
+
+    const safePage = Math.max(page, 1);
+
+    const safeLimit = Math.min(limit, 50);
+
+    const skip =
+      (safePage - 1) * safeLimit;
+
+    const where = {};
+
+    // ---------------- SEARCH ----------------
+
+    if (query) {
+      where.OR = [
+        {
+          senderName: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+
+        {
+          receiverName: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+
+        {
+          orderId: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+
+        {
+          message: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    // ---------------- STATUS ----------------
+
+    if (status) {
+      where.status = status;
+    }
+
+    // ---------------- DATE FILTER ----------------
+
+    let start;
+    let end;
+
+    if (filterType) {
+      switch (filterType) {
+        case "TODAY":
+          start = new Date();
+          start.setHours(0, 0, 0, 0);
+
+          end = new Date();
+          break;
+
+        case "WEEK":
+          start = new Date();
+          start.setDate(
+            start.getDate() - 7
+          );
+
+          end = new Date();
+          break;
+
+        case "MONTH":
+          start = new Date();
+          start.setMonth(
+            start.getMonth() - 1
+          );
+
+          end = new Date();
+          break;
+
+        case "YEAR":
+          start = new Date();
+          start.setFullYear(
+            start.getFullYear() - 1
+          );
+
+          end = new Date();
+          break;
+
+        case "CUSTOM":
+          start = startDate
+            ? new Date(startDate)
+            : undefined;
+
+          end = endDate
+            ? new Date(endDate)
+            : undefined;
+
+          break;
+      }
+    }
+
+    if (start || end) {
+      where.createdAt = {};
+
+      if (start) {
+        where.createdAt.gte = start;
+      }
+
+      if (end) {
+        where.createdAt.lte = end;
+      }
+    }
+
+    // ---------------- FETCH ----------------
+
+    const [logs, totalCount] =
+      await Promise.all([
+        prisma.fraudLog.findMany({
+          where,
+
+          orderBy: {
+            createdAt: "desc",
+          },
+
+          skip,
+          take: safeLimit,
+        }),
+
+        prisma.fraudLog.count({
+          where,
+        }),
+      ]);
+
+    return {
+      data: logs,
+
+      totalCount,
+
+      currentPage: safePage,
+
+      totalPages: Math.ceil(
+        totalCount / safeLimit
+      ),
+    };
+  } catch (error) {
+    console.error(
+      "getFraudLogs error:",
+      error
+    );
+
+    throw new Error(
+      "Failed to fetch fraud logs"
+    );
+  }
+},
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;
@@ -4207,6 +4381,36 @@ deleteFraudFlag: async (
 
     throw new Error(
       "Failed to delete fraud flag"
+    );
+  }
+},
+
+updateFraudLogStatus: async (
+  _,
+  { id, status },
+  { prisma }
+) => {
+  try {
+    const fraudLog =
+      await prisma.fraudLog.update({
+        where: {
+          id,
+        },
+
+        data: {
+          status,
+        },
+      });
+
+    return fraudLog;
+  } catch (error) {
+    console.error(
+      "updateFraudLogStatus error:",
+      error
+    );
+
+    throw new Error(
+      "Failed to update fraud log status"
     );
   }
 },
