@@ -1068,6 +1068,29 @@ type UserReviewList {
   averageRating: Float
 }
   #-------END of user reviews ---------#
+  #------------START FRAUD FLAGGING ---------------#
+  type FraudFlag {
+  id: ID!
+  keyword: String!
+  createdBy: String
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+
+input FraudFlagSearchInput {
+  query: String
+  page: Int
+  limit: Int
+}
+
+type FraudFlagList {
+  data: [FraudFlag!]!
+
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
+  #-----END FRAUD FLAGGING ---------------#
   type Query {
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -1183,6 +1206,9 @@ type UserReviewList {
     getUserReviews(
   searchInput: UserReviewSearchInput!
 ): UserReviewList!
+getFraudFlags(
+  searchInput: FraudFlagSearchInput
+): FraudFlagList!
   }
   input UpdateAstrologerInput {
     name: String
@@ -1404,6 +1430,13 @@ type UserReviewList {
     #---- Save bank details & docs -----#
     saveAndVerifyKyc(astrologerId: String!, input: KycDetailInput!): KycDetail
     rejectKyc(astrologerId: String!): KycDetail
+    createFraudFlag(
+  keyword: String!
+): FraudFlag!
+
+deleteFraudFlag(
+  id: ID!
+): Boolean!
   }
 `;
 

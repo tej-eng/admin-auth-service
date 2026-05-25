@@ -1996,6 +1996,68 @@ getUserCallHistory: async (_, { searchInput }, { prisma }) => {
     throw new Error("Failed to fetch user reviews");
   }
 },
+
+getFraudFlags: async (_, { searchInput }, { prisma }) => {
+  try {
+    const {
+      query,
+      page = 1,
+      limit = 10,
+    } = searchInput || {};
+
+    const safePage = Math.max(page, 1);
+    const safeLimit = Math.min(limit, 50);
+
+    const skip = (safePage - 1) * safeLimit;
+
+    const where = {};
+
+    if (query) {
+      where.keyword = {
+        contains: query,
+        mode: "insensitive",
+      };
+    }
+
+    const [flags, totalCount] = await Promise.all([
+      prisma.fraudFlag.findMany({
+        where,
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: safeLimit,
+      }),
+
+      prisma.fraudFlag.count({
+        where,
+      }),
+    ]);
+
+    return {
+      data: flags,
+
+      totalCount,
+
+      currentPage: safePage,
+
+      totalPages: Math.ceil(
+        totalCount / safeLimit
+      ),
+    };
+  } catch (error) {
+    console.error(
+      "getFraudFlags error:",
+      error
+    );
+
+    throw new Error(
+      "Failed to fetch fraud flags"
+    );
+  }
+},
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;
@@ -4075,5 +4137,78 @@ getUserCallHistory: async (_, { searchInput }, { prisma }) => {
 
       return kyc;
     },
+
+    createFraudFlag: async (
+  _,
+  { keyword },
+  { prisma }
+) => {
+  try {
+    const cleanKeyword =
+      keyword.trim().toLowerCase();
+
+    if (!cleanKeyword) {
+      throw new Error(
+        "Keyword is required"
+      );
+    }
+
+    const existing =
+      await prisma.fraudFlag.findUnique({
+        where: {
+          keyword: cleanKeyword,
+        },
+      });
+
+    if (existing) {
+      throw new Error(
+        "Keyword already exists"
+      );
+    }
+
+    const fraudFlag =
+      await prisma.fraudFlag.create({
+        data: {
+          keyword: cleanKeyword,
+        },
+      });
+
+    return fraudFlag;
+  } catch (error) {
+    console.error(
+      "createFraudFlag error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to create fraud flag"
+    );
+  }
+},
+deleteFraudFlag: async (
+  _,
+  { id },
+  { prisma }
+) => {
+  try {
+    await prisma.fraudFlag.delete({
+      where: {
+        id,
+      },
+    });
+
+    return true;
+  } catch (error) {
+    console.error(
+      "deleteFraudFlag error:",
+      error
+    );
+
+    throw new Error(
+      "Failed to delete fraud flag"
+    );
+  }
+},
   },
 };
