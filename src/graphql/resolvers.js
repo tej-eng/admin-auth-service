@@ -2940,17 +2940,26 @@ export const resolvers = {
       });
     },
     // remedy
-    getUserRemedies: async (_, { userId }) => {
-      return await prisma.remedy.findMany({
-        where: {
-          userId,
-        },
-
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
-    },
+  getRemedies: async () => {
+  try {
+    return await prisma.remedy.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
+getRemedyById: async (_, { id }) => {
+  try {
+    return await prisma.remedy.findUnique({
+      where: { id },
+    });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
   },
 
   // *******************************************************************************************************************************
@@ -4840,45 +4849,52 @@ export const resolvers = {
       }
     },
 
-    // Remedy Add
-    addRemedy: async (_, { input }) => {
-      try {
-        return await prisma.remedy.create({
-          data: {
-            userId: input.userId,
+    createRemedy: async (_, { input }) => {
+  try {
+    return await prisma.remedy.create({
+      data: {
+        title: input.title,
+        description: input.description,
+      },
+    });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
 
-            title: input.title,
-
-            description: input.description,
-          },
-        });
-      } catch (error) {
-        console.log(error);
-
-        throw new Error("Failed to add remedy");
-      }
-    },
-    updateRemedy: async (_, { remedyId, input }) => {
-      return await prisma.remedy.update({
-        where: {
-          id: remedyId,
-        },
-
-        data: {
-          title: input.title,
-
+updateRemedy: async (_, { id, input }) => {
+  try {
+    return await prisma.remedy.update({
+      where: { id },
+      data: {
+        ...(input.title && { title: input.title }),
+        ...(input.description && {
           description: input.description,
-        },
-      });
-    },
-    deleteRemedy: async (_, { remedyId }) => {
-      await prisma.remedy.delete({
-        where: {
-          id: remedyId,
-        },
-      });
+        }),
+        ...(input.isActive !== undefined && {
+          isActive: input.isActive,
+        }),
+      },
+    });
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
 
-      return "Remedy deleted";
-    },
+deleteRemedy: async (_, { id }) => {
+  try {
+    await prisma.remedy.delete({
+      where: { id },
+    });
+
+    return true;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
+
+
+
+
   },
 };

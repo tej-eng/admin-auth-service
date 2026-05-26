@@ -1367,36 +1367,35 @@ const typeDefs = gql`
 
     status: CmsStatus
   }
-    type Remedy {
-  id: ID
 
-  userId: String
+  #-----END OF PAYMENT REPORTS-----------------#
+#---------------------START code for remedy---#
 
-  user: User
-
-  title: String
-
+type Remedy {
+  id: ID!
+  title: String!
   description: String
-
+  isActive: Boolean
   createdAt: String
   updatedAt: String
 }
 
-input AddRemedyInput {
-  userId: String!
-
+input CreateRemedyInput {
   title: String!
-
-  description: String!
+  description: String
 }
 
 input UpdateRemedyInput {
   title: String
-
   description: String
+  isActive: Boolean
 }
 
-  #-----END OF PAYMENT REPORTS-----------------#
+
+
+
+#------------END CODE For remedy-----------------#
+
   type Query {
     #cmss page #
     getAboutPage: AboutPage
@@ -1404,8 +1403,7 @@ input UpdateRemedyInput {
     getRefundPolicyPage: RefundPolicyPage
     getDisclaimerPage: DisclaimerPage
 
-  #  Remedy #
-    getUserRemedies(userId: String!): [Remedy]
+
 
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -1526,24 +1524,19 @@ input UpdateRemedyInput {
     getPaymentReports(
       searchInput: PaymentReportSearchInput!
     ): PaymentReportList!
+
+     getRemedies: [Remedy]
+  getRemedyById(id: ID!): Remedy
+  
   }
 
   type Mutation {
-    #----------------about page -------------#
     upsertAboutPage(input: UpdateAboutPageInput!): AboutPage
     upsertPrivacyPage(input: UpdatePrivacyPageInput!): PrivacyPage
     upsertRefundPolicyPage(
       input: UpdateRefundPolicyPageInput!
     ): RefundPolicyPage
     upsertDisclaimerPage(input: UpdateDisclaimerPageInput!): DisclaimerPage
-
-    #remedy #
-     addRemedy(input: AddRemedyInput!): Remedy
-
-  updateRemedy(remedyId: String!input: UpdateRemedyInput!): Remedy
-
-  deleteRemedy(remedyId: String!): String
-
     uploadImage(file: Upload!): UploadResponse
 
     createBanner(input: BannerInput!): Banner
@@ -1644,7 +1637,6 @@ input UpdateRemedyInput {
     deleteCoupon(id: ID!): Boolean
     updateCouponStatus(id: ID!, status: String!): Coupon
 
-    #------------------------------START module -----------------#
     createModule(
       name: String!
       slug: String!
@@ -1693,7 +1685,6 @@ input UpdateRemedyInput {
 
     deleteStaff(staffId: ID!): Boolean!
 
-    #---------------hiring astrologer mutation-------------------#
     scheduleInterview(
       astrologerId: ID!
       interviewerId: String!
@@ -1746,6 +1737,10 @@ input UpdateRemedyInput {
     deleteFraudFlag(id: ID!): Boolean!
 
     updateFraudLogStatus(id: ID!, status: FraudStatus!): FraudLog!
+
+  createRemedy(input: CreateRemedyInput!): Remedy
+  updateRemedy(id: ID!, input: UpdateRemedyInput!): Remedy
+  deleteRemedy(id: ID!): Boolean
   }
 `;
 
