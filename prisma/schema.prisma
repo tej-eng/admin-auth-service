@@ -975,3 +975,37 @@ model FraudLog {
   @@index([status])
   @@index([createdAt])
 }
+
+
+// --------------------------------------------------------------------------
+enum CmsStatus {
+  DRAFT
+  PUBLISHED
+}
+model AboutPage {
+  id String @id @default(uuid())
+
+  pageType String @default("about-us")
+
+  heroTitle String?
+
+  heroDescription String? @db.LongText
+
+  mentors Json?
+
+  founders Json?
+
+  metaTitle String?
+  metaDescription String?
+  keywords String[]
+
+  status CmsStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pageType])
+
+  @@index([status])
+  @@index([createdAt])
+}

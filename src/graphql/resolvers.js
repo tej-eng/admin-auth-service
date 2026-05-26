@@ -628,483 +628,473 @@ export const resolvers = {
     },
     // -------------------- RESOLVER --------------------
 
-getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
-  try {
-    const {
-      query,
-      mobile,
-      astrologerName,
-      status,
-      filterType,
-      startDate,
-      endDate,
-      page = 1,
-      limit = 10,
-    } = searchInput;
+    getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
+      try {
+        const {
+          query,
+          mobile,
+          astrologerName,
+          status,
+          filterType,
+          startDate,
+          endDate,
+          page = 1,
+          limit = 10,
+        } = searchInput;
 
-    const safePage = Math.max(page, 1);
-    const safeLimit = Math.min(limit, 50);
+        const safePage = Math.max(page, 1);
+        const safeLimit = Math.min(limit, 50);
 
-    const skip = (safePage - 1) * safeLimit;
+        const skip = (safePage - 1) * safeLimit;
 
-    // ---------------- WHERE CONDITION ----------------
+        // ---------------- WHERE CONDITION ----------------
 
-    const where = {
-      type: "CHAT", // ONLY CHAT DATA
-    };
+        const where = {
+          type: "CHAT", // ONLY CHAT DATA
+        };
 
-    // ---------------- USER SEARCH FILTER ----------------
+        // ---------------- USER SEARCH FILTER ----------------
 
-    const userFilters = [];
+        const userFilters = [];
 
-    if (query) {
-      userFilters.push(
-        {
-          name: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-        {
-          mobile: {
-            contains: query,
-          },
+        if (query) {
+          userFilters.push(
+            {
+              name: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
+              mobile: {
+                contains: query,
+              },
+            },
+          );
         }
-      );
-    }
 
-    if (mobile) {
-      userFilters.push({
-        mobile: {
-          contains: mobile,
-        },
-      });
-    }
-
-    if (userFilters.length > 0) {
-      where.user = {
-        OR: userFilters,
-      };
-    }
-
-    // ---------------- ASTROLOGER FILTER ----------------
-
-    if (astrologerName) {
-      where.astrologer = {
-        name: {
-          contains: astrologerName,
-          mode: "insensitive",
-        },
-      };
-    }
-
-    // ---------------- STATUS FILTER ----------------
-
-    if (status) {
-      where.status = status;
-    }
-
-    // ---------------- DATE FILTER ----------------
-
-    let start;
-    let end;
-
-    if (filterType) {
-      switch (filterType) {
-        case "TODAY":
-          start = new Date();
-          start.setHours(0, 0, 0, 0);
-
-          end = new Date();
-          break;
-
-        case "WEEK":
-          start = new Date();
-          start.setDate(start.getDate() - 7);
-
-          end = new Date();
-          break;
-
-        case "MONTH":
-          start = new Date();
-          start.setMonth(start.getMonth() - 1);
-
-          end = new Date();
-          break;
-
-        case "YEAR":
-          start = new Date();
-          start.setFullYear(start.getFullYear() - 1);
-
-          end = new Date();
-          break;
-
-        case "CUSTOM":
-          start = startDate ? new Date(startDate) : undefined;
-          end = endDate ? new Date(endDate) : undefined;
-          break;
-      }
-    }
-
-    if (start || end) {
-      where.createdAt = {};
-
-      if (start) {
-        where.createdAt.gte = start;
-      }
-
-      if (end) {
-        where.createdAt.lte = end;
-      }
-    }
-
-    // ---------------- FETCH DATA ----------------
-
-    const [sessions, totalCount, aggregate] = await Promise.all([
-      prisma.session.findMany({
-        where,
-
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              mobile: true,
-              countryCode: true,
+        if (mobile) {
+          userFilters.push({
+            mobile: {
+              contains: mobile,
             },
-          },
-
-          astrologer: {
-            select: {
-              id: true,
-              name: true,
-              displayName: true,
-            },
-          },
-        },
-
-        orderBy: {
-          createdAt: "desc",
-        },
-
-        skip,
-        take: safeLimit,
-      }),
-
-      prisma.session.count({
-        where,
-      }),
-
-      prisma.session.aggregate({
-        where,
-
-        _sum: {
-          coinsDeducted: true,
-          coinsEarned: true,
-          commission: true,
-        },
-      }),
-    ]);
-
-    // ---------------- FORMAT RESPONSE ----------------
-
-    const formattedData = sessions.map((session) => ({
-      sessionId: session.id,
-
-      userId: session.user?.id || null,
-      userName: session.user?.name || "",
-      mobile: session.user?.mobile || "",
-
-      astrologerId: session.astrologer?.id || null,
-      astrologerName:
-        session.astrologer?.displayName ||
-        session.astrologer?.name ||
-        "",
-
-      type: session.type,
-      status: session.status,
-
-      ratePerMin: session.ratePerMin || 0,
-
-      durationSec: session.durationSec || 0,
-
-      coinsDeducted: session.coinsDeducted || 0,
-
-      coinsEarned: session.coinsEarned || 0,
-
-      commission: session.commission || 0,
-
-      startedAt: session.startedAt,
-      endedAt: session.endedAt,
-
-      createdAt: session.createdAt,
-    }));
-
-    // ---------------- RESPONSE ----------------
-
-    return {
-      data: formattedData,
-
-      totalCount,
-
-      currentPage: safePage,
-
-      totalPages: Math.ceil(totalCount / safeLimit),
-
-      totalCoinsDeducted:
-        aggregate?._sum?.coinsDeducted || 0,
-
-      totalCoinsEarned:
-        aggregate?._sum?.coinsEarned || 0,
-
-      totalCommission:
-        aggregate?._sum?.commission || 0,
-    };
-  } catch (error) {
-    console.error("getUsersChatHistory error:", error);
-
-    throw new Error("Failed to fetch users chat history");
-  }
-},
-
-getUserCallHistory: async (_, { searchInput }, { prisma }) => {
-  try {
-    const {
-      query,
-      mobile,
-      astrologerName,
-      status,
-      filterType,
-      startDate,
-      endDate,
-      page = 1,
-      limit = 10,
-    } = searchInput;
-
-    const safePage = Math.max(page, 1);
-    const safeLimit = Math.min(limit, 50);
-
-    const skip = (safePage - 1) * safeLimit;
-
-    // ---------------- WHERE CONDITION ----------------
-
-    const where = {
-      type: "CALL", // ONLY CALL DATA
-    };
-
-    // ---------------- USER SEARCH FILTER ----------------
-
-    const userFilters = [];
-
-    if (query) {
-      userFilters.push(
-        {
-          name: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-        {
-          mobile: {
-            contains: query,
-          },
+          });
         }
-      );
-    }
 
-    if (mobile) {
-      userFilters.push({
-        mobile: {
-          contains: mobile,
-        },
-      });
-    }
+        if (userFilters.length > 0) {
+          where.user = {
+            OR: userFilters,
+          };
+        }
 
-    if (userFilters.length > 0) {
-      where.user = {
-        OR: userFilters,
-      };
-    }
+        // ---------------- ASTROLOGER FILTER ----------------
 
-    // ---------------- ASTROLOGER FILTER ----------------
-
-    if (astrologerName) {
-      where.astrologer = {
-        name: {
-          contains: astrologerName,
-          mode: "insensitive",
-        },
-      };
-    }
-
-    // ---------------- STATUS FILTER ----------------
-
-    if (status) {
-      where.status = status;
-    }
-
-    // ---------------- DATE FILTER ----------------
-
-    let start;
-    let end;
-
-    if (filterType) {
-      switch (filterType) {
-        case "TODAY":
-          start = new Date();
-          start.setHours(0, 0, 0, 0);
-
-          end = new Date();
-          break;
-
-        case "WEEK":
-          start = new Date();
-          start.setDate(start.getDate() - 7);
-
-          end = new Date();
-          break;
-
-        case "MONTH":
-          start = new Date();
-          start.setMonth(start.getMonth() - 1);
-
-          end = new Date();
-          break;
-
-        case "YEAR":
-          start = new Date();
-          start.setFullYear(start.getFullYear() - 1);
-
-          end = new Date();
-          break;
-
-        case "CUSTOM":
-          start = startDate ? new Date(startDate) : undefined;
-          end = endDate ? new Date(endDate) : undefined;
-          break;
-      }
-    }
-
-    if (start || end) {
-      where.createdAt = {};
-
-      if (start) {
-        where.createdAt.gte = start;
-      }
-
-      if (end) {
-        where.createdAt.lte = end;
-      }
-    }
-
-    // ---------------- FETCH DATA ----------------
-
-    const [sessions, totalCount, aggregate] = await Promise.all([
-      prisma.session.findMany({
-        where,
-
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              mobile: true,
-              countryCode: true,
+        if (astrologerName) {
+          where.astrologer = {
+            name: {
+              contains: astrologerName,
+              mode: "insensitive",
             },
-          },
+          };
+        }
 
-          astrologer: {
-            select: {
-              id: true,
-              name: true,
-              displayName: true,
+        // ---------------- STATUS FILTER ----------------
+
+        if (status) {
+          where.status = status;
+        }
+
+        // ---------------- DATE FILTER ----------------
+
+        let start;
+        let end;
+
+        if (filterType) {
+          switch (filterType) {
+            case "TODAY":
+              start = new Date();
+              start.setHours(0, 0, 0, 0);
+
+              end = new Date();
+              break;
+
+            case "WEEK":
+              start = new Date();
+              start.setDate(start.getDate() - 7);
+
+              end = new Date();
+              break;
+
+            case "MONTH":
+              start = new Date();
+              start.setMonth(start.getMonth() - 1);
+
+              end = new Date();
+              break;
+
+            case "YEAR":
+              start = new Date();
+              start.setFullYear(start.getFullYear() - 1);
+
+              end = new Date();
+              break;
+
+            case "CUSTOM":
+              start = startDate ? new Date(startDate) : undefined;
+              end = endDate ? new Date(endDate) : undefined;
+              break;
+          }
+        }
+
+        if (start || end) {
+          where.createdAt = {};
+
+          if (start) {
+            where.createdAt.gte = start;
+          }
+
+          if (end) {
+            where.createdAt.lte = end;
+          }
+        }
+
+        // ---------------- FETCH DATA ----------------
+
+        const [sessions, totalCount, aggregate] = await Promise.all([
+          prisma.session.findMany({
+            where,
+
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  mobile: true,
+                  countryCode: true,
+                },
+              },
+
+              astrologer: {
+                select: {
+                  id: true,
+                  name: true,
+                  displayName: true,
+                },
+              },
             },
-          },
-        },
 
-        orderBy: {
-          createdAt: "desc",
-        },
+            orderBy: {
+              createdAt: "desc",
+            },
 
-        skip,
-        take: safeLimit,
-      }),
+            skip,
+            take: safeLimit,
+          }),
 
-      prisma.session.count({
-        where,
-      }),
+          prisma.session.count({
+            where,
+          }),
 
-      prisma.session.aggregate({
-        where,
+          prisma.session.aggregate({
+            where,
 
-        _sum: {
-          coinsDeducted: true,
-          coinsEarned: true,
-          commission: true,
-        },
-      }),
-    ]);
+            _sum: {
+              coinsDeducted: true,
+              coinsEarned: true,
+              commission: true,
+            },
+          }),
+        ]);
 
-    // ---------------- FORMAT RESPONSE ----------------
+        // ---------------- FORMAT RESPONSE ----------------
 
-    const formattedData = sessions.map((session) => ({
-      sessionId: session.id,
+        const formattedData = sessions.map((session) => ({
+          sessionId: session.id,
 
-      userId: session.user?.id || null,
-      userName: session.user?.name || "",
-      mobile: session.user?.mobile || "",
+          userId: session.user?.id || null,
+          userName: session.user?.name || "",
+          mobile: session.user?.mobile || "",
 
-      astrologerId: session.astrologer?.id || null,
-      astrologerName:
-        session.astrologer?.displayName ||
-        session.astrologer?.name ||
-        "",
+          astrologerId: session.astrologer?.id || null,
+          astrologerName:
+            session.astrologer?.displayName || session.astrologer?.name || "",
 
-      type: session.type,
-      status: session.status,
+          type: session.type,
+          status: session.status,
 
-      ratePerMin: session.ratePerMin || 0,
+          ratePerMin: session.ratePerMin || 0,
 
-      durationSec: session.durationSec || 0,
+          durationSec: session.durationSec || 0,
 
-      coinsDeducted: session.coinsDeducted || 0,
+          coinsDeducted: session.coinsDeducted || 0,
 
-      coinsEarned: session.coinsEarned || 0,
+          coinsEarned: session.coinsEarned || 0,
 
-      commission: session.commission || 0,
+          commission: session.commission || 0,
 
-      startedAt: session.startedAt,
-      endedAt: session.endedAt,
+          startedAt: session.startedAt,
+          endedAt: session.endedAt,
 
-      createdAt: session.createdAt,
-    }));
+          createdAt: session.createdAt,
+        }));
 
-    // ---------------- RESPONSE ----------------
+        // ---------------- RESPONSE ----------------
 
-    return {
-      data: formattedData,
+        return {
+          data: formattedData,
 
-      totalCount,
+          totalCount,
 
-      currentPage: safePage,
+          currentPage: safePage,
 
-      totalPages: Math.ceil(totalCount / safeLimit),
+          totalPages: Math.ceil(totalCount / safeLimit),
 
-      totalCoinsDeducted:
-        aggregate?._sum?.coinsDeducted || 0,
+          totalCoinsDeducted: aggregate?._sum?.coinsDeducted || 0,
 
-      totalCoinsEarned:
-        aggregate?._sum?.coinsEarned || 0,
+          totalCoinsEarned: aggregate?._sum?.coinsEarned || 0,
 
-      totalCommission:
-        aggregate?._sum?.commission || 0,
-    };
-  } catch (error) {
-    console.error("getUserCallHistory error:", error);
+          totalCommission: aggregate?._sum?.commission || 0,
+        };
+      } catch (error) {
+        console.error("getUsersChatHistory error:", error);
 
-    throw new Error("Failed to fetch user call history");
-  }
-},
+        throw new Error("Failed to fetch users chat history");
+      }
+    },
+
+    getUserCallHistory: async (_, { searchInput }, { prisma }) => {
+      try {
+        const {
+          query,
+          mobile,
+          astrologerName,
+          status,
+          filterType,
+          startDate,
+          endDate,
+          page = 1,
+          limit = 10,
+        } = searchInput;
+
+        const safePage = Math.max(page, 1);
+        const safeLimit = Math.min(limit, 50);
+
+        const skip = (safePage - 1) * safeLimit;
+
+        // ---------------- WHERE CONDITION ----------------
+
+        const where = {
+          type: "CALL", // ONLY CALL DATA
+        };
+
+        // ---------------- USER SEARCH FILTER ----------------
+
+        const userFilters = [];
+
+        if (query) {
+          userFilters.push(
+            {
+              name: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
+              mobile: {
+                contains: query,
+              },
+            },
+          );
+        }
+
+        if (mobile) {
+          userFilters.push({
+            mobile: {
+              contains: mobile,
+            },
+          });
+        }
+
+        if (userFilters.length > 0) {
+          where.user = {
+            OR: userFilters,
+          };
+        }
+
+        // ---------------- ASTROLOGER FILTER ----------------
+
+        if (astrologerName) {
+          where.astrologer = {
+            name: {
+              contains: astrologerName,
+              mode: "insensitive",
+            },
+          };
+        }
+
+        // ---------------- STATUS FILTER ----------------
+
+        if (status) {
+          where.status = status;
+        }
+
+        // ---------------- DATE FILTER ----------------
+
+        let start;
+        let end;
+
+        if (filterType) {
+          switch (filterType) {
+            case "TODAY":
+              start = new Date();
+              start.setHours(0, 0, 0, 0);
+
+              end = new Date();
+              break;
+
+            case "WEEK":
+              start = new Date();
+              start.setDate(start.getDate() - 7);
+
+              end = new Date();
+              break;
+
+            case "MONTH":
+              start = new Date();
+              start.setMonth(start.getMonth() - 1);
+
+              end = new Date();
+              break;
+
+            case "YEAR":
+              start = new Date();
+              start.setFullYear(start.getFullYear() - 1);
+
+              end = new Date();
+              break;
+
+            case "CUSTOM":
+              start = startDate ? new Date(startDate) : undefined;
+              end = endDate ? new Date(endDate) : undefined;
+              break;
+          }
+        }
+
+        if (start || end) {
+          where.createdAt = {};
+
+          if (start) {
+            where.createdAt.gte = start;
+          }
+
+          if (end) {
+            where.createdAt.lte = end;
+          }
+        }
+
+        // ---------------- FETCH DATA ----------------
+
+        const [sessions, totalCount, aggregate] = await Promise.all([
+          prisma.session.findMany({
+            where,
+
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  mobile: true,
+                  countryCode: true,
+                },
+              },
+
+              astrologer: {
+                select: {
+                  id: true,
+                  name: true,
+                  displayName: true,
+                },
+              },
+            },
+
+            orderBy: {
+              createdAt: "desc",
+            },
+
+            skip,
+            take: safeLimit,
+          }),
+
+          prisma.session.count({
+            where,
+          }),
+
+          prisma.session.aggregate({
+            where,
+
+            _sum: {
+              coinsDeducted: true,
+              coinsEarned: true,
+              commission: true,
+            },
+          }),
+        ]);
+
+        // ---------------- FORMAT RESPONSE ----------------
+
+        const formattedData = sessions.map((session) => ({
+          sessionId: session.id,
+
+          userId: session.user?.id || null,
+          userName: session.user?.name || "",
+          mobile: session.user?.mobile || "",
+
+          astrologerId: session.astrologer?.id || null,
+          astrologerName:
+            session.astrologer?.displayName || session.astrologer?.name || "",
+
+          type: session.type,
+          status: session.status,
+
+          ratePerMin: session.ratePerMin || 0,
+
+          durationSec: session.durationSec || 0,
+
+          coinsDeducted: session.coinsDeducted || 0,
+
+          coinsEarned: session.coinsEarned || 0,
+
+          commission: session.commission || 0,
+
+          startedAt: session.startedAt,
+          endedAt: session.endedAt,
+
+          createdAt: session.createdAt,
+        }));
+
+        // ---------------- RESPONSE ----------------
+
+        return {
+          data: formattedData,
+
+          totalCount,
+
+          currentPage: safePage,
+
+          totalPages: Math.ceil(totalCount / safeLimit),
+
+          totalCoinsDeducted: aggregate?._sum?.coinsDeducted || 0,
+
+          totalCoinsEarned: aggregate?._sum?.coinsEarned || 0,
+
+          totalCommission: aggregate?._sum?.commission || 0,
+        };
+      } catch (error) {
+        console.error("getUserCallHistory error:", error);
+
+        throw new Error("Failed to fetch user call history");
+      }
+    },
     // ================= GET PENDING ASTROLOGERS =================
     getPendingAstrologers: async (_, { page = 1, limit = 10 }, context) => {
       try {
@@ -1762,698 +1752,663 @@ getUserCallHistory: async (_, { searchInput }, { prisma }) => {
       }
     },
     getUserReviews: async (_, { searchInput }, { prisma }) => {
-  try {
-    const {
-      query,
-      userName,
-      astrologerName,
-      rating,
-      filterType,
-      startDate,
-      endDate,
-      page = 1,
-      limit = 10,
-    } = searchInput;
+      try {
+        const {
+          query,
+          userName,
+          astrologerName,
+          rating,
+          filterType,
+          startDate,
+          endDate,
+          page = 1,
+          limit = 10,
+        } = searchInput;
 
-    const safePage = Math.max(page, 1);
-    const safeLimit = Math.min(limit, 50);
+        const safePage = Math.max(page, 1);
+        const safeLimit = Math.min(limit, 50);
 
-    const skip = (safePage - 1) * safeLimit;
+        const skip = (safePage - 1) * safeLimit;
 
-    // ---------------- WHERE CONDITION ----------------
+        // ---------------- WHERE CONDITION ----------------
 
-    const where = {};
+        const where = {};
 
-    // ---------------- SEARCH FILTER ----------------
+        // ---------------- SEARCH FILTER ----------------
 
-    const orFilters = [];
+        const orFilters = [];
 
-    if (query) {
-      orFilters.push(
-        {
-          userName: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-        {
-          astroName: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-        {
-          comment: {
-            contains: query,
-            mode: "insensitive",
-          },
+        if (query) {
+          orFilters.push(
+            {
+              userName: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
+              astroName: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
+              comment: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+          );
         }
-      );
-    }
 
-    if (orFilters.length > 0) {
-      where.OR = orFilters;
-    }
+        if (orFilters.length > 0) {
+          where.OR = orFilters;
+        }
 
-    // ---------------- USER FILTER ----------------
+        // ---------------- USER FILTER ----------------
 
-    if (userName) {
-      where.userName = {
-        contains: userName,
-        mode: "insensitive",
-      };
-    }
+        if (userName) {
+          where.userName = {
+            contains: userName,
+            mode: "insensitive",
+          };
+        }
 
-    // ---------------- ASTROLOGER FILTER ----------------
+        // ---------------- ASTROLOGER FILTER ----------------
 
-    if (astrologerName) {
-      where.astroName = {
-        contains: astrologerName,
-        mode: "insensitive",
-      };
-    }
+        if (astrologerName) {
+          where.astroName = {
+            contains: astrologerName,
+            mode: "insensitive",
+          };
+        }
 
-    // ---------------- RATING FILTER ----------------
+        // ---------------- RATING FILTER ----------------
 
-    if (rating) {
-      where.rating = Number(rating);
-    }
+        if (rating) {
+          where.rating = Number(rating);
+        }
 
-    // ---------------- DATE FILTER ----------------
+        // ---------------- DATE FILTER ----------------
 
-    let start;
-    let end;
+        let start;
+        let end;
 
-    if (filterType) {
-      switch (filterType) {
-        case "TODAY":
-          start = new Date();
-          start.setHours(0, 0, 0, 0);
+        if (filterType) {
+          switch (filterType) {
+            case "TODAY":
+              start = new Date();
+              start.setHours(0, 0, 0, 0);
 
-          end = new Date();
-          break;
+              end = new Date();
+              break;
 
-        case "WEEK":
-          start = new Date();
-          start.setDate(start.getDate() - 7);
+            case "WEEK":
+              start = new Date();
+              start.setDate(start.getDate() - 7);
 
-          end = new Date();
-          break;
+              end = new Date();
+              break;
 
-        case "MONTH":
-          start = new Date();
-          start.setMonth(start.getMonth() - 1);
+            case "MONTH":
+              start = new Date();
+              start.setMonth(start.getMonth() - 1);
 
-          end = new Date();
-          break;
+              end = new Date();
+              break;
 
-        case "YEAR":
-          start = new Date();
-          start.setFullYear(start.getFullYear() - 1);
+            case "YEAR":
+              start = new Date();
+              start.setFullYear(start.getFullYear() - 1);
 
-          end = new Date();
-          break;
+              end = new Date();
+              break;
 
-        case "CUSTOM":
-          start = startDate ? new Date(startDate) : undefined;
-          end = endDate ? new Date(endDate) : undefined;
-          break;
-      }
-    }
+            case "CUSTOM":
+              start = startDate ? new Date(startDate) : undefined;
+              end = endDate ? new Date(endDate) : undefined;
+              break;
+          }
+        }
 
-    if (start || end) {
-      where.createdAt = {};
+        if (start || end) {
+          where.createdAt = {};
 
-      if (start) {
-        where.createdAt.gte = start;
-      }
+          if (start) {
+            where.createdAt.gte = start;
+          }
 
-      if (end) {
-        where.createdAt.lte = end;
-      }
-    }
+          if (end) {
+            where.createdAt.lte = end;
+          }
+        }
 
-    // ---------------- FETCH DATA ----------------
+        // ---------------- FETCH DATA ----------------
 
-    const [reviews, totalCount, aggregate] = await Promise.all([
-      prisma.review.findMany({
-        where,
+        const [reviews, totalCount, aggregate] = await Promise.all([
+          prisma.review.findMany({
+            where,
 
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              mobile: true,
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  mobile: true,
+                },
+              },
+
+              astrologer: {
+                select: {
+                  id: true,
+                  name: true,
+                  displayName: true,
+                },
+              },
+
+              session: {
+                select: {
+                  id: true,
+                  type: true,
+                  status: true,
+                },
+              },
             },
-          },
 
-          astrologer: {
-            select: {
-              id: true,
-              name: true,
-              displayName: true,
+            orderBy: {
+              createdAt: "desc",
             },
-          },
 
-          session: {
-            select: {
-              id: true,
-              type: true,
-              status: true,
+            skip,
+            take: safeLimit,
+          }),
+
+          prisma.review.count({
+            where,
+          }),
+
+          prisma.review.aggregate({
+            where,
+
+            _avg: {
+              rating: true,
             },
-          },
-        },
+          }),
+        ]);
 
-        orderBy: {
-          createdAt: "desc",
-        },
+        // ---------------- FORMAT RESPONSE ----------------
 
-        skip,
-        take: safeLimit,
-      }),
+        const formattedData = reviews.map((review) => ({
+          reviewId: review.id,
 
-      prisma.review.count({
-        where,
-      }),
+          sessionId: review.session?.id || null,
 
-      prisma.review.aggregate({
-        where,
+          userId: review.user?.id || null,
+          userName: review.userName || review.user?.name || "",
+          mobile: review.user?.mobile || "",
 
-        _avg: {
-          rating: true,
-        },
-      }),
-    ]);
+          astrologerId: review.astrologer?.id || null,
 
-    // ---------------- FORMAT RESPONSE ----------------
+          astrologerName:
+            review.astroName ||
+            review.astrologer?.displayName ||
+            review.astrologer?.name ||
+            "",
 
-    const formattedData = reviews.map((review) => ({
-      reviewId: review.id,
+          sessionType: review.session?.type || "",
 
-      sessionId: review.session?.id || null,
+          sessionStatus: review.session?.status || "",
 
-      userId: review.user?.id || null,
-      userName: review.userName || review.user?.name || "",
-      mobile: review.user?.mobile || "",
+          rating: review.rating,
 
-      astrologerId: review.astrologer?.id || null,
+          comment: review.comment || "",
 
-      astrologerName:
-        review.astroName ||
-        review.astrologer?.displayName ||
-        review.astrologer?.name ||
-        "",
+          createdAt: review.createdAt,
+        }));
 
-      sessionType: review.session?.type || "",
+        // ---------------- RESPONSE ----------------
 
-      sessionStatus: review.session?.status || "",
+        return {
+          data: formattedData,
 
-      rating: review.rating,
+          totalCount,
 
-      comment: review.comment || "",
+          currentPage: safePage,
 
-      createdAt: review.createdAt,
-    }));
+          totalPages: Math.ceil(totalCount / safeLimit),
 
-    // ---------------- RESPONSE ----------------
+          averageRating: aggregate?._avg?.rating || 0,
+        };
+      } catch (error) {
+        console.error("getUserReviews error:", error);
 
-    return {
-      data: formattedData,
-
-      totalCount,
-
-      currentPage: safePage,
-
-      totalPages: Math.ceil(totalCount / safeLimit),
-
-      averageRating:
-        aggregate?._avg?.rating || 0,
-    };
-  } catch (error) {
-    console.error("getUserReviews error:", error);
-
-    throw new Error("Failed to fetch user reviews");
-  }
-},
-
-getFraudFlags: async (_, { searchInput }, { prisma }) => {
-  try {
-    const {
-      query,
-      page = 1,
-      limit = 10,
-    } = searchInput || {};
-
-    const safePage = Math.max(page, 1);
-    const safeLimit = Math.min(limit, 50);
-
-    const skip = (safePage - 1) * safeLimit;
-
-    const where = {};
-
-    if (query) {
-      where.keyword = {
-        contains: query,
-        mode: "insensitive",
-      };
-    }
-
-    const [flags, totalCount] = await Promise.all([
-      prisma.fraudFlag.findMany({
-        where,
-
-        orderBy: {
-          createdAt: "desc",
-        },
-
-        skip,
-        take: safeLimit,
-      }),
-
-      prisma.fraudFlag.count({
-        where,
-      }),
-    ]);
-
-    return {
-      data: flags,
-
-      totalCount,
-
-      currentPage: safePage,
-
-      totalPages: Math.ceil(
-        totalCount / safeLimit
-      ),
-    };
-  } catch (error) {
-    console.error(
-      "getFraudFlags error:",
-      error
-    );
-
-    throw new Error(
-      "Failed to fetch fraud flags"
-    );
-  }
-},
-
-getFraudLogs: async (
-  _,
-  { searchInput },
-  { prisma }
-) => {
-  try {
-    const {
-      query,
-      status,
-      filterType,
-      startDate,
-      endDate,
-      page = 1,
-      limit = 10,
-    } = searchInput || {};
-
-    const safePage = Math.max(page, 1);
-
-    const safeLimit = Math.min(limit, 50);
-
-    const skip =
-      (safePage - 1) * safeLimit;
-
-    const where = {};
-
-    // ---------------- SEARCH ----------------
-
-    if (query) {
-      where.OR = [
-        {
-          senderName: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-
-        {
-          receiverName: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-
-        {
-          orderId: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-
-        {
-          message: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-      ];
-    }
-
-    // ---------------- STATUS ----------------
-
-    if (status) {
-      where.status = status;
-    }
-
-    // ---------------- DATE FILTER ----------------
-
-    let start;
-    let end;
-
-    if (filterType) {
-      switch (filterType) {
-        case "TODAY":
-          start = new Date();
-          start.setHours(0, 0, 0, 0);
-
-          end = new Date();
-          break;
-
-        case "WEEK":
-          start = new Date();
-          start.setDate(
-            start.getDate() - 7
-          );
-
-          end = new Date();
-          break;
-
-        case "MONTH":
-          start = new Date();
-          start.setMonth(
-            start.getMonth() - 1
-          );
-
-          end = new Date();
-          break;
-
-        case "YEAR":
-          start = new Date();
-          start.setFullYear(
-            start.getFullYear() - 1
-          );
-
-          end = new Date();
-          break;
-
-        case "CUSTOM":
-          start = startDate
-            ? new Date(startDate)
-            : undefined;
-
-          end = endDate
-            ? new Date(endDate)
-            : undefined;
-
-          break;
+        throw new Error("Failed to fetch user reviews");
       }
-    }
-
-    if (start || end) {
-      where.createdAt = {};
-
-      if (start) {
-        where.createdAt.gte = start;
-      }
-
-      if (end) {
-        where.createdAt.lte = end;
-      }
-    }
-
-    // ---------------- FETCH ----------------
-
-    const [logs, totalCount] =
-      await Promise.all([
-        prisma.fraudLog.findMany({
-          where,
-
-          orderBy: {
-            createdAt: "desc",
-          },
-
-          skip,
-          take: safeLimit,
-        }),
-
-        prisma.fraudLog.count({
-          where,
-        }),
-      ]);
-
-    return {
-      data: logs,
-
-      totalCount,
-
-      currentPage: safePage,
-
-      totalPages: Math.ceil(
-        totalCount / safeLimit
-      ),
-    };
-  } catch (error) {
-    console.error(
-      "getFraudLogs error:",
-      error
-    );
-
-    throw new Error(
-      "Failed to fetch fraud logs"
-    );
-  }
-},
-getPaymentReports: async (
-  _,
-  {
-    searchInput: {
-      query,
-      status,
-      filterType,
-      startDate,
-      endDate,
-      page = 1,
-      limit = 20,
     },
-  },
-  { prisma }
-) => {
-  try {
-    const skip = (page - 1) * limit;
 
-    const whereClause = {};
+    getFraudFlags: async (_, { searchInput }, { prisma }) => {
+      try {
+        const { query, page = 1, limit = 10 } = searchInput || {};
 
-    // ======================
-    // STATUS FILTER
-    // ======================
-    if (status) {
-      whereClause.status = status;
-    }
+        const safePage = Math.max(page, 1);
+        const safeLimit = Math.min(limit, 50);
 
-    // ======================
-    // SEARCH FILTER
-    // ======================
-    if (query) {
-      whereClause.OR = [
-        {
-          razorpayOrderId: {
+        const skip = (safePage - 1) * safeLimit;
+
+        const where = {};
+
+        if (query) {
+          where.keyword = {
             contains: query,
             mode: "insensitive",
-          },
-        },
-        {
-          user: {
-            name: {
-              contains: query,
-              mode: "insensitive",
+          };
+        }
+
+        const [flags, totalCount] = await Promise.all([
+          prisma.fraudFlag.findMany({
+            where,
+
+            orderBy: {
+              createdAt: "desc",
             },
-          },
-        },
-        {
-          user: {
-            mobile: {
-              contains: query,
+
+            skip,
+            take: safeLimit,
+          }),
+
+          prisma.fraudFlag.count({
+            where,
+          }),
+        ]);
+
+        return {
+          data: flags,
+
+          totalCount,
+
+          currentPage: safePage,
+
+          totalPages: Math.ceil(totalCount / safeLimit),
+        };
+      } catch (error) {
+        console.error("getFraudFlags error:", error);
+
+        throw new Error("Failed to fetch fraud flags");
+      }
+    },
+
+    getFraudLogs: async (_, { searchInput }, { prisma }) => {
+      try {
+        const {
+          query,
+          status,
+          filterType,
+          startDate,
+          endDate,
+          page = 1,
+          limit = 10,
+        } = searchInput || {};
+
+        const safePage = Math.max(page, 1);
+
+        const safeLimit = Math.min(limit, 50);
+
+        const skip = (safePage - 1) * safeLimit;
+
+        const where = {};
+
+        // ---------------- SEARCH ----------------
+
+        if (query) {
+          where.OR = [
+            {
+              senderName: {
+                contains: query,
+                mode: "insensitive",
+              },
             },
-          },
+
+            {
+              receiverName: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+
+            {
+              orderId: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+
+            {
+              message: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+          ];
+        }
+
+        // ---------------- STATUS ----------------
+
+        if (status) {
+          where.status = status;
+        }
+
+        // ---------------- DATE FILTER ----------------
+
+        let start;
+        let end;
+
+        if (filterType) {
+          switch (filterType) {
+            case "TODAY":
+              start = new Date();
+              start.setHours(0, 0, 0, 0);
+
+              end = new Date();
+              break;
+
+            case "WEEK":
+              start = new Date();
+              start.setDate(start.getDate() - 7);
+
+              end = new Date();
+              break;
+
+            case "MONTH":
+              start = new Date();
+              start.setMonth(start.getMonth() - 1);
+
+              end = new Date();
+              break;
+
+            case "YEAR":
+              start = new Date();
+              start.setFullYear(start.getFullYear() - 1);
+
+              end = new Date();
+              break;
+
+            case "CUSTOM":
+              start = startDate ? new Date(startDate) : undefined;
+
+              end = endDate ? new Date(endDate) : undefined;
+
+              break;
+          }
+        }
+
+        if (start || end) {
+          where.createdAt = {};
+
+          if (start) {
+            where.createdAt.gte = start;
+          }
+
+          if (end) {
+            where.createdAt.lte = end;
+          }
+        }
+
+        // ---------------- FETCH ----------------
+
+        const [logs, totalCount] = await Promise.all([
+          prisma.fraudLog.findMany({
+            where,
+
+            orderBy: {
+              createdAt: "desc",
+            },
+
+            skip,
+            take: safeLimit,
+          }),
+
+          prisma.fraudLog.count({
+            where,
+          }),
+        ]);
+
+        return {
+          data: logs,
+
+          totalCount,
+
+          currentPage: safePage,
+
+          totalPages: Math.ceil(totalCount / safeLimit),
+        };
+      } catch (error) {
+        console.error("getFraudLogs error:", error);
+
+        throw new Error("Failed to fetch fraud logs");
+      }
+    },
+    getPaymentReports: async (
+      _,
+      {
+        searchInput: {
+          query,
+          status,
+          filterType,
+          startDate,
+          endDate,
+          page = 1,
+          limit = 20,
         },
-      ];
-    }
+      },
+      { prisma },
+    ) => {
+      try {
+        const skip = (page - 1) * limit;
 
-    // ======================
-    // DATE FILTERS
-    // ======================
-    const now = new Date();
+        const whereClause = {};
 
-    if (filterType === "TODAY") {
-      const start = new Date();
-      start.setHours(0, 0, 0, 0);
+        // ======================
+        // STATUS FILTER
+        // ======================
+        if (status) {
+          whereClause.status = status;
+        }
 
-      const end = new Date();
-      end.setHours(23, 59, 59, 999);
+        // ======================
+        // SEARCH FILTER
+        // ======================
+        if (query) {
+          whereClause.OR = [
+            {
+              razorpayOrderId: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
+              user: {
+                name: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+            },
+            {
+              user: {
+                mobile: {
+                  contains: query,
+                },
+              },
+            },
+          ];
+        }
 
-      whereClause.createdAt = {
-        gte: start,
-        lte: end,
-      };
-    }
+        // ======================
+        // DATE FILTERS
+        // ======================
+        const now = new Date();
 
-    if (filterType === "WEEK") {
-      const weekStart = new Date();
-      weekStart.setDate(now.getDate() - 7);
+        if (filterType === "TODAY") {
+          const start = new Date();
+          start.setHours(0, 0, 0, 0);
 
-      whereClause.createdAt = {
-        gte: weekStart,
-        lte: now,
-      };
-    }
+          const end = new Date();
+          end.setHours(23, 59, 59, 999);
 
-    if (filterType === "MONTH") {
-      const monthStart = new Date();
-      monthStart.setMonth(now.getMonth() - 1);
+          whereClause.createdAt = {
+            gte: start,
+            lte: end,
+          };
+        }
 
-      whereClause.createdAt = {
-        gte: monthStart,
-        lte: now,
-      };
-    }
+        if (filterType === "WEEK") {
+          const weekStart = new Date();
+          weekStart.setDate(now.getDate() - 7);
 
-    if (filterType === "YEAR") {
-      const yearStart = new Date();
-      yearStart.setFullYear(now.getFullYear() - 1);
+          whereClause.createdAt = {
+            gte: weekStart,
+            lte: now,
+          };
+        }
 
-      whereClause.createdAt = {
-        gte: yearStart,
-        lte: now,
-      };
-    }
+        if (filterType === "MONTH") {
+          const monthStart = new Date();
+          monthStart.setMonth(now.getMonth() - 1);
 
-    if (filterType === "CUSTOM" && startDate && endDate) {
-      whereClause.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
-    }
+          whereClause.createdAt = {
+            gte: monthStart,
+            lte: now,
+          };
+        }
 
-    // ======================
-    // FETCH DATA
-    // ======================
-    const [data, totalCount, totalStats, paidStats, failedStats] =
-      await Promise.all([
-        prisma.paymentOrder.findMany({
-          where: whereClause,
+        if (filterType === "YEAR") {
+          const yearStart = new Date();
+          yearStart.setFullYear(now.getFullYear() - 1);
 
-          include: {
-            user: true,
-            rechargePack: true,
-          },
+          whereClause.createdAt = {
+            gte: yearStart,
+            lte: now,
+          };
+        }
 
-          orderBy: {
-            createdAt: "desc",
-          },
+        if (filterType === "CUSTOM" && startDate && endDate) {
+          whereClause.createdAt = {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
+          };
+        }
 
-          skip,
-          take: limit,
-        }),
+        // ======================
+        // FETCH DATA
+        // ======================
+        const [data, totalCount, totalStats, paidStats, failedStats] =
+          await Promise.all([
+            prisma.paymentOrder.findMany({
+              where: whereClause,
 
-        prisma.paymentOrder.count({
-          where: whereClause,
-        }),
+              include: {
+                user: true,
+                rechargePack: true,
+              },
 
-        prisma.paymentOrder.aggregate({
-          where: whereClause,
+              orderBy: {
+                createdAt: "desc",
+              },
 
-          _sum: {
-            amount: true,
-            coins: true,
-          },
-        }),
+              skip,
+              take: limit,
+            }),
 
-        prisma.paymentOrder.aggregate({
-          where: {
-            ...whereClause,
-            status: "PAID",
-          },
+            prisma.paymentOrder.count({
+              where: whereClause,
+            }),
 
-          _sum: {
-            amount: true,
-          },
+            prisma.paymentOrder.aggregate({
+              where: whereClause,
 
-          _count: true,
-        }),
+              _sum: {
+                amount: true,
+                coins: true,
+              },
+            }),
 
-        prisma.paymentOrder.aggregate({
-          where: {
-            ...whereClause,
-            status: "FAILED",
-          },
+            prisma.paymentOrder.aggregate({
+              where: {
+                ...whereClause,
+                status: "PAID",
+              },
 
-          _sum: {
-            amount: true,
-          },
+              _sum: {
+                amount: true,
+              },
 
-          _count: true,
-        }),
-      ]);
+              _count: true,
+            }),
 
-    // ======================
-    // FORMAT DATA
-    // ======================
-    const formattedData = data.map((item) => ({
-      id: item.id,
+            prisma.paymentOrder.aggregate({
+              where: {
+                ...whereClause,
+                status: "FAILED",
+              },
 
-      userId: item.userId,
-      userName: item.user?.name || null,
-      mobile: item.user?.mobile || null,
+              _sum: {
+                amount: true,
+              },
 
-      rechargePackId: item.rechargePackId,
-      rechargePackName: item.rechargePack?.name || null,
+              _count: true,
+            }),
+          ]);
 
-      razorpayOrderId: item.razorpayOrderId,
+        // ======================
+        // FORMAT DATA
+        // ======================
+        const formattedData = data.map((item) => ({
+          id: item.id,
 
-      amount: item.amount,
-      coins: item.coins,
+          userId: item.userId,
+          userName: item.user?.name || null,
+          mobile: item.user?.mobile || null,
 
-      status: item.status,
+          rechargePackId: item.rechargePackId,
+          rechargePackName: item.rechargePack?.name || null,
 
-      createdAt: item.createdAt,
-      updatedAt: item.updatedAt,
-    }));
+          razorpayOrderId: item.razorpayOrderId,
 
-    return {
-      data: formattedData,
+          amount: item.amount,
+          coins: item.coins,
 
-      totalCount,
+          status: item.status,
 
-      currentPage: page,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }));
 
-      totalPages: Math.ceil(totalCount / limit),
+        return {
+          data: formattedData,
 
-      totalAmount: totalStats._sum.amount || 0,
+          totalCount,
 
-      totalCoins: totalStats._sum.coins || 0,
+          currentPage: page,
 
-      paidAmount: paidStats._sum.amount || 0,
+          totalPages: Math.ceil(totalCount / limit),
 
-      failedAmount: failedStats._sum.amount || 0,
+          totalAmount: totalStats._sum.amount || 0,
 
-      paidCount: paidStats._count || 0,
+          totalCoins: totalStats._sum.coins || 0,
 
-      failedCount: failedStats._count || 0,
-    };
-  } catch (err) {
-    console.error("getPaymentReports error:", err);
-    throw new Error("Failed to fetch payment reports");
-  }
-},
+          paidAmount: paidStats._sum.amount || 0,
+
+          failedAmount: failedStats._sum.amount || 0,
+
+          paidCount: paidStats._count || 0,
+
+          failedCount: failedStats._count || 0,
+        };
+      } catch (err) {
+        console.error("getPaymentReports error:", err);
+        throw new Error("Failed to fetch payment reports");
+      }
+    },
     // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;
@@ -2950,6 +2905,15 @@ getPaymentReports: async (
         where: { id },
         include: {
           kycDetail: true,
+        },
+      });
+    },
+
+    // about page
+    getAboutPage: async () => {
+      return await prisma.aboutPage.findFirst({
+        where: {
+          pageType: "about-us",
         },
       });
     },
@@ -4534,107 +4498,99 @@ getPaymentReports: async (
       return kyc;
     },
 
-    createFraudFlag: async (
-  _,
-  { keyword },
-  { prisma }
-) => {
-  try {
-    const cleanKeyword =
-      keyword.trim().toLowerCase();
+    createFraudFlag: async (_, { keyword }, { prisma }) => {
+      try {
+        const cleanKeyword = keyword.trim().toLowerCase();
 
-    if (!cleanKeyword) {
-      throw new Error(
-        "Keyword is required"
-      );
-    }
+        if (!cleanKeyword) {
+          throw new Error("Keyword is required");
+        }
 
-    const existing =
-      await prisma.fraudFlag.findUnique({
-        where: {
-          keyword: cleanKeyword,
-        },
-      });
+        const existing = await prisma.fraudFlag.findUnique({
+          where: {
+            keyword: cleanKeyword,
+          },
+        });
 
-    if (existing) {
-      throw new Error(
-        "Keyword already exists"
-      );
-    }
+        if (existing) {
+          throw new Error("Keyword already exists");
+        }
 
-    const fraudFlag =
-      await prisma.fraudFlag.create({
-        data: {
-          keyword: cleanKeyword,
-        },
-      });
+        const fraudFlag = await prisma.fraudFlag.create({
+          data: {
+            keyword: cleanKeyword,
+          },
+        });
 
-    return fraudFlag;
-  } catch (error) {
-    console.error(
-      "createFraudFlag error:",
-      error
-    );
+        return fraudFlag;
+      } catch (error) {
+        console.error("createFraudFlag error:", error);
 
-    throw new Error(
-      error.message ||
-        "Failed to create fraud flag"
-    );
-  }
-},
-deleteFraudFlag: async (
-  _,
-  { id },
-  { prisma }
-) => {
-  try {
-    await prisma.fraudFlag.delete({
+        throw new Error(error.message || "Failed to create fraud flag");
+      }
+    },
+    deleteFraudFlag: async (_, { id }, { prisma }) => {
+      try {
+        await prisma.fraudFlag.delete({
+          where: {
+            id,
+          },
+        });
+
+        return true;
+      } catch (error) {
+        console.error("deleteFraudFlag error:", error);
+
+        throw new Error("Failed to delete fraud flag");
+      }
+    },
+
+    updateFraudLogStatus: async (_, { id, status }, { prisma }) => {
+      try {
+        const fraudLog = await prisma.fraudLog.update({
+          where: {
+            id,
+          },
+
+          data: {
+            status,
+          },
+        });
+
+        return fraudLog;
+      } catch (error) {
+        console.error("updateFraudLogStatus error:", error);
+
+        throw new Error("Failed to update fraud log status");
+      }
+    },
+
+    // about page 
+    updateAboutPage: async (_, { input }) => {
+  const existing =
+    await prisma.aboutPage.findFirst({
       where: {
-        id,
+        pageType: "about-us",
       },
     });
 
-    return true;
-  } catch (error) {
-    console.error(
-      "deleteFraudFlag error:",
-      error
-    );
+  if (existing) {
+    return await prisma.aboutPage.update({
+      where: {
+        id: existing.id,
+      },
 
-    throw new Error(
-      "Failed to delete fraud flag"
-    );
+      data: {
+        ...input,
+      },
+    });
   }
-},
 
-updateFraudLogStatus: async (
-  _,
-  { id, status },
-  { prisma }
-) => {
-  try {
-    const fraudLog =
-      await prisma.fraudLog.update({
-        where: {
-          id,
-        },
-
-        data: {
-          status,
-        },
-      });
-
-    return fraudLog;
-  } catch (error) {
-    console.error(
-      "updateFraudLogStatus error:",
-      error
-    );
-
-    throw new Error(
-      "Failed to update fraud log status"
-    );
-  }
+  return await prisma.aboutPage.create({
+    data: {
+      ...input,
+    },
+  });
 },
   },
 };
