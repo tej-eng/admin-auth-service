@@ -1220,55 +1220,192 @@ const typeDefs = gql`
   }
 
   #--------------------About pagge ___________________#
-enum CmsStatus {
-  DRAFT
-  PUBLISHED
-}
+  enum CmsStatus {
+    DRAFT
+    PUBLISHED
+  }
 
-type AboutPage {
+  type AboutPage {
+    id: ID
+
+    pageType: String
+
+    heroTitle: String
+    heroDescription: String
+
+    mentors: JSON
+    founders: JSON
+
+    metaTitle: String
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+
+    createdAt: String
+    updatedAt: String
+  }
+
+  input UpdateAboutPageInput {
+    heroTitle: String
+
+    heroDescription: String
+
+    mentors: JSON
+
+    founders: JSON
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+  }
+
+  type PrivacyPage {
+    id: ID
+
+    pageType: String
+
+    title: String
+
+    content: String
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+
+    createdAt: String
+    updatedAt: String
+  }
+
+  input UpdatePrivacyPageInput {
+    title: String
+
+    content: String
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+  }
+  type RefundPolicyPage {
+    id: ID
+
+    pageType: String
+
+    title: String
+
+    content: String
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+
+    createdAt: String
+    updatedAt: String
+  }
+
+  input UpdateRefundPolicyPageInput {
+    title: String
+
+    content: String
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+  }
+  type DisclaimerPage {
+    id: ID
+
+    pageType: String
+
+    title: String
+
+    content: String
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+
+    createdAt: String
+    updatedAt: String
+  }
+
+  input UpdateDisclaimerPageInput {
+    title: String
+
+    content: String
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+  }
+    type Remedy {
   id: ID
 
-  pageType: String
+  userId: String
 
-  heroTitle: String
-  heroDescription: String
+  user: User
 
-  mentors: JSON
-  founders: JSON
+  title: String
 
-  metaTitle: String
-  metaDescription: String
-
-  keywords: [String]
-
-  status: CmsStatus
+  description: String
 
   createdAt: String
   updatedAt: String
 }
 
-input UpdateAboutPageInput {
-  heroTitle: String
+input AddRemedyInput {
+  userId: String!
 
-  heroDescription: String
+  title: String!
 
-  mentors: JSON
+  description: String!
+}
 
-  founders: JSON
+input UpdateRemedyInput {
+  title: String
 
-  metaTitle: String
-
-  metaDescription: String
-
-  keywords: [String]
-
-  status: CmsStatus
+  description: String
 }
 
   #-----END OF PAYMENT REPORTS-----------------#
   type Query {
-    #about page #
+    #cmss page #
     getAboutPage: AboutPage
+    getPrivacyPage: PrivacyPage
+    getRefundPolicyPage: RefundPolicyPage
+    getDisclaimerPage: DisclaimerPage
+
+  #  Remedy #
+    getUserRemedies(userId: String!): [Remedy]
 
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -1393,7 +1530,19 @@ input UpdateAboutPageInput {
 
   type Mutation {
     #----------------about page -------------#
-     upsertAboutPage(input: UpdateAboutPageInput!): AboutPage
+    upsertAboutPage(input: UpdateAboutPageInput!): AboutPage
+    upsertPrivacyPage(input: UpdatePrivacyPageInput!): PrivacyPage
+    upsertRefundPolicyPage(
+      input: UpdateRefundPolicyPageInput!
+    ): RefundPolicyPage
+    upsertDisclaimerPage(input: UpdateDisclaimerPageInput!): DisclaimerPage
+
+    #remedy #
+     addRemedy(input: AddRemedyInput!): Remedy
+
+  updateRemedy(remedyId: String!input: UpdateRemedyInput!): Remedy
+
+  deleteRemedy(remedyId: String!): String
 
     uploadImage(file: Upload!): UploadResponse
 

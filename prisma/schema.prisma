@@ -1009,3 +1009,93 @@ model AboutPage {
   @@index([status])
   @@index([createdAt])
 }
+
+model PrivacyPage {
+  id String @id @default(uuid())
+
+  pageType String @default("privacy-policy")
+
+  title String?
+
+  content String? @db.LongText
+
+  metaTitle String?
+  metaDescription String?
+
+  keywords String[]
+
+  status CmsStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pageType])
+
+  @@index([status])
+  @@index([createdAt])
+}
+model RefundPolicyPage {
+  id String @id @default(uuid())
+
+  pageType String @default("refund-policy")
+
+  title String?
+
+  content String? @db.LongText
+
+  metaTitle String?
+  metaDescription String?
+
+  keywords String[]
+
+  status CmsStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pageType])
+
+  @@index([status])
+  @@index([createdAt])
+}
+model DisclaimerPage {
+  id String @id @default(uuid())
+
+  pageType String @default("disclaimer")
+
+  title String?
+
+  content String? @db.LongText
+
+  metaTitle String?
+  metaDescription String?
+
+  keywords String[]
+
+  status CmsStatus @default(DRAFT)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([pageType])
+
+  @@index([status])
+  @@index([createdAt])
+}
+model Remedy {
+  id String @id @default(uuid())
+
+  userId String
+
+  user User @relation(fields: [userId], references: [id])
+
+  title String
+
+  description String @db.LongText
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([createdAt])
+}
