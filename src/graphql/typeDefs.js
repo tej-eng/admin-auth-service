@@ -1220,51 +1220,50 @@ const typeDefs = gql`
   }
 
   #--------------------About pagge ___________________#
-  enum CmsStatus {
-    DRAFT
-    PUBLISHED
-  }
-  type AboutPage {
-    id: ID
+enum CmsStatus {
+  DRAFT
+  PUBLISHED
+}
 
-    pageType: String
+type AboutPage {
+  id: ID
 
-    heroTitle: String
+  pageType: String
 
-    heroDescription: String
+  heroTitle: String
+  heroDescription: String
 
-    mentors: JSON
+  mentors: JSON
+  founders: JSON
 
-    founders: JSON
+  metaTitle: String
+  metaDescription: String
 
-    metaTitle: String
+  keywords: [String]
 
-    metaDescription: String
+  status: CmsStatus
 
-    keywords: [String]
+  createdAt: String
+  updatedAt: String
+}
 
-    status: CmsStatus
+input UpdateAboutPageInput {
+  heroTitle: String
 
-    createdAt: String
-    updatedAt: String
-  }
-  input UpdateAboutPageInput {
-    heroTitle: String
+  heroDescription: String
 
-    heroDescription: String
+  mentors: JSON
 
-    mentors: JSON
+  founders: JSON
 
-    founders: JSON
+  metaTitle: String
 
-    metaTitle: String
+  metaDescription: String
 
-    metaDescription: String
+  keywords: [String]
 
-    keywords: [String]
-
-    status: CmsStatus
-  }
+  status: CmsStatus
+}
 
   #-----END OF PAYMENT REPORTS-----------------#
   type Query {
@@ -1394,7 +1393,7 @@ const typeDefs = gql`
 
   type Mutation {
     #----------------about page -------------#
-    updateAboutPage(input: UpdateAboutPageInput): AboutPage
+     upsertAboutPage(input: UpdateAboutPageInput!): AboutPage
 
     uploadImage(file: Upload!): UploadResponse
 
