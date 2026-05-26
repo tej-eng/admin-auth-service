@@ -1085,17 +1085,14 @@ model DisclaimerPage {
 model Remedy {
   id String @id @default(uuid())
 
-  userId String
-
-  user User @relation(fields: [userId], references: [id])
-
   title String
-
   description String @db.Text
+
+  isActive Boolean @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@index([userId])
   @@index([createdAt])
+  @@index([isActive])
 }
