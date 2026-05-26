@@ -4565,32 +4565,71 @@ export const resolvers = {
       }
     },
 
-    // about page 
-    updateAboutPage: async (_, { input }) => {
-  const existing =
-    await prisma.aboutPage.findFirst({
-      where: {
-        pageType: "about-us",
-      },
-    });
+    // about page
+    upsertAboutPage: async (_, { input }, context) => {
+      try {
+        const existing = await prisma.aboutPage.findFirst({
+          where: {
+            pageType: "about-us",
+          },
+        });
 
-  if (existing) {
-    return await prisma.aboutPage.update({
-      where: {
-        id: existing.id,
-      },
+        // ================= UPDATE =================
 
-      data: {
-        ...input,
-      },
-    });
-  }
+        if (existing) {
+          return await prisma.aboutPage.update({
+            where: {
+              id: existing.id,
+            },
 
-  return await prisma.aboutPage.create({
-    data: {
-      ...input,
+            data: {
+              heroTitle: input.heroTitle,
+
+              heroDescription: input.heroDescription,
+
+              mentors: input.mentors,
+
+              founders: input.founders,
+
+              metaTitle: input.metaTitle,
+
+              metaDescription: input.metaDescription,
+
+              keywords: input.keywords,
+
+              status: input.status,
+            },
+          });
+        }
+
+        // ================= CREATE =================
+
+        return await prisma.aboutPage.create({
+          data: {
+            pageType: "about-us",
+
+            heroTitle: input.heroTitle,
+
+            heroDescription: input.heroDescription,
+
+            mentors: input.mentors,
+
+            founders: input.founders,
+
+            metaTitle: input.metaTitle,
+
+            metaDescription: input.metaDescription,
+
+            keywords: input.keywords,
+
+            status: input.status,
+          },
+        });
+      } catch (error) {
+        console.log(error);
+
+        throw new Error("Failed to save about page");
+      }
     },
-  });
-},
   },
 };
