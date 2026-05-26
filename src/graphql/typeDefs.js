@@ -1022,21 +1022,21 @@ const typeDefs = gql`
   #--------------------END of user call history-----------------#
   #-----start of user reviews ---------#
   input UserReviewSearchInput {
-  query: String
-  userName: String
-  astrologerName: String
-  rating: Int
+    query: String
+    userName: String
+    astrologerName: String
+    rating: Int
 
-  filterType: SessionFilterType
+    filterType: SessionFilterType
 
-  startDate: String
-  endDate: String
+    startDate: String
+    endDate: String
 
-  page: Int
-  limit: Int
-}
+    page: Int
+    limit: Int
+  }
 
- input UpdateAstrologerInput {
+  input UpdateAstrologerInput {
     name: String
     email: String
     contactNo: String
@@ -1057,169 +1057,220 @@ const typeDefs = gql`
     occupation: String
     isActive: Boolean
   }
-type UserReview {
-  reviewId: ID!
+  type UserReview {
+    reviewId: ID!
 
-  sessionId: ID
+    sessionId: ID
 
-  userId: ID
-  userName: String
-  mobile: String
+    userId: ID
+    userName: String
+    mobile: String
 
-  astrologerId: ID
-  astrologerName: String
+    astrologerId: ID
+    astrologerName: String
 
-  sessionType: String
-  sessionStatus: String
+    sessionType: String
+    sessionStatus: String
 
-  rating: Int
+    rating: Int
 
-  comment: String
+    comment: String
 
-  createdAt: DateTime
-}
+    createdAt: DateTime
+  }
 
-type UserReviewList {
-  data: [UserReview!]!
+  type UserReviewList {
+    data: [UserReview!]!
 
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
 
-  averageRating: Float
-}
+    averageRating: Float
+  }
   #-------END of user reviews ---------#
   #------------START FRAUD FLAGGING ---------------#
   type FraudFlag {
-  id: ID!
-  keyword: String!
-  createdBy: String
-  createdAt: DateTime
-  updatedAt: DateTime
-}
+    id: ID!
+    keyword: String!
+    createdBy: String
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
 
-input FraudFlagSearchInput {
-  query: String
-  page: Int
-  limit: Int
-}
+  input FraudFlagSearchInput {
+    query: String
+    page: Int
+    limit: Int
+  }
 
-type FraudFlagList {
-  data: [FraudFlag!]!
+  type FraudFlagList {
+    data: [FraudFlag!]!
 
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
-}
- #-----END FRAUD FLAGGING ---------------#
- #----------start faud LOGGING ---------------#
- enum FraudStatus {
-  PENDING
-  FRAUD
-  FINE
-}
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+  }
+  #-----END FRAUD FLAGGING ---------------#
+  #----------start faud LOGGING ---------------#
+  enum FraudStatus {
+    PENDING
+    FRAUD
+    FINE
+  }
   type FraudLog {
-  id: ID!
+    id: ID!
 
-  orderId: String
+    orderId: String
 
-  sessionId: String
+    sessionId: String
 
-  senderId: String
-  senderName: String
+    senderId: String
+    senderName: String
 
-  receiverId: String
-  receiverName: String
+    receiverId: String
+    receiverName: String
 
-  message: String
+    message: String
 
-  matchedKeywords: [String]
+    matchedKeywords: [String]
 
-  status: FraudStatus
+    status: FraudStatus
 
-  createdAt: DateTime
-  updatedAt: DateTime
-}
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
 
-input FraudLogSearchInput {
-  query: String
-  status: FraudStatus
+  input FraudLogSearchInput {
+    query: String
+    status: FraudStatus
 
-  filterType: SessionFilterType
+    filterType: SessionFilterType
 
-  startDate: String
-  endDate: String
+    startDate: String
+    endDate: String
 
-  page: Int
-  limit: Int
-}
+    page: Int
+    limit: Int
+  }
 
-type FraudLogList {
-  data: [FraudLog!]!
+  type FraudLogList {
+    data: [FraudLog!]!
 
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
-}
- #------end fraud LOGGING ---------------#
- #--------------start of payment reports-----------------#
- enum PaymentOrderStatus {
-  CREATED
-  PAID
-  FAILED
-}
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+  }
+  #------end fraud LOGGING ---------------#
+  #--------------start of payment reports-----------------#
+  enum PaymentOrderStatus {
+    CREATED
+    PAID
+    FAILED
+  }
 
-input PaymentReportSearchInput {
-  query: String
-  status: PaymentOrderStatus
+  input PaymentReportSearchInput {
+    query: String
+    status: PaymentOrderStatus
 
-  filterType: SessionFilterType
+    filterType: SessionFilterType
 
-  startDate: String
-  endDate: String
+    startDate: String
+    endDate: String
 
-  page: Int
-  limit: Int
-}
+    page: Int
+    limit: Int
+  }
   type PaymentReport {
-  id: ID!
+    id: ID!
 
-  userId: ID!
-  userName: String
-  mobile: String
+    userId: ID!
+    userName: String
+    mobile: String
 
-  rechargePackId: ID
-  rechargePackName: String
+    rechargePackId: ID
+    rechargePackName: String
 
-  razorpayOrderId: String
+    razorpayOrderId: String
 
-  amount: Float
-  coins: Int
+    amount: Float
+    coins: Int
 
-  status: PaymentOrderStatus
+    status: PaymentOrderStatus
 
-  createdAt: DateTime
-  updatedAt: DateTime
-}
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
 
-type PaymentReportList {
-  data: [PaymentReport!]!
+  type PaymentReportList {
+    data: [PaymentReport!]!
 
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
 
-  totalAmount: Float!
-  totalCoins: Int!
+    totalAmount: Float!
+    totalCoins: Int!
 
-  paidAmount: Float!
-  failedAmount: Float!
+    paidAmount: Float!
+    failedAmount: Float!
 
-  paidCount: Int!
-  failedCount: Int!
-}
- #-----END OF PAYMENT REPORTS-----------------#
+    paidCount: Int!
+    failedCount: Int!
+  }
+
+  #--------------------About pagge ___________________#
+  enum CmsStatus {
+    DRAFT
+    PUBLISHED
+  }
+  type AboutPage {
+    id: ID
+
+    pageType: String
+
+    heroTitle: String
+
+    heroDescription: String
+
+    mentors: JSON
+
+    founders: JSON
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+
+    createdAt: String
+    updatedAt: String
+  }
+  input UpdateAboutPageInput {
+    heroTitle: String
+
+    heroDescription: String
+
+    mentors: JSON
+
+    founders: JSON
+
+    metaTitle: String
+
+    metaDescription: String
+
+    keywords: [String]
+
+    status: CmsStatus
+  }
+
+  #-----END OF PAYMENT REPORTS-----------------#
   type Query {
+    #about page #
+    getAboutPage: AboutPage
+
     #pricing config #
     getOfferAnalytics: OfferAnalytics
 
@@ -1331,25 +1382,20 @@ type PaymentReportList {
       searchInput: UserCallHistorySearchInput!
     ): UserCallHistoryList!
 
-    getUserReviews(
-  searchInput: UserReviewSearchInput!
-): UserReviewList!
-getFraudFlags(
-  searchInput: FraudFlagSearchInput
-): FraudFlagList!
+    getUserReviews(searchInput: UserReviewSearchInput!): UserReviewList!
+    getFraudFlags(searchInput: FraudFlagSearchInput): FraudFlagList!
 
-getFraudLogs(
-  searchInput: FraudLogSearchInput
-): FraudLogList!
+    getFraudLogs(searchInput: FraudLogSearchInput): FraudLogList!
 
-getPaymentReports(
-  searchInput: PaymentReportSearchInput!
-): PaymentReportList!
-
+    getPaymentReports(
+      searchInput: PaymentReportSearchInput!
+    ): PaymentReportList!
   }
- 
 
   type Mutation {
+    #----------------about page -------------#
+    updateAboutPage(input: UpdateAboutPageInput): AboutPage
+
     uploadImage(file: Upload!): UploadResponse
 
     createBanner(input: BannerInput!): Banner
@@ -1547,19 +1593,11 @@ getPaymentReports(
     #---- Save bank details & docs -----#
     saveAndVerifyKyc(astrologerId: String!, input: KycDetailInput!): KycDetail
     rejectKyc(astrologerId: String!): KycDetail
-    createFraudFlag(
-  keyword: String!
-): FraudFlag!
+    createFraudFlag(keyword: String!): FraudFlag!
 
-deleteFraudFlag(
-  id: ID!
-): Boolean!
+    deleteFraudFlag(id: ID!): Boolean!
 
-updateFraudLogStatus(
-  id: ID!
-  status: FraudStatus!
-): FraudLog!
-
+    updateFraudLogStatus(id: ID!, status: FraudStatus!): FraudLog!
   }
 `;
 
