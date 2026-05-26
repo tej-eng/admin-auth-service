@@ -989,7 +989,7 @@ model AboutPage {
 
   heroTitle String?
 
-  heroDescription String? @db.LongText
+  heroDescription String? @db.Text
 
   mentors Json?
 
