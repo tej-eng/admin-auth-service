@@ -2917,6 +2917,40 @@ export const resolvers = {
         },
       });
     },
+
+    getPrivacyPage: async () => {
+      return await prisma.privacyPage.findFirst({
+        where: {
+          pageType: "privacy-policy",
+        },
+      });
+    },
+    getRefundPolicyPage: async () => {
+      return await prisma.refundPolicyPage.findFirst({
+        where: {
+          pageType: "refund-policy",
+        },
+      });
+    },
+    getDisclaimerPage: async () => {
+      return await prisma.disclaimerPage.findFirst({
+        where: {
+          pageType: "disclaimer",
+        },
+      });
+    },
+    // remedy
+    getUserRemedies: async (_, { userId }) => {
+      return await prisma.remedy.findMany({
+        where: {
+          userId,
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
   },
 
   // *******************************************************************************************************************************
@@ -4630,6 +4664,221 @@ export const resolvers = {
 
         throw new Error("Failed to save about page");
       }
+    },
+
+    upsertPrivacyPage: async (_, { input }) => {
+      try {
+        const existing = await prisma.privacyPage.findFirst({
+          where: {
+            pageType: "privacy-policy",
+          },
+        });
+
+        // ================= UPDATE =================
+
+        if (existing) {
+          return await prisma.privacyPage.update({
+            where: {
+              id: existing.id,
+            },
+
+            data: {
+              title: input.title,
+
+              content: input.content,
+
+              metaTitle: input.metaTitle,
+
+              metaDescription: input.metaDescription,
+
+              keywords: input.keywords,
+
+              status: input.status,
+            },
+          });
+        }
+
+        // ================= CREATE =================
+
+        return await prisma.privacyPage.create({
+          data: {
+            pageType: "privacy-policy",
+
+            title: input.title,
+
+            content: input.content,
+
+            metaTitle: input.metaTitle,
+
+            metaDescription: input.metaDescription,
+
+            keywords: input.keywords,
+
+            status: input.status,
+          },
+        });
+      } catch (error) {
+        console.log(error);
+
+        throw new Error("Failed to save privacy page");
+      }
+    },
+
+    upsertRefundPolicyPage: async (_, { input }) => {
+      try {
+        const existing = await prisma.refundPolicyPage.findFirst({
+          where: {
+            pageType: "refund-policy",
+          },
+        });
+
+        // ================= UPDATE =================
+
+        if (existing) {
+          return await prisma.refundPolicyPage.update({
+            where: {
+              id: existing.id,
+            },
+
+            data: {
+              title: input.title,
+
+              content: input.content,
+
+              metaTitle: input.metaTitle,
+
+              metaDescription: input.metaDescription,
+
+              keywords: input.keywords,
+
+              status: input.status,
+            },
+          });
+        }
+
+        // ================= CREATE =================
+
+        return await prisma.refundPolicyPage.create({
+          data: {
+            pageType: "refund-policy",
+
+            title: input.title,
+
+            content: input.content,
+
+            metaTitle: input.metaTitle,
+
+            metaDescription: input.metaDescription,
+
+            keywords: input.keywords,
+
+            status: input.status,
+          },
+        });
+      } catch (error) {
+        console.log(error);
+
+        throw new Error("Failed to save refund policy page");
+      }
+    },
+
+    upsertDisclaimerPage: async (_, { input }) => {
+      try {
+        const existing = await prisma.disclaimerPage.findFirst({
+          where: {
+            pageType: "disclaimer",
+          },
+        });
+
+        // ================= UPDATE =================
+
+        if (existing) {
+          return await prisma.disclaimerPage.update({
+            where: {
+              id: existing.id,
+            },
+
+            data: {
+              title: input.title,
+
+              content: input.content,
+
+              metaTitle: input.metaTitle,
+
+              metaDescription: input.metaDescription,
+
+              keywords: input.keywords,
+
+              status: input.status,
+            },
+          });
+        }
+
+        // ================= CREATE =================
+
+        return await prisma.disclaimerPage.create({
+          data: {
+            pageType: "disclaimer",
+
+            title: input.title,
+
+            content: input.content,
+
+            metaTitle: input.metaTitle,
+
+            metaDescription: input.metaDescription,
+
+            keywords: input.keywords,
+
+            status: input.status,
+          },
+        });
+      } catch (error) {
+        console.log(error);
+
+        throw new Error("Failed to save disclaimer page");
+      }
+    },
+
+    // Remedy Add
+    addRemedy: async (_, { input }) => {
+      try {
+        return await prisma.remedy.create({
+          data: {
+            userId: input.userId,
+
+            title: input.title,
+
+            description: input.description,
+          },
+        });
+      } catch (error) {
+        console.log(error);
+
+        throw new Error("Failed to add remedy");
+      }
+    },
+    updateRemedy: async (_, { remedyId, input }) => {
+      return await prisma.remedy.update({
+        where: {
+          id: remedyId,
+        },
+
+        data: {
+          title: input.title,
+
+          description: input.description,
+        },
+      });
+    },
+    deleteRemedy: async (_, { remedyId }) => {
+      await prisma.remedy.delete({
+        where: {
+          id: remedyId,
+        },
+      });
+
+      return "Remedy deleted";
     },
   },
 };
