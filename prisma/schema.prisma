@@ -1017,7 +1017,7 @@ model PrivacyPage {
 
   title String?
 
-  content String? @db.LongText
+  content String? @db.Text
 
   metaTitle String?
   metaDescription String?
@@ -1041,7 +1041,7 @@ model RefundPolicyPage {
 
   title String?
 
-  content String? @db.LongText
+  content String? @db.Text
 
   metaTitle String?
   metaDescription String?
@@ -1065,7 +1065,7 @@ model DisclaimerPage {
 
   title String?
 
-  content String? @db.LongText
+  content String? @db.Text
 
   metaTitle String?
   metaDescription String?
@@ -1091,7 +1091,7 @@ model Remedy {
 
   title String
 
-  description String @db.LongText
+  description String @db.Text
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
