@@ -1095,3 +1095,30 @@ model Remedy {
   @@index([createdAt])
   @@index([isActive])
 }
+
+enum PlatformType {
+  ANDROID
+  IOS
+}
+model AppVersion {
+  id String @id @default(uuid())
+
+  platform PlatformType
+
+  latestVersion String
+  minimumVersion String
+
+  forceUpdate Boolean @default(false)
+
+  maintenanceMode Boolean @default(false)
+
+  maintenanceMessage String?
+
+  playStoreUrl String?
+  appStoreUrl String?
+
+  releaseNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

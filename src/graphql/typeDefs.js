@@ -109,7 +109,7 @@ const typeDefs = gql`
     email: String!
     phoneNumber: String!
     experience: Int!
-    status: Boolean 
+    status: Boolean
 
     profilePic: String
     expertise: [String!]!
@@ -755,7 +755,7 @@ const typeDefs = gql`
     ifscCode: String
     panCardNumber: String
     branchName: String
-    status: DocumentStatus 
+    status: DocumentStatus
   }
   input DocumentsInput {
     profilePic: String
@@ -1372,41 +1372,88 @@ const typeDefs = gql`
   }
 
   #-----END OF PAYMENT REPORTS-----------------#
-#---------------------START code for remedy---#
+  #---------------------START code for remedy---#
 
-type Remedy {
-  id: ID!
-  title: String!
-  description: String
-  isActive: Boolean
-  createdAt: String
-  updatedAt: String
-}
+  type Remedy {
+    id: ID!
+    title: String!
+    description: String
+    isActive: Boolean
+    createdAt: String
+    updatedAt: String
+  }
 
-input CreateRemedyInput {
-  title: String!
-  description: String
-}
+  input CreateRemedyInput {
+    title: String!
+    description: String
+  }
 
-input UpdateRemedyInput {
-  title: String
-  description: String
-  isActive: Boolean
-}
+  input UpdateRemedyInput {
+    title: String
+    description: String
+    isActive: Boolean
+  }
 
+  #----------------------app----------------#
+  enum PlatformType {
+    ANDROID
+    IOS
+  }
 
+  type AppVersion {
+    id: ID!
 
+    platform: PlatformType!
 
-#------------END CODE For remedy-----------------#
+    latestVersion: String!
+    minimumVersion: String!
+
+    forceUpdate: Boolean!
+
+    maintenanceMode: Boolean!
+    maintenanceMessage: String
+
+    playStoreUrl: String
+    appStoreUrl: String
+
+    releaseNotes: String
+
+    createdAt: String
+    updatedAt: String
+  }
+
+  input AddAppVersionInput {
+    platform: PlatformType!
+
+    latestVersion: String!
+    minimumVersion: String!
+
+    forceUpdate: Boolean
+
+    maintenanceMode: Boolean
+    maintenanceMessage: String
+
+    playStoreUrl: String
+    appStoreUrl: String
+
+    releaseNotes: String
+  }
+
+  type AppVersionResponse {
+    success: Boolean!
+    message: String!
+    data: AppVersion
+  }
+
+  #------------END CODE For remedy-----------------#
 
   type Query {
+    getLatestAppVersion(platform: PlatformType!): AppVersion
     #cmss page #
     getAboutPage: AboutPage
     getPrivacyPage: PrivacyPage
     getRefundPolicyPage: RefundPolicyPage
     getDisclaimerPage: DisclaimerPage
-
-
 
     #pricing config #
     getOfferAnalytics: OfferAnalytics
@@ -1528,9 +1575,8 @@ input UpdateRemedyInput {
       searchInput: PaymentReportSearchInput!
     ): PaymentReportList!
 
-     getRemedies: [Remedy]
-  getRemedyById(id: ID!): Remedy
-  
+    getRemedies: [Remedy]
+    getRemedyById(id: ID!): Remedy
   }
 
   type Mutation {
@@ -1741,9 +1787,11 @@ input UpdateRemedyInput {
 
     updateFraudLogStatus(id: ID!, status: FraudStatus!): FraudLog!
 
-  createRemedy(input: CreateRemedyInput!): Remedy
-  updateRemedy(id: ID!, input: UpdateRemedyInput!): Remedy
-  deleteRemedy(id: ID!): Boolean
+    createRemedy(input: CreateRemedyInput!): Remedy
+    updateRemedy(id: ID!, input: UpdateRemedyInput!): Remedy
+    deleteRemedy(id: ID!): Boolean
+
+    addOrUpdateAppVersion(data: AddAppVersionInput!): AppVersionResponse
   }
 `;
 

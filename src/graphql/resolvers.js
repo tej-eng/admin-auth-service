@@ -2960,6 +2960,20 @@ getRemedyById: async (_, { id }) => {
     throw new Error(error.message);
   }
 },
+
+
+// apppppppppppppppppppppppppppppppp
+getLatestAppVersion: async (
+  _,
+  { platform },
+  context
+) => {
+  return await context.prisma.appVersion.findFirst({
+    where: {
+      platform,
+    },
+  });
+},
   },
 
   // *******************************************************************************************************************************
@@ -4884,6 +4898,76 @@ deleteRemedy: async (_, { id }) => {
     });
 
     return true;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+},
+
+
+// appppppppppppppppppp
+addOrUpdateAppVersion: async (
+  _,
+  { data },
+  context
+) => {
+  const { prisma } = context;
+
+  try {
+    const existing =
+      await prisma.appVersion.findFirst({
+        where: {
+          platform: data.platform,
+        },
+      });
+
+    let version;
+
+    if (existing) {
+      version =
+        await prisma.appVersion.update({
+          where: {
+            id: existing.id,
+          },
+
+          data: {
+            latestVersion:
+              data.latestVersion,
+
+            minimumVersion:
+              data.minimumVersion,
+
+            forceUpdate:
+              data.forceUpdate,
+
+            maintenanceMode:
+              data.maintenanceMode,
+
+            maintenanceMessage:
+              data.maintenanceMessage,
+
+            playStoreUrl:
+              data.playStoreUrl,
+
+            appStoreUrl:
+              data.appStoreUrl,
+
+            releaseNotes:
+              data.releaseNotes,
+          },
+        });
+    } else {
+      version =
+        await prisma.appVersion.create({
+          data,
+        });
+    }
+
+    return {
+      success: true,
+      message:
+        "Version updated successfully",
+      data: version,
+    };
   } catch (error) {
     throw new Error(error.message);
   }
