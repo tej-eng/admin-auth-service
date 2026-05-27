@@ -3190,7 +3190,7 @@ getRemedyById: async (_, { id }) => {
             password: data.password,
             experience: Number(data.experience),
             about: data.about,
-
+            status:data.status,
             languages: data.languages,
             skills: data.expertise,
             problems: data.problems,
@@ -3266,6 +3266,7 @@ getRemedyById: async (_, { id }) => {
                     ifsc: data.bankDetails.ifscCode,
                     panNumber: data.bankDetails.panCardNumber,
                     branchName: data.bankDetails.branchName,
+                    status:data.bankDetails.status,
 
                     ...(data.applicationId && {
                       application: {
