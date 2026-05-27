@@ -109,8 +109,9 @@ const typeDefs = gql`
     email: String!
     phoneNumber: String!
     experience: Int!
+    status: Boolean 
 
-  profilePic: String
+    profilePic: String
     expertise: [String!]!
     languages: [String!]!
     problems: [String!]!
@@ -754,6 +755,7 @@ const typeDefs = gql`
     ifscCode: String
     panCardNumber: String
     branchName: String
+    status: DocumentStatus 
   }
   input DocumentsInput {
     profilePic: String
