@@ -249,8 +249,6 @@ model Astrologer {
   createdBy  Staff?     @relation("CreatedAstrologers", fields: [createdById], references: [id])
   kycDetail  KycDetail?
 
-  //kyc KycDetail? @relation(fields: [kycDetailId], references: [id])
-
   intakes          Intake[]
   addresses        Address[]
   experiences      ExperiencePlatform[]
@@ -869,13 +867,14 @@ model KycDetail {
   aadhaarImage  String?
   panImage      String?
   passbookImage String?
-
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
   status DocumentStatus @default(PENDING)
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   astrologerId String?     @unique
-  astrologer   Astrologer? @relation(fields: [astrologerId], references: [id])
+   
+
 }
 
 model Notification {
