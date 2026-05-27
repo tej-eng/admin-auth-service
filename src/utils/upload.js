@@ -28,6 +28,8 @@ const storage = multer.diskStorage({
       uploadPath = getUploadPath("documents");
     } else if (req.originalUrl.includes("upload-profile")) {
       uploadPath = getUploadPath("profile");
+    } else if (req.originalUrl.includes("upload-gifts")) {
+      uploadPath = getUploadPath("gifts");
     }
 
     fs.mkdirSync(uploadPath, { recursive: true });
