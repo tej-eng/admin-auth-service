@@ -69,5 +69,30 @@ router.post(
 );
 
 
+router.post(
+  "/upload-gifts",
+  upload.single("image"),
+  (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: "No file uploaded",
+        });
+      }
+
+      return res.json({
+        url: `/adminAuth/uploads/gifts/${req.file.filename}`,
+      });
+    } catch (err) {
+      console.error(err);
+
+      return res.status(500).json({
+        error: "Upload failed",
+      });
+    }
+  }
+);
+
+
 
 export default router;
