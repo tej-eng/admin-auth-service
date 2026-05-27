@@ -3183,6 +3183,7 @@ getRemedyById: async (_, { id }) => {
           data: {
             name: data.astroname,
             displayName: data.displayName,
+            profilePic: data.profilePic,
             gender: data.gender,
             email: data.email,
             contactNo: String(data.phoneNumber),
@@ -3250,14 +3251,7 @@ getRemedyById: async (_, { id }) => {
                         ]
                       : []),
 
-                    ...(data.documents?.profilePic
-                      ? [
-                          {
-                            documentType: "PROFILE",
-                            documentUrl: data.documents.profilePic,
-                          },
-                        ]
-                      : []),
+               
                   ],
                 }
               : undefined,

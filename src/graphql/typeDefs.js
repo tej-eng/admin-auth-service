@@ -110,6 +110,7 @@ const typeDefs = gql`
     phoneNumber: String!
     experience: Int!
 
+  profilePic: String
     expertise: [String!]!
     languages: [String!]!
     problems: [String!]!
