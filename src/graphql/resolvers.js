@@ -4495,6 +4495,7 @@ getRemedyById: async (_, { id }) => {
       if (!context.user) throw new Error("Unauthorized");
 
       const { astrologerId, input } = args;
+      console.log("KYC INPUTTTTTTTTTTTTTTTTTTTTTTTTT:", input);
 
       const kyc = await prisma.kycDetail.upsert({
         where: {
@@ -4515,7 +4516,7 @@ getRemedyById: async (_, { id }) => {
           documentStatus: input.status,
         },
       });
-
+        console.log("KYC SAVED AND VERIFIED:", kyc);
       return kyc;
     },
 
