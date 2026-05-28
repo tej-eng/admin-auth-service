@@ -10,6 +10,8 @@ router.post(
     { name: "aadhaar", maxCount: 1 },
     { name: "panCard", maxCount: 1 },
     { name: "passbook", maxCount: 1 },
+       { name: "mentorImage", maxCount: 1 },
+    { name: "founderImage", maxCount: 1 },
   ]),
   (req, res) => {
     try {
@@ -30,6 +32,14 @@ router.post(
 
         passbook: files?.passbook?.[0]?.filename
           ? `/adminAuth/uploads/documents/${files.passbook[0].filename}`
+          : null,
+             
+        mentorImage: files?.mentorImage?.[0]?.filename
+          ? `/adminAuth/uploads/documents/${files.mentorImage[0].filename}`
+          : null,
+
+        founderImage: files?.founderImage?.[0]?.filename
+          ? `/adminAuth/uploads/documents/${files.founderImage[0].filename}`
           : null,
       };
 
