@@ -197,6 +197,7 @@ model Review {
   @@index([createdAt])
 }
 
+
 model Intake {
   id           String   @id @default(uuid())
   userId       String
