@@ -2940,40 +2940,46 @@ export const resolvers = {
       });
     },
     // remedy
-  getRemedies: async () => {
-  try {
-    return await prisma.remedy.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
-getRemedyById: async (_, { id }) => {
-  try {
-    return await prisma.remedy.findUnique({
-      where: { id },
-    });
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
-
-
-// apppppppppppppppppppppppppppppppp
-getLatestAppVersion: async (
-  _,
-  { platform },
-  context
-) => {
-  return await context.prisma.appVersion.findFirst({
-    where: {
-      platform,
+    getRemedies: async () => {
+      try {
+        return await prisma.remedy.findMany({
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
+      } catch (error) {
+        throw new Error(error.message);
+      }
     },
-  });
-},
+    getRemedyById: async (_, { id }) => {
+      try {
+        return await prisma.remedy.findUnique({
+          where: { id },
+        });
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+
+    // apppppppppppppppppppppppppppppppp
+    getLatestAppVersion: async (_, { platform }, context) => {
+      return await context.prisma.appVersion.findFirst({
+        where: {
+          platform,
+        },
+      });
+    },
+
+     freeServices: async () => {
+      return await prisma.freeService.findMany({
+        where: {
+          isActive: true,
+        },
+        orderBy: {
+          order: "asc",
+        },
+      });
+    },
   },
 
   // *******************************************************************************************************************************
@@ -3204,7 +3210,7 @@ getLatestAppVersion: async (
             password: data.password,
             experience: Number(data.experience),
             about: data.about,
-            status:data.status,
+            status: data.status,
             languages: data.languages,
             skills: data.expertise,
             problems: data.problems,
@@ -3264,8 +3270,6 @@ getLatestAppVersion: async (
                           },
                         ]
                       : []),
-
-               
                   ],
                 }
               : undefined,
@@ -3280,7 +3284,7 @@ getLatestAppVersion: async (
                     ifsc: data.bankDetails.ifscCode,
                     panNumber: data.bankDetails.panCardNumber,
                     branchName: data.bankDetails.branchName,
-                    status:data.bankDetails.status,
+                    status: data.bankDetails.status,
 
                     ...(data.applicationId && {
                       application: {
@@ -4531,7 +4535,7 @@ getLatestAppVersion: async (
           documentStatus: input.status,
         },
       });
-        console.log("KYC SAVED AND VERIFIED:", kyc);
+      console.log("KYC SAVED AND VERIFIED:", kyc);
       return kyc;
     },
 
@@ -4860,121 +4864,114 @@ getLatestAppVersion: async (
     },
 
     createRemedy: async (_, { input }) => {
-  try {
-    return await prisma.remedy.create({
-      data: {
-        title: input.title,
-        description: input.description,
-      },
-    });
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
+      try {
+        return await prisma.remedy.create({
+          data: {
+            title: input.title,
+            description: input.description,
+          },
+        });
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
 
-updateRemedy: async (_, { id, input }) => {
-  try {
-    return await prisma.remedy.update({
-      where: { id },
-      data: {
-        ...(input.title && { title: input.title }),
-        ...(input.description && {
-          description: input.description,
-        }),
-        ...(input.isActive !== undefined && {
-          isActive: input.isActive,
-        }),
-      },
-    });
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
+    updateRemedy: async (_, { id, input }) => {
+      try {
+        return await prisma.remedy.update({
+          where: { id },
+          data: {
+            ...(input.title && { title: input.title }),
+            ...(input.description && {
+              description: input.description,
+            }),
+            ...(input.isActive !== undefined && {
+              isActive: input.isActive,
+            }),
+          },
+        });
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
 
-deleteRemedy: async (_, { id }) => {
-  try {
-    await prisma.remedy.delete({
-      where: { id },
-    });
+    deleteRemedy: async (_, { id }) => {
+      try {
+        await prisma.remedy.delete({
+          where: { id },
+        });
 
-    return true;
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
+        return true;
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
 
+    // appppppppppppppppppp
+    addOrUpdateAppVersion: async (_, { data }, context) => {
+      const { prisma } = context;
 
-// appppppppppppppppppp
-addOrUpdateAppVersion: async (
-  _,
-  { data },
-  context
-) => {
-  const { prisma } = context;
+      try {
+        const existing = await prisma.appVersion.findFirst({
+          where: {
+            platform: data.platform,
+          },
+        });
 
-  try {
-    const existing =
-      await prisma.appVersion.findFirst({
-        where: {
-          platform: data.platform,
-        },
+        let version;
+
+        if (existing) {
+          version = await prisma.appVersion.update({
+            where: {
+              id: existing.id,
+            },
+
+            data: {
+              latestVersion: data.latestVersion,
+
+              minimumVersion: data.minimumVersion,
+
+              forceUpdate: data.forceUpdate,
+
+              maintenanceMode: data.maintenanceMode,
+
+              maintenanceMessage: data.maintenanceMessage,
+
+              playStoreUrl: data.playStoreUrl,
+
+              appStoreUrl: data.appStoreUrl,
+
+              releaseNotes: data.releaseNotes,
+            },
+          });
+        } else {
+          version = await prisma.appVersion.create({
+            data,
+          });
+        }
+
+        return {
+          success: true,
+          message: "Version updated successfully",
+          data: version,
+        };
+      } catch (error) {
+        throw new Error(error.message);
+      }
+    },
+
+           createFreeService: async (_, args) => {
+      return await prisma.freeService.create({
+        data: args,
+      });
+    },
+
+    deleteFreeService: async (_, { id }) => {
+      await prisma.freeService.delete({
+        where: { id },
       });
 
-    let version;
-
-    if (existing) {
-      version =
-        await prisma.appVersion.update({
-          where: {
-            id: existing.id,
-          },
-
-          data: {
-            latestVersion:
-              data.latestVersion,
-
-            minimumVersion:
-              data.minimumVersion,
-
-            forceUpdate:
-              data.forceUpdate,
-
-            maintenanceMode:
-              data.maintenanceMode,
-
-            maintenanceMessage:
-              data.maintenanceMessage,
-
-            playStoreUrl:
-              data.playStoreUrl,
-
-            appStoreUrl:
-              data.appStoreUrl,
-
-            releaseNotes:
-              data.releaseNotes,
-          },
-        });
-    } else {
-      version =
-        await prisma.appVersion.create({
-          data,
-        });
-    }
-
-    return {
-      success: true,
-      message:
-        "Version updated successfully",
-      data: version,
-    };
-  } catch (error) {
-    throw new Error(error.message);
-  }
-},
-
-
-
-
+      return true;
+    },
   },
 };

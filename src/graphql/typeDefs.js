@@ -1445,9 +1445,20 @@ const typeDefs = gql`
     data: AppVersion
   }
 
+  type FreeService {
+    id: ID!
+    title: String!
+    icon: String!
+    href: String!
+    slug: String!
+    isActive: Boolean!
+    order: Int!
+  }
+
   #------------END CODE For remedy-----------------#
 
   type Query {
+    freeServices: [FreeService!]!
     getLatestAppVersion(platform: PlatformType!): AppVersion
     #cmss page #
     getAboutPage: AboutPage
@@ -1792,6 +1803,16 @@ const typeDefs = gql`
     deleteRemedy(id: ID!): Boolean
 
     addOrUpdateAppVersion(data: AddAppVersionInput!): AppVersionResponse
+
+    createFreeService(
+      title: String!
+      icon: String!
+      href: String!
+      slug: String!
+      order: Int
+    ): FreeService!
+
+    deleteFreeService(id: ID!): Boolean!
   }
 `;
 
