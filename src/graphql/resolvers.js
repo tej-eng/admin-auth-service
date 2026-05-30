@@ -5025,5 +5025,126 @@ export const resolvers = {
     );
   }
 },
+deleteOffer: async (_, { id }) => {
+  try {
+    const existingOffer = await prisma.offer.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!existingOffer) {
+      throw new Error("Offer not found");
+    }
+
+    await prisma.offer.delete({
+      where: {
+        id,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Offer deleted successfully",
+    };
+  } catch (error) {
+    console.error("deleteOffer error:", error);
+
+    throw new Error(
+      error.message || "Failed to delete offer"
+    );
+  }
+},
+updateOffer: async (_, { id, data }) => {
+  try {
+    const existingOffer = await prisma.offer.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!existingOffer) {
+      throw new Error("Offer not found");
+    }
+
+    const updatedOffer = await prisma.offer.update({
+      where: {
+        id,
+      },
+
+      data: {
+        ...(data.offerName !== undefined && {
+          offerName: data.offerName,
+        }),
+
+        ...(data.price !== undefined && {
+          price: data.price,
+        }),
+
+        ...(data.description !== undefined && {
+          description: data.description,
+        }),
+
+        ...(data.isActive !== undefined && {
+          isActive: data.isActive,
+        }),
+      },
+    });
+
+    return {
+      success: true,
+
+      message: "Offer updated successfully",
+
+      data: {
+        ...updatedOffer,
+
+        createdAt: updatedOffer.createdAt.toISOString(),
+
+        updatedAt: updatedOffer.updatedAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error("updateOffer error:", error);
+
+    throw new Error(
+      error.message || "Failed to update offer"
+    );
+  }
+},
+deleteOffer: async (_, { id }) => {
+  try {
+    const existingOffer = await prisma.offer.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!existingOffer) {
+      throw new Error("Offer not found");
+    }
+
+    await prisma.offer.update({
+      where: {
+        id,
+      },
+
+      data: {
+        isActive: false,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Offer deactivated successfully",
+    };
+  } catch (error) {
+    console.error("deleteOffer error:", error);
+
+    throw new Error(
+      error.message || "Failed to delete offer"
+    );
+  }
+},
   },
 };

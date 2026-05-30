@@ -1491,6 +1491,12 @@ type OfferResponse {
 
   data: Offer
 }
+  input UpdateOfferInput {
+  offerName: String
+  price: Float
+  description: String
+  isActive: Boolean
+}
   #------------------END code for offer price-----------------#
 
   type Query {
@@ -1853,6 +1859,17 @@ type OfferResponse {
     createOffer(
   data: CreateOfferInput!
 ): OfferResponse!
+
+updateOffer(
+  id: String!
+  data: UpdateOfferInput!
+): OfferResponse!
+
+deleteOffer(
+  id: String!
+): MessageResponse!
+
+
 
   }
 `;
