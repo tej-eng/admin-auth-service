@@ -2970,7 +2970,7 @@ export const resolvers = {
       });
     },
 
-     freeServices: async () => {
+    freeServices: async () => {
       return await prisma.freeService.findMany({
         where: {
           isActive: true,
@@ -2981,7 +2981,7 @@ export const resolvers = {
       });
     },
 
-    getOffers: async () => {
+   getOffers: async () => {
   try {
     const offers = await prisma.offer.findMany({
       orderBy: {
@@ -2997,9 +2997,7 @@ export const resolvers = {
   } catch (error) {
     console.error("getOffers error:", error);
 
-    throw new Error(
-      error.message || "Failed to fetch offers"
-    );
+    throw new Error(error.message || "Failed to fetch offers");
   }
 },
   },
@@ -4982,7 +4980,7 @@ export const resolvers = {
       }
     },
 
-           createFreeService: async (_, args) => {
+    createFreeService: async (_, args) => {
       return await prisma.freeService.create({
         data: args,
       });
@@ -4997,154 +4995,146 @@ export const resolvers = {
     },
 
     createOffer: async (_, { data }) => {
-  try {
-    const { offerName, price, description } = data;
+      try {
+        const { offerName, price, description } = data;
 
-    const offer = await prisma.offer.create({
-      data: {
-        offerName,
-        price,
-        description,
-      },
-    });
+        const offer = await prisma.offer.create({
+          data: {
+            offerName,
+            price,
+            description,
+          },
+        });
 
-    return {
-      success: true,
-      message: "Offer created successfully",
-      data: {
-        ...offer,
-        createdAt: offer.createdAt.toISOString(),
-        updatedAt: offer.updatedAt.toISOString(),
-      },
-    };
-  } catch (error) {
-    console.error("createOffer error:", error);
+        return {
+          success: true,
+          message: "Offer created successfully",
+          data: {
+            ...offer,
+            createdAt: offer.createdAt.toISOString(),
+            updatedAt: offer.updatedAt.toISOString(),
+          },
+        };
+      } catch (error) {
+        console.error("createOffer error:", error);
 
-    throw new Error(
-      error.message || "Failed to create offer"
-    );
-  }
-},
-deleteOffer: async (_, { id }) => {
-  try {
-    const existingOffer = await prisma.offer.findUnique({
-      where: {
-        id,
-      },
-    });
+        throw new Error(error.message || "Failed to create offer");
+      }
+    },
+    deleteOffer: async (_, { id }) => {
+      try {
+        const existingOffer = await prisma.offer.findUnique({
+          where: {
+            id,
+          },
+        });
 
-    if (!existingOffer) {
-      throw new Error("Offer not found");
-    }
+        if (!existingOffer) {
+          throw new Error("Offer not found");
+        }
 
-    await prisma.offer.delete({
-      where: {
-        id,
-      },
-    });
+        await prisma.offer.delete({
+          where: {
+            id,
+          },
+        });
 
-    return {
-      success: true,
-      message: "Offer deleted successfully",
-    };
-  } catch (error) {
-    console.error("deleteOffer error:", error);
+        return {
+          success: true,
+          message: "Offer deleted successfully",
+        };
+      } catch (error) {
+        console.error("deleteOffer error:", error);
 
-    throw new Error(
-      error.message || "Failed to delete offer"
-    );
-  }
-},
-updateOffer: async (_, { id, data }) => {
-  try {
-    const existingOffer = await prisma.offer.findUnique({
-      where: {
-        id,
-      },
-    });
+        throw new Error(error.message || "Failed to delete offer");
+      }
+    },
+    updateOffer: async (_, { id, data }) => {
+      try {
+        const existingOffer = await prisma.offer.findUnique({
+          where: {
+            id,
+          },
+        });
 
-    if (!existingOffer) {
-      throw new Error("Offer not found");
-    }
+        if (!existingOffer) {
+          throw new Error("Offer not found");
+        }
 
-    const updatedOffer = await prisma.offer.update({
-      where: {
-        id,
-      },
+        const updatedOffer = await prisma.offer.update({
+          where: {
+            id,
+          },
 
-      data: {
-        ...(data.offerName !== undefined && {
-          offerName: data.offerName,
-        }),
+          data: {
+            ...(data.offerName !== undefined && {
+              offerName: data.offerName,
+            }),
 
-        ...(data.price !== undefined && {
-          price: data.price,
-        }),
+            ...(data.price !== undefined && {
+              price: data.price,
+            }),
 
-        ...(data.description !== undefined && {
-          description: data.description,
-        }),
+            ...(data.description !== undefined && {
+              description: data.description,
+            }),
 
-        ...(data.isActive !== undefined && {
-          isActive: data.isActive,
-        }),
-      },
-    });
+            ...(data.isActive !== undefined && {
+              isActive: data.isActive,
+            }),
+          },
+        });
 
-    return {
-      success: true,
+        return {
+          success: true,
 
-      message: "Offer updated successfully",
+          message: "Offer updated successfully",
 
-      data: {
-        ...updatedOffer,
+          data: {
+            ...updatedOffer,
 
-        createdAt: updatedOffer.createdAt.toISOString(),
+            createdAt: updatedOffer.createdAt.toISOString(),
 
-        updatedAt: updatedOffer.updatedAt.toISOString(),
-      },
-    };
-  } catch (error) {
-    console.error("updateOffer error:", error);
+            updatedAt: updatedOffer.updatedAt.toISOString(),
+          },
+        };
+      } catch (error) {
+        console.error("updateOffer error:", error);
 
-    throw new Error(
-      error.message || "Failed to update offer"
-    );
-  }
-},
-deleteOffer: async (_, { id }) => {
-  try {
-    const existingOffer = await prisma.offer.findUnique({
-      where: {
-        id,
-      },
-    });
+        throw new Error(error.message || "Failed to update offer");
+      }
+    },
+    deleteOffer: async (_, { id }) => {
+      try {
+        const existingOffer = await prisma.offer.findUnique({
+          where: {
+            id,
+          },
+        });
 
-    if (!existingOffer) {
-      throw new Error("Offer not found");
-    }
+        if (!existingOffer) {
+          throw new Error("Offer not found");
+        }
 
-    await prisma.offer.update({
-      where: {
-        id,
-      },
+        await prisma.offer.update({
+          where: {
+            id,
+          },
 
-      data: {
-        isActive: false,
-      },
-    });
+          data: {
+            isActive: false,
+          },
+        });
 
-    return {
-      success: true,
-      message: "Offer deactivated successfully",
-    };
-  } catch (error) {
-    console.error("deleteOffer error:", error);
+        return {
+          success: true,
+          message: "Offer deactivated successfully",
+        };
+      } catch (error) {
+        console.error("deleteOffer error:", error);
 
-    throw new Error(
-      error.message || "Failed to delete offer"
-    );
-  }
-},
+        throw new Error(error.message || "Failed to delete offer");
+      }
+    },
   },
 };
