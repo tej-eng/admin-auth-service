@@ -1457,6 +1457,42 @@ const typeDefs = gql`
 
   #------------END CODE For remedy-----------------#
 
+  #------------------start code for offer price-----------------#
+  # ================= OFFER =================
+
+type Offer {
+  id: ID!
+
+  offerName: String!
+
+  price: Float!
+
+  description: String
+
+  isActive: Boolean!
+
+  createdAt: String!
+
+  updatedAt: String!
+}
+
+input CreateOfferInput {
+  offerName: String!
+
+  price: Float!
+
+  description: String
+}
+
+type OfferResponse {
+  success: Boolean!
+
+  message: String!
+
+  data: Offer
+}
+  #------------------END code for offer price-----------------#
+
   type Query {
     freeServices: [FreeService!]!
     getLatestAppVersion(platform: PlatformType!): AppVersion
@@ -1588,6 +1624,7 @@ const typeDefs = gql`
 
     getRemedies: [Remedy]
     getRemedyById(id: ID!): Remedy
+    getOffers: [Offer!]!
   }
 
   type Mutation {
@@ -1813,6 +1850,10 @@ const typeDefs = gql`
     ): FreeService!
 
     deleteFreeService(id: ID!): Boolean!
+    createOffer(
+  data: CreateOfferInput!
+): OfferResponse!
+
   }
 `;
 

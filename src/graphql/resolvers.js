@@ -2980,6 +2980,28 @@ export const resolvers = {
         },
       });
     },
+
+    getOffers: async () => {
+  try {
+    const offers = await prisma.offer.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return offers.map((offer) => ({
+      ...offer,
+      createdAt: offer.createdAt.toISOString(),
+      updatedAt: offer.updatedAt.toISOString(),
+    }));
+  } catch (error) {
+    console.error("getOffers error:", error);
+
+    throw new Error(
+      error.message || "Failed to fetch offers"
+    );
+  }
+},
   },
 
   // *******************************************************************************************************************************
@@ -4973,5 +4995,35 @@ export const resolvers = {
 
       return true;
     },
+
+    createOffer: async (_, { data }) => {
+  try {
+    const { offerName, price, description } = data;
+
+    const offer = await prisma.offer.create({
+      data: {
+        offerName,
+        price,
+        description,
+      },
+    });
+
+    return {
+      success: true,
+      message: "Offer created successfully",
+      data: {
+        ...offer,
+        createdAt: offer.createdAt.toISOString(),
+        updatedAt: offer.updatedAt.toISOString(),
+      },
+    };
+  } catch (error) {
+    console.error("createOffer error:", error);
+
+    throw new Error(
+      error.message || "Failed to create offer"
+    );
+  }
+},
   },
 };
