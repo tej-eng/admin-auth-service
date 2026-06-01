@@ -1460,43 +1460,43 @@ const typeDefs = gql`
   #------------------start code for offer price-----------------#
   # ================= OFFER =================
 
-type Offer {
-  id: ID!
+  type Offer {
+    id: ID!
 
-  offerName: String!
+    offerName: String!
 
-  price: Float!
+    price: Float!
 
-  description: String
+    description: String
 
-  isActive: Boolean!
+    isActive: Boolean!
 
-  createdAt: String!
+    createdAt: String!
 
-  updatedAt: String!
-}
+    updatedAt: String!
+  }
 
-input CreateOfferInput {
-  offerName: String!
+  input CreateOfferInput {
+    offerName: String!
 
-  price: Float!
+    price: Float!
 
-  description: String
-}
+    description: String
+  }
 
-type OfferResponse {
-  success: Boolean!
+  type OfferResponse {
+    success: Boolean!
 
-  message: String!
+    message: String!
 
-  data: Offer
-}
+    data: Offer
+  }
   input UpdateOfferInput {
-  offerName: String
-  price: Float
-  description: String
-  isActive: Boolean
-}
+    offerName: String
+    price: Float
+    description: String
+    isActive: Boolean
+  }
   #------------------END code for offer price-----------------#
 
   type Query {
@@ -1856,21 +1856,12 @@ type OfferResponse {
     ): FreeService!
 
     deleteFreeService(id: ID!): Boolean!
-    createOffer(
-  data: CreateOfferInput!
-): OfferResponse!
 
-updateOffer(
-  id: String!
-  data: UpdateOfferInput!
-): OfferResponse!
+    createOffer(data: CreateOfferInput!): OfferResponse!
 
-deleteOffer(
-  id: String!
-): MessageResponse!
+    updateOffer(id: String!, data: UpdateOfferInput!): OfferResponse!
 
-
-
+    deleteOffer(id: String!): MessageResponse!
   }
 `;
 
