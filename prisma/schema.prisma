@@ -715,9 +715,9 @@ model Session {
   transactions  WalletTransaction[]
   fraudLogs FraudLog[] 
 
-  remedyId      String?
-
-  remedy        Remedy?  @relation(fields: [remedyId], references: [id])
+  //remedyId      String?
+  remedies SessionRemedy[]
+  //remedy        Remedy?  @relation(fields: [remedyId], references: [id])
   @@index([userId])
   @@index([astrologerId])
   @@index([status])
@@ -1110,7 +1110,7 @@ model Remedy {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  sessions    Session[]
+  //sessions    Session[]
 
   @@index([createdAt])
   @@index([isActive])
@@ -1175,4 +1175,19 @@ model Offer {
 
   @@index([offerName])
   @@index([isActive])
+}
+
+model SessionRemedy {
+  id          String   @id @default(uuid())
+
+  sessionId   String
+
+  remedyText  String   @db.Text
+
+  createdAt   DateTime @default(now())
+
+  session     Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([createdAt])
 }
