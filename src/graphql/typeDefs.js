@@ -19,7 +19,7 @@ const typeDefs = gql`
   }
 
  type MessageResponse {
-  status: Boolean!
+  success: Boolean!
   message: String!
 }
 
