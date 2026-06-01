@@ -18,9 +18,10 @@ const typeDefs = gql`
     SUPPORT
   }
 
-  type MessageResponse {
-    message: String!
-  }
+ type MessageResponse {
+  status: Boolean!
+  message: String!
+}
 
   enum ApprovalStatus {
     PENDING

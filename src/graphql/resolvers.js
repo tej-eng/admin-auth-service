@@ -5105,36 +5105,34 @@ export const resolvers = {
       }
     },
     deleteOffer: async (_, { id }) => {
-      try {
-        const existingOffer = await prisma.offer.findUnique({
-          where: {
-            id,
-          },
-        });
+  try {
+    const existingOffer = await prisma.offer.findUnique({
+      where: {
+        id,
+      },
+    });
 
-        if (!existingOffer) {
-          throw new Error("Offer not found");
-        }
+    if (!existingOffer) {
+      throw new Error("Offer not found");
+    }
 
-        await prisma.offer.update({
-          where: {
-            id,
-          },
+    await prisma.offer.delete({
+      where: {
+        id,
+      },
+    });
 
-          data: {
-            isActive: false,
-          },
-        });
+    return {
+      success: true,
+      message: "Offer deleted successfully",
+    };
+  } catch (error) {
+    console.error("deleteOffer error:", error);
 
-        return {
-          success: true,
-          message: "Offer deactivated successfully",
-        };
-      } catch (error) {
-        console.error("deleteOffer error:", error);
-
-        throw new Error(error.message || "Failed to delete offer");
-      }
-    },
+    throw new Error(
+      error.message || "Failed to delete offer"
+    );
+  }
+},
   },
 };
