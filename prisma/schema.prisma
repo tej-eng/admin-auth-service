@@ -693,10 +693,10 @@ model Session {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 
   astrologerId String
- astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   type   SessionType
   status SessionStatus
@@ -704,20 +704,24 @@ model Session {
   ratePerMin  Int
   durationSec Int @default(0)
 
-  coinsDeducted Int                 @default(0)
-  coinsEarned   Int                 @default(0)
-  commission    Int                 @default(0)
+  coinsDeducted Int @default(0)
+  coinsEarned   Int @default(0)
+  commission    Int @default(0)
+
   review        Review?
   startedAt     DateTime?
   endedAt       DateTime?
-  messages      Message[]
-  createdAt     DateTime            @default(now())
-  transactions  WalletTransaction[]
-  fraudLogs FraudLog[] 
 
-  //remedyId      String?
-  remedies SessionRemedy[]
-  //remedy        Remedy?  @relation(fields: [remedyId], references: [id])
+  messages      Message[]
+
+  transactions  WalletTransaction[]
+
+  fraudLogs     FraudLog[]
+
+  remedies      SessionRemedy[]   // 👈 ADD THIS
+
+  createdAt     DateTime @default(now())
+
   @@index([userId])
   @@index([astrologerId])
   @@index([status])
