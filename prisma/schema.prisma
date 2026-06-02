@@ -197,7 +197,6 @@ model Review {
   @@index([createdAt])
 }
 
-
 model Intake {
   id           String   @id @default(uuid())
   userId       String
@@ -718,7 +717,7 @@ model Session {
 
   fraudLogs     FraudLog[]
 
-  remedies      SessionRemedy[]   // 👈 ADD THIS
+  remedies      SessionRemedy[]   
 
   createdAt     DateTime @default(now())
 
@@ -1114,7 +1113,7 @@ model Remedy {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  //sessions    Session[]
+ // sessions    Session[]
 
   @@index([createdAt])
   @@index([isActive])
@@ -1124,6 +1123,7 @@ enum PlatformType {
   ANDROID
   IOS
 }
+
 model AppVersion {
   id String @id @default(uuid())
 
@@ -1163,22 +1163,16 @@ model FreeService {
 }
 
 model Offer {
-  id String @id @default(uuid())
-
-  offerName String
-
-  price Float
-
+  id          String   @id @default(uuid())
+  offerName   String
+  price       Float
   description String?
+  isActive    Boolean  @default(true)
 
-  isActive Boolean @default(false)
+  astrologerOffers AstrologerOffer[]
 
   createdAt DateTime @default(now())
-
   updatedAt DateTime @updatedAt
-
-  @@index([offerName])
-  @@index([isActive])
 }
 
 model SessionRemedy {
@@ -1194,4 +1188,32 @@ model SessionRemedy {
 
   @@index([sessionId])
   @@index([createdAt])
+}
+
+model AstrologerOffer {
+  id String @id @default(uuid())
+
+  astrologerId String
+  offerId      String
+
+  isActive Boolean @default(false)
+
+  astrologer Astrologer @relation(
+    fields: [astrologerId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  offer Offer @relation(
+    fields: [offerId],
+    references: [id],
+    onDelete: Cascade
+  )
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([astrologerId, offerId])
+  @@index([astrologerId])
+  @@index([offerId])
 }
