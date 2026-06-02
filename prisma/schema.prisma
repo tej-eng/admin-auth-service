@@ -273,6 +273,7 @@ model Astrologer {
   reviews          Review[]
   pricing          AstrologerPricing[]
   applications     AstrologerApplication[]
+  offers AstrologerOffer[]
 
   @@index([rating])
   @@index([experience])
@@ -1169,10 +1170,10 @@ model Offer {
   description String?
   isActive    Boolean  @default(true)
 
-  astrologerOffers AstrologerOffer[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  astrologerOffers AstrologerOffer[]
 }
 
 model SessionRemedy {
@@ -1191,29 +1192,23 @@ model SessionRemedy {
 }
 
 model AstrologerOffer {
-  id String @id @default(uuid())
+  id           String @id @default(uuid())
 
   astrologerId String
   offerId      String
 
-  isActive Boolean @default(false)
+  isActive     Boolean @default(false)
 
-  astrologer Astrologer @relation(
-    fields: [astrologerId],
-    references: [id],
-    onDelete: Cascade
-  )
+  astrologer   Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
-  offer Offer @relation(
-    fields: [offerId],
-    references: [id],
-    onDelete: Cascade
-  )
+  offer        Offer @relation(fields: [offerId], references: [id], onDelete: Cascade)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([astrologerId, offerId])
+
   @@index([astrologerId])
   @@index([offerId])
+  @@index([isActive])
 }
