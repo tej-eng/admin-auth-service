@@ -1171,7 +1171,7 @@ model Offer {
 
   description String?
 
-  isActive Boolean @default(true)
+  isActive Boolean @default(false)
 
   createdAt DateTime @default(now())
 
