@@ -2801,73 +2801,103 @@ export const resolvers = {
     },
 
     // pricing config
-    getFinalPrice: async (_, { astrologerId }, { prisma, userId }) => {
-      const config = await prisma.pricingConfig.findFirst();
-      await prisma.userOfferUsage.upsert({
-        where: { userId },
-        update: {
-          visitCount: { increment: 1 },
-        },
-        create: {
-          userId,
-          visitCount: 1,
-        },
-      });
+   getFinalPrice: async (_, { astrologerId }, { prisma, userId }) => {
+  const config = await prisma.pricingConfig.findFirst();
 
-      const userUsage = await prisma.userOfferUsage.findUnique({
-        where: { userId },
-      });
+  const userUsage = await prisma.userOfferUsage.findUnique({
+    where: { userId },
+  });
 
-      const visitCount = userUsage?.visitCount || 0;
+  const visitCount = userUsage?.visitCount || 0;
 
-      // 🧠 decision engine
-      if (visitCount === 0 && config?.isFirstOfferEnabled) {
-        return {
-          chatPrice: config.firstChatPrice,
-          callPrice: config.firstCallPrice,
-          isOfferApplied: true,
-        };
-      }
+  // First Time Offer
+  if (
+    visitCount === 0 &&
+    config?.isFirstOfferEnabled
+  ) {
+    return {
+      chatPrice: config.firstChatPrice,
+      callPrice: config.firstCallPrice,
+      isOfferApplied: true,
+      offerType: "FIRST_TIME",
+    };
+  }
 
-      if (visitCount === 1 && config?.isSecondOfferEnabled) {
-        return {
-          chatPrice: config.secondChatPrice,
-          callPrice: config.secondCallPrice,
-          isOfferApplied: true,
-        };
-      }
+  // Second Time Offer
+  if (
+    visitCount === 1 &&
+    config?.isSecondOfferEnabled
+  ) {
+    return {
+      chatPrice: config.secondChatPrice,
+      callPrice: config.secondCallPrice,
+      isOfferApplied: true,
+      offerType: "SECOND_TIME",
+    };
+  }
 
-      // fallback → original astrologer price
-      const chat = await prisma.astrologerPricing.findFirst({
-        where: { astrologerId, type: "CHAT", isActive: true },
-      });
+  // Global Offer
+  if (config?.isGlobalOfferEnabled) {
+    return {
+      chatPrice: config.globalChatPrice,
+      callPrice: config.globalCallPrice,
+      isOfferApplied: true,
+      offerType: "GLOBAL",
+    };
+  }
 
-      const call = await prisma.astrologerPricing.findFirst({
-        where: { astrologerId, type: "CALL", isActive: true },
-      });
-
-      return {
-        chatPrice: chat?.price || 0,
-        callPrice: call?.price || 0,
-        isOfferApplied: false,
-      };
+  const chat = await prisma.astrologerPricing.findFirst({
+    where: {
+      astrologerId,
+      type: "CHAT",
+      isActive: true,
     },
+  });
+
+  const call = await prisma.astrologerPricing.findFirst({
+    where: {
+      astrologerId,
+      type: "CALL",
+      isActive: true,
+    },
+  });
+
+  return {
+    chatPrice: chat?.price || 0,
+    callPrice: call?.price || 0,
+    isOfferApplied: false,
+    offerType: null,
+  };
+},
 
     getPricingConfig: async (_, __, { prisma }) => {
       return await prisma.pricingConfig.findFirst();
     },
 
-    getAdminPreviewPrice: async (_, __, { prisma }) => {
-      const config = await prisma.pricingConfig.findFirst();
+   getAdminPreviewPrice: async (_, __, { prisma }) => {
+  const config =
+    await prisma.pricingConfig.findFirst();
 
-      return {
-        chatPrice: config?.isFirstOfferEnabled ? config.firstChatPrice : 50, // fallback
+  return {
+    globalChatPrice:
+      config?.globalChatPrice || 0,
 
-        callPrice: config?.isFirstOfferEnabled ? config.firstCallPrice : 100,
+    globalCallPrice:
+      config?.globalCallPrice || 0,
 
-        isOfferApplied: config?.isFirstOfferEnabled || false,
-      };
-    },
+    firstChatPrice:
+      config?.firstChatPrice || 0,
+
+    firstCallPrice:
+      config?.firstCallPrice || 0,
+
+    secondChatPrice:
+      config?.secondChatPrice || 0,
+
+    secondCallPrice:
+      config?.secondCallPrice || 0,
+  };
+},
 
     getOfferAnalytics: async (_, __, { prisma }) => {
       const totalUsers = await prisma.userOfferUsage.count();
