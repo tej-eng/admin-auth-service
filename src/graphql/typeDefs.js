@@ -686,6 +686,9 @@ const typeDefs = gql`
 
   type PricingConfig {
     id: ID!
+     isGlobalOfferEnabled: Boolean
+  globalChatPrice: Int
+  globalCallPrice: Int
 
     isFirstOfferEnabled: Boolean
     firstChatPrice: Int
@@ -1825,6 +1828,9 @@ const typeDefs = gql`
 
     # pricing config mutation #
     updatePricingConfig(
+      isGlobalOfferEnabled: Boolean
+  globalChatPrice: Int
+  globalCallPrice: Int
       isFirstOfferEnabled: Boolean
       firstChatPrice: Int
       firstCallPrice: Int
