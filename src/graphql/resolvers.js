@@ -2981,25 +2981,25 @@ export const resolvers = {
       });
     },
 
-   getOffers: async () => {
-  try {
-    const offers = await prisma.offer.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
+    getOffers: async () => {
+      try {
+        const offers = await prisma.offer.findMany({
+          orderBy: {
+            createdAt: "desc",
+          },
+        });
 
-    return offers.map((offer) => ({
-      ...offer,
-      createdAt: offer.createdAt.toISOString(),
-      updatedAt: offer.updatedAt.toISOString(),
-    }));
-  } catch (error) {
-    console.error("getOffers error:", error);
+        return offers.map((offer) => ({
+          ...offer,
+          createdAt: offer.createdAt.toISOString(),
+          updatedAt: offer.updatedAt.toISOString(),
+        }));
+      } catch (error) {
+        console.error("getOffers error:", error);
 
-    throw new Error(error.message || "Failed to fetch offers");
-  }
-},
+        throw new Error(error.message || "Failed to fetch offers");
+      }
+    },
   },
 
   // *******************************************************************************************************************************
@@ -3234,6 +3234,7 @@ export const resolvers = {
             languages: data.languages,
             skills: data.expertise,
             problems: data.problems,
+            dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
 
             tags: data.tags,
             vtags: data.vtags,
@@ -5105,34 +5106,32 @@ export const resolvers = {
       }
     },
     deleteOffer: async (_, { id }) => {
-  try {
-    const existingOffer = await prisma.offer.findUnique({
-      where: {
-        id,
-      },
-    });
+      try {
+        const existingOffer = await prisma.offer.findUnique({
+          where: {
+            id,
+          },
+        });
 
-    if (!existingOffer) {
-      throw new Error("Offer not found");
-    }
+        if (!existingOffer) {
+          throw new Error("Offer not found");
+        }
 
-    await prisma.offer.delete({
-      where: {
-        id,
-      },
-    });
+        await prisma.offer.delete({
+          where: {
+            id,
+          },
+        });
 
-    return {
-      success: true,
-      message: "Offer deleted successfully",
-    };
-  } catch (error) {
-    console.error("deleteOffer error:", error);
+        return {
+          success: true,
+          message: "Offer deleted successfully",
+        };
+      } catch (error) {
+        console.error("deleteOffer error:", error);
 
-    throw new Error(
-      error.message || "Failed to delete offer"
-    );
-  }
-},
+        throw new Error(error.message || "Failed to delete offer");
+      }
+    },
   },
 };
