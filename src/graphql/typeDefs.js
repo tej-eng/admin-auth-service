@@ -104,31 +104,34 @@ const typeDefs = gql`
   }
 
   input AddAstrologerInput {
-    astroname: String!
-    displayName: String!
-    gender: Gender!
-    email: String!
-    phoneNumber: String!
-    experience: Int!
-    status: Boolean
+  astroname: String!
+  displayName: String!
+  gender: Gender!
 
-    profilePic: String
-    expertise: [String!]!
-    languages: [String!]!
-    problems: [String!]!
+  dateOfBirth: String
 
-    about: String
+  email: String!
+  phoneNumber: String!
+  experience: Int!
+  status: Boolean
 
-    tags: String
-    vtags: String
+  profilePic: String
+  expertise: [String!]!
+  languages: [String!]!
+  problems: [String!]!
 
-    address: AddressInput
+  about: String
 
-    bankDetails: BankDetailsInput
-    documents: DocumentsInput
+  tags: String
+  vtags: String
 
-    pricing: [PricingInput!]!
-  }
+  address: AddressInput
+
+  bankDetails: BankDetailsInput
+  documents: DocumentsInput
+
+  pricing: [PricingInput!]!
+}
 
   type Astrologer {
     id: ID!
