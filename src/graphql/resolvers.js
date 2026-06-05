@@ -1,7 +1,5 @@
-// src/graphql/resolvers.js
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
-// import { adminLoginService } from "../services/auth.service.js";
 import {
   createAdminService,
   addAstrologerService,
@@ -96,8 +94,8 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
     const collection = db.collection("adminGraphQLLogs");
 
     await collection.insertOne({
-      type, // SUCCESS / ERROR
-      operation, // getUsersDetails / createRole etc
+      type, 
+      operation, 
       userId,
       details,
       timestamp: new Date(),
@@ -110,14 +108,14 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
 async function checkPermission(context, requiredPermission) {
   const staff = context.user;
 
-  console.log("STAFF OBJECT:", staff); // 👈 here
+  console.log("STAFF OBJECT:", staff); 
 
   if (!staff || !staff.id) {
     throw new Error("Unauthorized");
   }
 
   // SUPER ADMIN CHECK
-  console.log("ROLE:", staff.role); // 👈 here
+  console.log("ROLE:", staff.role); 
 
   if (staff.role?.slug === "super-admin") {
     return true;
@@ -125,8 +123,8 @@ async function checkPermission(context, requiredPermission) {
 
   const roleId = staff.roleId || staff.role?.id;
 
-  console.log("ROLE ID:", roleId); // 👈 here
-  console.log("REQUIRED:", requiredPermission); // 👈 here
+  console.log("ROLE ID:", roleId); 
+  console.log("REQUIRED:", requiredPermission); 
 
   if (!roleId) {
     throw new Error("Unauthorized: Role missing");
@@ -147,7 +145,7 @@ async function checkPermission(context, requiredPermission) {
     ...staffPerms.map((s) => s.permission.name),
   ];
 
-  console.log("ALL PERMS:", allPermissions); // 👈 MOST IMPORTANT
+  console.log("ALL PERMS:", allPermissions); 
 
   if (!allPermissions.includes(requiredPermission)) {
     throw new Error("Unauthorized: Missing permission");
@@ -609,7 +607,6 @@ export const resolvers = {
           };
         });
 
-        // ---------------- RETURN ----------------
 
         return {
           data: enrichedData,
@@ -838,7 +835,6 @@ export const resolvers = {
           createdAt: session.createdAt,
         }));
 
-        // ---------------- RESPONSE ----------------
 
         return {
           data: formattedData,
@@ -884,7 +880,7 @@ export const resolvers = {
         // ---------------- WHERE CONDITION ----------------
 
         const where = {
-          type: "CALL", // ONLY CALL DATA
+          type: "CALL", 
         };
 
         // ---------------- USER SEARCH FILTER ----------------
@@ -1072,7 +1068,6 @@ export const resolvers = {
           createdAt: session.createdAt,
         }));
 
-        // ---------------- RESPONSE ----------------
 
         return {
           data: formattedData,
@@ -1095,7 +1090,6 @@ export const resolvers = {
         throw new Error("Failed to fetch user call history");
       }
     },
-    // ================= GET PENDING ASTROLOGERS =================
     getPendingAstrologers: async (_, { page = 1, limit = 10 }, context) => {
       try {
         if (!context.user || context.user.role !== "ADMIN") {
@@ -2153,7 +2147,6 @@ export const resolvers = {
           }
         }
 
-        // ---------------- FETCH ----------------
 
         const [logs, totalCount] = await Promise.all([
           prisma.fraudLog.findMany({
@@ -2409,7 +2402,6 @@ export const resolvers = {
         throw new Error("Failed to fetch payment reports");
       }
     },
-    // Modules Query
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;
 
@@ -2430,7 +2422,6 @@ export const resolvers = {
       };
     },
 
-    // ROLES QUERY
     getRoles: async (_, { page = 1, limit = 10 }, context) => {
       const { prisma } = context;
       await checkPermission(context, "roles.read");
@@ -2459,7 +2450,6 @@ export const resolvers = {
       }
     },
 
-    // Permission Query
     getPermissions: async (_, { page = 1, limit = 100, type }, context) => {
       const { prisma } = context;
       await checkPermission(context, "permissions.read");
@@ -2500,7 +2490,6 @@ export const resolvers = {
       };
     },
 
-    // Department Query
     getDepartments: async (_, { page = 1, limit = 10 }, context) => {
       const skip = (page - 1) * limit;
       const { prisma } = context;
@@ -2523,7 +2512,6 @@ export const resolvers = {
       };
     },
 
-    // Staff query
     getStaff: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;
 
@@ -2689,7 +2677,7 @@ export const resolvers = {
       }
     },
 
-    // dhwani services
+    
     getServices: async (_, __, context) => {
       const { prisma } = context;
 
@@ -2710,7 +2698,7 @@ export const resolvers = {
       });
     },
 
-    // gifts
+    
     getGifts: async (_, __, context) => {
       const { prisma } = context;
 
@@ -2721,7 +2709,7 @@ export const resolvers = {
       });
     },
 
-    // Testimonial
+    
     testimonials: async (_, __, context) => {
       await checkPermission(context, "testimonials.read");
 
@@ -2738,7 +2726,7 @@ export const resolvers = {
       });
     },
 
-    // FAQs
+    
     faqs: async (_, __, context) => {
       await checkPermission(context, "faqs.read");
 
@@ -2755,7 +2743,7 @@ export const resolvers = {
       });
     },
 
-    // banners
+    
     getBanners: async (_, __, context) => {
       4;
       const { prisma } = context;
@@ -2766,7 +2754,7 @@ export const resolvers = {
       });
     },
 
-    // hiring astrologer
+   
 
     getInterviewers: async (_, __, { prisma }) => {
       return prisma.staff.findMany({
@@ -2800,104 +2788,87 @@ export const resolvers = {
       });
     },
 
-    // pricing config
-   getFinalPrice: async (_, { astrologerId }, { prisma, userId }) => {
-  const config = await prisma.pricingConfig.findFirst();
+    getFinalPrice: async (_, { astrologerId }, { prisma, userId }) => {
+      const config = await prisma.pricingConfig.findFirst();
 
-  const userUsage = await prisma.userOfferUsage.findUnique({
-    where: { userId },
-  });
+      const userUsage = await prisma.userOfferUsage.findUnique({
+        where: { userId },
+      });
 
-  const visitCount = userUsage?.visitCount || 0;
+      const visitCount = userUsage?.visitCount || 0;
 
-  // First Time Offer
-  if (
-    visitCount === 0 &&
-    config?.isFirstOfferEnabled
-  ) {
-    return {
-      chatPrice: config.firstChatPrice,
-      callPrice: config.firstCallPrice,
-      isOfferApplied: true,
-      offerType: "FIRST_TIME",
-    };
-  }
+      if (visitCount === 0 && config?.isFirstOfferEnabled) {
+        return {
+          chatPrice: config.firstChatPrice,
+          callPrice: config.firstCallPrice,
+          isOfferApplied: true,
+          offerType: "FIRST_TIME",
+        };
+      }
 
-  // Second Time Offer
-  if (
-    visitCount === 1 &&
-    config?.isSecondOfferEnabled
-  ) {
-    return {
-      chatPrice: config.secondChatPrice,
-      callPrice: config.secondCallPrice,
-      isOfferApplied: true,
-      offerType: "SECOND_TIME",
-    };
-  }
+      if (visitCount === 1 && config?.isSecondOfferEnabled) {
+        return {
+          chatPrice: config.secondChatPrice,
+          callPrice: config.secondCallPrice,
+          isOfferApplied: true,
+          offerType: "SECOND_TIME",
+        };
+      }
 
-  // Global Offer
-  if (config?.isGlobalOfferEnabled) {
-    return {
-      chatPrice: config.globalChatPrice,
-      callPrice: config.globalCallPrice,
-      isOfferApplied: true,
-      offerType: "GLOBAL",
-    };
-  }
+      if (config?.isGlobalOfferEnabled) {
+        return {
+          chatPrice: config.globalChatPrice,
+          callPrice: config.globalCallPrice,
+          isOfferApplied: true,
+          offerType: "GLOBAL",
+        };
+      }
 
-  const chat = await prisma.astrologerPricing.findFirst({
-    where: {
-      astrologerId,
-      type: "CHAT",
-      isActive: true,
+      const chat = await prisma.astrologerPricing.findFirst({
+        where: {
+          astrologerId,
+          type: "CHAT",
+          isActive: true,
+        },
+      });
+
+      const call = await prisma.astrologerPricing.findFirst({
+        where: {
+          astrologerId,
+          type: "CALL",
+          isActive: true,
+        },
+      });
+
+      return {
+        chatPrice: chat?.price || 0,
+        callPrice: call?.price || 0,
+        isOfferApplied: false,
+        offerType: null,
+      };
     },
-  });
-
-  const call = await prisma.astrologerPricing.findFirst({
-    where: {
-      astrologerId,
-      type: "CALL",
-      isActive: true,
-    },
-  });
-
-  return {
-    chatPrice: chat?.price || 0,
-    callPrice: call?.price || 0,
-    isOfferApplied: false,
-    offerType: null,
-  };
-},
 
     getPricingConfig: async (_, __, { prisma }) => {
       return await prisma.pricingConfig.findFirst();
     },
 
-   getAdminPreviewPrice: async (_, __, { prisma }) => {
-  const config =
-    await prisma.pricingConfig.findFirst();
+    getAdminPreviewPrice: async (_, __, { prisma }) => {
+      const config = await prisma.pricingConfig.findFirst();
 
-  return {
-    globalChatPrice:
-      config?.globalChatPrice || 0,
+      return {
+        globalChatPrice: config?.globalChatPrice || 0,
 
-    globalCallPrice:
-      config?.globalCallPrice || 0,
+        globalCallPrice: config?.globalCallPrice || 0,
 
-    firstChatPrice:
-      config?.firstChatPrice || 0,
+        firstChatPrice: config?.firstChatPrice || 0,
 
-    firstCallPrice:
-      config?.firstCallPrice || 0,
+        firstCallPrice: config?.firstCallPrice || 0,
 
-    secondChatPrice:
-      config?.secondChatPrice || 0,
+        secondChatPrice: config?.secondChatPrice || 0,
 
-    secondCallPrice:
-      config?.secondCallPrice || 0,
-  };
-},
+        secondCallPrice: config?.secondCallPrice || 0,
+      };
+    },
 
     getOfferAnalytics: async (_, __, { prisma }) => {
       const totalUsers = await prisma.userOfferUsage.count();
@@ -2929,7 +2900,6 @@ export const resolvers = {
       });
     },
 
-    // get application for add astrologer
     getApplicationById: async (_, { id }) => {
       return await prisma.astrologerApplication.findUnique({
         where: { id },
@@ -2939,7 +2909,6 @@ export const resolvers = {
       });
     },
 
-    // about page
     getAboutPage: async () => {
       return await prisma.aboutPage.findFirst({
         where: {
