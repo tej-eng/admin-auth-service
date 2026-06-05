@@ -2999,6 +2999,27 @@ export const resolvers = {
         throw new Error(error.message || "Failed to fetch offers");
       }
     },
+  getAstrologerById: async (_, { id }, context) => {
+  const { prisma } = context;
+
+  await checkPermission(context, "astrologer.read");
+
+  const astrologer = await prisma.astrologer.findUnique({
+    where: { id },
+
+    include: {
+      pricing: true,
+      addresses: true,
+      kycDetail: true,
+    },
+  });
+
+  if (!astrologer) {
+    throw new Error("Astrologer not found");
+  }
+
+  return astrologer;
+},
   },
 
   // *******************************************************************************************************************************

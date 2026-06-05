@@ -974,7 +974,7 @@ const typeDefs = gql`
   }
   #-------start of user chat history ---------#
 
-  # ------------start for call-history---------------------------
+  # ------------start for call-history--------
 
   input UserCallHistorySearchInput {
     query: String
@@ -1029,7 +1029,7 @@ const typeDefs = gql`
     totalCommission: Float
   }
   #-------start of user call history ---------#
-  #--------------------END of user call history-----------------#
+  #-----END of user call history-------------#
   #-----start of user reviews ---------#
   input UserReviewSearchInput {
     query: String
@@ -1172,7 +1172,7 @@ const typeDefs = gql`
     totalPages: Int!
   }
   #------end fraud LOGGING ---------------#
-  #--------------start of payment reports-----------------#
+  #-----start of payment reports-------------#
   enum PaymentOrderStatus {
     CREATED
     PAID
@@ -1229,7 +1229,7 @@ const typeDefs = gql`
     failedCount: Int!
   }
 
-  #--------------------About pagge ___________________#
+  #------About pagge ___________________#
   enum CmsStatus {
     DRAFT
     PUBLISHED
@@ -1464,7 +1464,7 @@ const typeDefs = gql`
 
   #------------END CODE For remedy-----------------#
 
-  #------------------start code for offer price-----------------#
+  #-----start code for offer price-----------------#
   # ================= OFFER =================
 
   type Offer {
@@ -1504,7 +1504,48 @@ const typeDefs = gql`
     description: String
     isActive: Boolean
   }
-  #------------------END code for offer price-----------------#
+  #--------END code for offer price-----------#
+  #-------------------START OF GET ASTROLOGER BY ID-----------------#
+  type Astrologer {
+  id: ID!
+
+  name: String!
+  displayName: String!
+
+  profilePic: String
+
+  dateOfBirth: DateTime
+
+  gender: Gender!
+
+  email: String!
+  contactNo: String!
+
+  experience: Int!
+
+  about: String
+
+  languages: [String!]!
+  skills: [String!]!
+  problems: [String!]!
+
+  pricing: [AstrologerPricing!]!
+
+  tags: String
+  vtags: String
+
+  kycDetail: KycDetail
+
+  approvalStatus: ApprovalStatus!
+
+  addresses: [Address!]!
+  experiences: [ExperiencePlatform!]!
+  interviews: [Interview!]!
+
+  createdAt: DateTime
+  updatedAt: DateTime
+}
+  #----END OF GET ASTROLOGER BY ID-----------------#
 
   type Query {
     freeServices: [FreeService!]!
@@ -1638,6 +1679,7 @@ const typeDefs = gql`
     getRemedies: [Remedy]
     getRemedyById(id: ID!): Remedy
     getOffers: [Offer!]!
+    getAstrologerById(id: ID!): Astrologer
   }
 
   type Mutation {
