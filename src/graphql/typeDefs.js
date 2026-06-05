@@ -1046,17 +1046,37 @@ const typeDefs = gql`
     limit: Int
   }
 
-  input UpdateAstrologerInput {
-    name: String
-    email: String
-    contactNo: String
-    dateOfBirth: String
-    gender: Gender
-    languages: [String!]
-    skills: [String!]
-    experience: Int
-    about: String
-  }
+ input UpdateAstrologerInput {
+  astroname: String
+  displayName: String
+
+  profilePic: String
+
+  gender: Gender
+  dateOfBirth: String
+
+  email: String
+  phoneNumber: String
+
+  experience: Int
+
+  expertise: [String!]
+  languages: [String!]
+  problems: [String!]
+
+  about: String
+
+  status: Boolean
+
+  tags: String
+  vtags: String
+
+  address: AddressInput
+  bankDetails: BankDetailsInput
+  documents: DocumentsInput
+
+  pricing: [PricingInput!]
+}
 
   input UpdateUserInput {
     name: String

@@ -3354,27 +3354,177 @@ export const resolvers = {
 
     // ================= UPDATE ASTROLOGER =================
     updateAstrologer: async (_, { astrologerId, data }, context) => {
-      try {
-        if (
-          !context.user ||
-          !["SUPER_ADMIN", "MANAGER"].includes(context.user.role)
-        )
-          throw new Error("Not authorized");
+  try {
+    if (
+      !context.user ||
+      !["SUPER_ADMIN", "MANAGER"].includes(context.user.role)
+    ) {
+      throw new Error("Not authorized");
+    }
 
-        const existing = await prisma.astrologer.findUnique({
-          where: { id: astrologerId },
-        });
+    const existing = await prisma.astrologer.findUnique({
+      where: { id: astrologerId },
+      include: {
+        addresses: true,
+        kycDetail: true,
+        pricing: true,
+      },
+    });
 
-        if (!existing) throw new Error("Astrologer not found");
+    if (!existing) {
+      throw new Error("Astrologer not found");
+    }
 
-        return await prisma.astrologer.update({
-          where: { id: astrologerId },
-          data,
-        });
-      } catch (error) {
-        throw new Error(error.message || "Failed to update astrologer");
-      }
-    },
+    const updatedAstrologer = await prisma.astrologer.update({
+      where: {
+        id: astrologerId,
+      },
+      data: {
+        name: data.astroname,
+        displayName: data.displayName,
+
+        profilePic: data.profilePic,
+
+        gender: data.gender,
+
+        dateOfBirth: data.dateOfBirth
+          ? new Date(data.dateOfBirth)
+          : undefined,
+
+        email: data.email,
+        contactNo: data.phoneNumber,
+
+        experience: data.experience,
+
+        skills: data.expertise,
+        languages: data.languages,
+        problems: data.problems,
+
+        about: data.about,
+
+        status: data.status,
+
+        tags: data.tags,
+        vtags: data.vtags,
+
+        // ADDRESS
+        addresses: data.address
+          ? {
+              deleteMany: {},
+
+              create: {
+                street: data.address.street,
+                city: data.address.city,
+                state: data.address.state,
+                country: data.address.country,
+                pincode: data.address.pincode,
+              },
+            }
+          : undefined,
+
+        // KYC
+        kycDetail:
+          data.bankDetails || data.documents
+            ? {
+                upsert: {
+                  create: {
+                    accountHolderName:
+                      data.bankDetails?.accountHolderName,
+
+                    accountNumber:
+                      data.bankDetails?.accountNumber,
+
+                    bankName:
+                      data.bankDetails?.bankName,
+
+                    ifsc:
+                      data.bankDetails?.ifscCode,
+
+                    branchName:
+                      data.bankDetails?.branchName,
+
+                    panNumber:
+                      data.bankDetails?.panCardNumber,
+
+                    profileImage:
+                      data.documents?.profilePic,
+
+                    aadhaarImage:
+                      data.documents?.aadhaar,
+
+                    panImage:
+                      data.documents?.panCard,
+
+                    passbookImage:
+                      data.documents?.passbook,
+                  },
+
+                  update: {
+                    accountHolderName:
+                      data.bankDetails?.accountHolderName,
+
+                    accountNumber:
+                      data.bankDetails?.accountNumber,
+
+                    bankName:
+                      data.bankDetails?.bankName,
+
+                    ifsc:
+                      data.bankDetails?.ifscCode,
+
+                    branchName:
+                      data.bankDetails?.branchName,
+
+                    panNumber:
+                      data.bankDetails?.panCardNumber,
+
+                    profileImage:
+                      data.documents?.profilePic,
+
+                    aadhaarImage:
+                      data.documents?.aadhaar,
+
+                    panImage:
+                      data.documents?.panCard,
+
+                    passbookImage:
+                      data.documents?.passbook,
+                  },
+                },
+              }
+            : undefined,
+
+        // PRICING
+        pricing: data.pricing?.length
+          ? {
+              deleteMany: {},
+
+              create: data.pricing.map((item) => ({
+                type: item.type,
+                price: Number(item.price),
+                offerPrice: Number(item.offerPrice),
+                commissionPercent: Number(
+                  item.commissionPercent
+                ),
+                isActive: item.isActive,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        addresses: true,
+        pricing: true,
+        kycDetail: true,
+      },
+    });
+
+    return updatedAstrologer;
+  } catch (error) {
+    throw new Error(
+      error.message || "Failed to update astrologer"
+    );
+  }
+},
 
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
