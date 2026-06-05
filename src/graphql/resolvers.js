@@ -94,8 +94,8 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
     const collection = db.collection("adminGraphQLLogs");
 
     await collection.insertOne({
-      type, 
-      operation, 
+      type,
+      operation,
       userId,
       details,
       timestamp: new Date(),
@@ -108,14 +108,14 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
 async function checkPermission(context, requiredPermission) {
   const staff = context.user;
 
-  console.log("STAFF OBJECT:", staff); 
+  console.log("STAFF OBJECT:", staff);
 
   if (!staff || !staff.id) {
     throw new Error("Unauthorized");
   }
 
   // SUPER ADMIN CHECK
-  console.log("ROLE:", staff.role); 
+  console.log("ROLE:", staff.role);
 
   if (staff.role?.slug === "super-admin") {
     return true;
@@ -123,8 +123,8 @@ async function checkPermission(context, requiredPermission) {
 
   const roleId = staff.roleId || staff.role?.id;
 
-  console.log("ROLE ID:", roleId); 
-  console.log("REQUIRED:", requiredPermission); 
+  console.log("ROLE ID:", roleId);
+  console.log("REQUIRED:", requiredPermission);
 
   if (!roleId) {
     throw new Error("Unauthorized: Role missing");
@@ -145,7 +145,7 @@ async function checkPermission(context, requiredPermission) {
     ...staffPerms.map((s) => s.permission.name),
   ];
 
-  console.log("ALL PERMS:", allPermissions); 
+  console.log("ALL PERMS:", allPermissions);
 
   if (!allPermissions.includes(requiredPermission)) {
     throw new Error("Unauthorized: Missing permission");
@@ -607,7 +607,6 @@ export const resolvers = {
           };
         });
 
-
         return {
           data: enrichedData,
 
@@ -835,7 +834,6 @@ export const resolvers = {
           createdAt: session.createdAt,
         }));
 
-
         return {
           data: formattedData,
 
@@ -880,7 +878,7 @@ export const resolvers = {
         // ---------------- WHERE CONDITION ----------------
 
         const where = {
-          type: "CALL", 
+          type: "CALL",
         };
 
         // ---------------- USER SEARCH FILTER ----------------
@@ -1067,7 +1065,6 @@ export const resolvers = {
 
           createdAt: session.createdAt,
         }));
-
 
         return {
           data: formattedData,
@@ -2147,7 +2144,6 @@ export const resolvers = {
           }
         }
 
-
         const [logs, totalCount] = await Promise.all([
           prisma.fraudLog.findMany({
             where,
@@ -2677,7 +2673,6 @@ export const resolvers = {
       }
     },
 
-    
     getServices: async (_, __, context) => {
       const { prisma } = context;
 
@@ -2698,7 +2693,6 @@ export const resolvers = {
       });
     },
 
-    
     getGifts: async (_, __, context) => {
       const { prisma } = context;
 
@@ -2709,7 +2703,6 @@ export const resolvers = {
       });
     },
 
-    
     testimonials: async (_, __, context) => {
       await checkPermission(context, "testimonials.read");
 
@@ -2726,7 +2719,6 @@ export const resolvers = {
       });
     },
 
-    
     faqs: async (_, __, context) => {
       await checkPermission(context, "faqs.read");
 
@@ -2743,7 +2735,6 @@ export const resolvers = {
       });
     },
 
-    
     getBanners: async (_, __, context) => {
       4;
       const { prisma } = context;
@@ -2753,8 +2744,6 @@ export const resolvers = {
         orderBy: { sortorder: "asc" },
       });
     },
-
-   
 
     getInterviewers: async (_, __, { prisma }) => {
       return prisma.staff.findMany({
@@ -2999,27 +2988,27 @@ export const resolvers = {
         throw new Error(error.message || "Failed to fetch offers");
       }
     },
-  getAstrologerById: async (_, { id }, context) => {
-  const { prisma } = context;
+    getAstrologerById: async (_, { id }, context) => {
+      const { prisma } = context;
 
-  await checkPermission(context, "astrologer.read");
+      await checkPermission(context, "astrologer.read");
 
-  const astrologer = await prisma.astrologer.findUnique({
-    where: { id },
+      const astrologer = await prisma.astrologer.findUnique({
+        where: { id },
 
-    include: {
-      pricing: true,
-      addresses: true,
-      kycDetail: true,
+        include: {
+          pricing: true,
+          addresses: true,
+          kycDetail: true,
+        },
+      });
+
+      if (!astrologer) {
+        throw new Error("Astrologer not found");
+      }
+
+      return astrologer;
     },
-  });
-
-  if (!astrologer) {
-    throw new Error("Astrologer not found");
-  }
-
-  return astrologer;
-},
   },
 
   // *******************************************************************************************************************************
@@ -3354,177 +3343,157 @@ export const resolvers = {
 
     // ================= UPDATE ASTROLOGER =================
     updateAstrologer: async (_, { astrologerId, data }, context) => {
-  try {
-    if (
-      !context.user ||
-      !["SUPER_ADMIN", "MANAGER"].includes(context.user.role)
-    ) {
-      throw new Error("Not authorized");
-    }
+      const { prisma } = context;
 
-    const existing = await prisma.astrologer.findUnique({
-      where: { id: astrologerId },
-      include: {
-        addresses: true,
-        kycDetail: true,
-        pricing: true,
-      },
-    });
+      try {
+        console.log("updateAstrologer called", {
+          requestedBy: context?.user?.id,
+          role: context?.user?.role,
+          astrologerId,
+          timestamp: new Date().toISOString(),
+        });
 
-    if (!existing) {
-      throw new Error("Astrologer not found");
-    }
+        await checkPermission(context, "astrologer.update");
 
-    const updatedAstrologer = await prisma.astrologer.update({
-      where: {
-        id: astrologerId,
-      },
-      data: {
-        name: data.astroname,
-        displayName: data.displayName,
+        const existing = await prisma.astrologer.findUnique({
+          where: { id: astrologerId },
+          include: {
+            addresses: true,
+            kycDetail: true,
+            pricing: true,
+          },
+        });
 
-        profilePic: data.profilePic,
+        if (!existing) {
+          throw new Error("Astrologer not found");
+        }
 
-        gender: data.gender,
+        const updatedAstrologer = await prisma.astrologer.update({
+          where: {
+            id: astrologerId,
+          },
+          data: {
+            name: data.astroname,
+            displayName: data.displayName,
 
-        dateOfBirth: data.dateOfBirth
-          ? new Date(data.dateOfBirth)
-          : undefined,
+            profilePic: data.profilePic,
 
-        email: data.email,
-        contactNo: data.phoneNumber,
+            gender: data.gender,
 
-        experience: data.experience,
+            dateOfBirth: data.dateOfBirth
+              ? new Date(data.dateOfBirth)
+              : undefined,
 
-        skills: data.expertise,
-        languages: data.languages,
-        problems: data.problems,
+            email: data.email,
+            contactNo: data.phoneNumber,
 
-        about: data.about,
+            experience: data.experience,
 
-        status: data.status,
+            skills: data.expertise,
+            languages: data.languages,
+            problems: data.problems,
 
-        tags: data.tags,
-        vtags: data.vtags,
+            about: data.about,
 
-        // ADDRESS
-        addresses: data.address
-          ? {
-              deleteMany: {},
+            status: data.status,
 
-              create: {
-                street: data.address.street,
-                city: data.address.city,
-                state: data.address.state,
-                country: data.address.country,
-                pincode: data.address.pincode,
-              },
-            }
-          : undefined,
+            tags: data.tags,
+            vtags: data.vtags,
 
-        // KYC
-        kycDetail:
-          data.bankDetails || data.documents
-            ? {
-                upsert: {
+            // ADDRESS
+            addresses: data.address
+              ? {
+                  deleteMany: {},
+
                   create: {
-                    accountHolderName:
-                      data.bankDetails?.accountHolderName,
-
-                    accountNumber:
-                      data.bankDetails?.accountNumber,
-
-                    bankName:
-                      data.bankDetails?.bankName,
-
-                    ifsc:
-                      data.bankDetails?.ifscCode,
-
-                    branchName:
-                      data.bankDetails?.branchName,
-
-                    panNumber:
-                      data.bankDetails?.panCardNumber,
-
-                    profileImage:
-                      data.documents?.profilePic,
-
-                    aadhaarImage:
-                      data.documents?.aadhaar,
-
-                    panImage:
-                      data.documents?.panCard,
-
-                    passbookImage:
-                      data.documents?.passbook,
+                    street: data.address.street,
+                    city: data.address.city,
+                    state: data.address.state,
+                    country: data.address.country,
+                    pincode: data.address.pincode,
                   },
+                }
+              : undefined,
 
-                  update: {
-                    accountHolderName:
-                      data.bankDetails?.accountHolderName,
+            // KYC
+            kycDetail:
+              data.bankDetails || data.documents
+                ? {
+                    upsert: {
+                      create: {
+                        accountHolderName: data.bankDetails?.accountHolderName,
 
-                    accountNumber:
-                      data.bankDetails?.accountNumber,
+                        accountNumber: data.bankDetails?.accountNumber,
 
-                    bankName:
-                      data.bankDetails?.bankName,
+                        bankName: data.bankDetails?.bankName,
 
-                    ifsc:
-                      data.bankDetails?.ifscCode,
+                        ifsc: data.bankDetails?.ifscCode,
 
-                    branchName:
-                      data.bankDetails?.branchName,
+                        branchName: data.bankDetails?.branchName,
 
-                    panNumber:
-                      data.bankDetails?.panCardNumber,
+                        panNumber: data.bankDetails?.panCardNumber,
 
-                    profileImage:
-                      data.documents?.profilePic,
+                        profileImage: data.documents?.profilePic,
 
-                    aadhaarImage:
-                      data.documents?.aadhaar,
+                        aadhaarImage: data.documents?.aadhaar,
 
-                    panImage:
-                      data.documents?.panCard,
+                        panImage: data.documents?.panCard,
 
-                    passbookImage:
-                      data.documents?.passbook,
-                  },
-                },
-              }
-            : undefined,
+                        passbookImage: data.documents?.passbook,
+                      },
 
-        // PRICING
-        pricing: data.pricing?.length
-          ? {
-              deleteMany: {},
+                      update: {
+                        accountHolderName: data.bankDetails?.accountHolderName,
 
-              create: data.pricing.map((item) => ({
-                type: item.type,
-                price: Number(item.price),
-                offerPrice: Number(item.offerPrice),
-                commissionPercent: Number(
-                  item.commissionPercent
-                ),
-                isActive: item.isActive,
-              })),
-            }
-          : undefined,
-      },
-      include: {
-        addresses: true,
-        pricing: true,
-        kycDetail: true,
-      },
-    });
+                        accountNumber: data.bankDetails?.accountNumber,
 
-    return updatedAstrologer;
-  } catch (error) {
-    throw new Error(
-      error.message || "Failed to update astrologer"
-    );
-  }
-},
+                        bankName: data.bankDetails?.bankName,
+
+                        ifsc: data.bankDetails?.ifscCode,
+
+                        branchName: data.bankDetails?.branchName,
+
+                        panNumber: data.bankDetails?.panCardNumber,
+
+                        profileImage: data.documents?.profilePic,
+
+                        aadhaarImage: data.documents?.aadhaar,
+
+                        panImage: data.documents?.panCard,
+
+                        passbookImage: data.documents?.passbook,
+                      },
+                    },
+                  }
+                : undefined,
+
+            // PRICING
+            pricing: data.pricing?.length
+              ? {
+                  deleteMany: {},
+
+                  create: data.pricing.map((item) => ({
+                    type: item.type,
+                    price: Number(item.price),
+                    offerPrice: Number(item.offerPrice),
+                    commissionPercent: Number(item.commissionPercent),
+                    isActive: item.isActive,
+                  })),
+                }
+              : undefined,
+          },
+          include: {
+            addresses: true,
+            pricing: true,
+            kycDetail: true,
+          },
+        });
+
+        return updatedAstrologer;
+      } catch (error) {
+        throw new Error(error.message || "Failed to update astrologer");
+      }
+    },
 
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
