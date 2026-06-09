@@ -2679,7 +2679,12 @@ export const resolvers = {
       await checkPermission(context, "all-services.read");
 
       return prisma.service.findMany({
-        orderBy: { createdAt: "desc" },
+        include: {
+          category: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
       });
     },
 
