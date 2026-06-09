@@ -156,6 +156,7 @@ model User {
   paymentOrders PaymentOrder[]
   sessions      Session[]
   reviews       Review[]
+ giftsSent GiftHistory[] @relation("UserGiftHistory")
 
   @@unique([countryCode, mobile])
 }
@@ -278,6 +279,7 @@ model Astrologer {
   pricing          AstrologerPricing[]
   applications     AstrologerApplication[]
   offers AstrologerOffer[]
+ giftsReceived GiftHistory[] @relation("AstrologerGiftHistory")
 
   @@index([rating])
   @@index([experience])
@@ -1232,17 +1234,26 @@ model AstrologerOffer {
 }
 
 model GiftHistory {
-  id                String   @id @default(cuid())
+  id           String   @id @default(cuid())
 
-  userId            String
-  astrologerId      String
-  giftId            String
+  userId       String
+  astrologerId String
+  giftId       String
 
-  giftName          String
-  giftPrice         Float
+  giftName     String
+  giftPrice    Float
 
-  createdAt         DateTime @default(now())
+  createdAt    DateTime @default(now())
 
-  user              User       @relation(fields: [userId], references: [id])
-  astrologer        Astrologer @relation(fields: [astrologerId], references: [id])
+  user User @relation(
+    "UserGiftHistory",
+    fields: [userId],
+    references: [id]
+  )
+
+  astrologer Astrologer @relation(
+    "AstrologerGiftHistory",
+    fields: [astrologerId],
+    references: [id]
+  )
 }
