@@ -1574,6 +1574,14 @@ const typeDefs = gql`
     updatedAt: DateTime
   }
   #----END OF GET ASTROLOGER BY ID-----------------#
+  #-------------START code for send gift history----
+  type GiftHistoryResponse {
+  data: [GiftHistory!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
+  #-----End code for send gift history-----------------#
 
   type Query {
     freeServices: [FreeService!]!
@@ -1712,9 +1720,21 @@ const typeDefs = gql`
     ): PaymentReportList!
 
     getRemedies: [Remedy]
+
     getRemedyById(id: ID!): Remedy
+
     getOffers: [Offer!]!
+
     getAstrologerById(id: ID!): Astrologer
+    
+    getSendGiftHistory(
+    page: Int
+    limit: Int
+    search: String
+    astrologerId: String
+    fromDate: String
+    toDate: String
+  ): GiftHistoryResponse!
   }
 
   type Mutation {
