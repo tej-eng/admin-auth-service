@@ -1575,6 +1575,22 @@ const typeDefs = gql`
   }
   #----END OF GET ASTROLOGER BY ID-----------------#
   #-------------START code for send gift history----
+  
+  type GiftHistory {
+  id: ID!
+
+  giftId: ID
+  giftName: String!
+  giftPrice: Float!
+
+  userId: ID!
+  astrologerId: ID!
+
+  user: User
+  astrologer: Astrologer
+
+  createdAt: DateTime!
+}
   type GiftHistoryResponse {
   data: [GiftHistory!]!
   totalCount: Int!
@@ -1726,8 +1742,8 @@ const typeDefs = gql`
     getOffers: [Offer!]!
 
     getAstrologerById(id: ID!): Astrologer
-    
-    getSendGiftHistory(
+
+   getSendGiftHistory(
     page: Int
     limit: Int
     search: String
