@@ -509,23 +509,31 @@ model Category {
   id        String    @id @default(cuid())
   name      String    @unique
   slug      String    @unique
+  image     String?
+
   createdAt DateTime  @default(now())
+
   services  Service[]
 }
 
 model Service {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
+
   name        String
-  slug        String      @unique
-  type        ServiceType
-  categoryId  String?
+  slug        String   @unique
+
   image       String?
   description String?
   longText    String?
+
   price       Float?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  category    Category?   @relation(fields: [categoryId], references: [id])
+
+  categoryId  String?
+
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Gift {
