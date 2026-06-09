@@ -31,6 +31,12 @@ const storage = multer.diskStorage({
     } else if (req.originalUrl.includes("upload-gifts")) {
       uploadPath = getUploadPath("gifts");
     }
+    else if (req.originalUrl.includes("upload-gifts")) {
+      uploadPath = getUploadPath("gifts");
+    }
+    else if (req.originalUrl.includes("upload-services")) {
+      uploadPath = getUploadPath("services");
+    }
 
     fs.mkdirSync(uploadPath, { recursive: true });
 
