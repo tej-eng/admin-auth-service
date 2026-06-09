@@ -18,10 +18,10 @@ const typeDefs = gql`
     SUPPORT
   }
 
- type MessageResponse {
-  success: Boolean!
-  message: String!
-}
+  type MessageResponse {
+    success: Boolean!
+    message: String!
+  }
 
   enum ApprovalStatus {
     PENDING
@@ -104,34 +104,34 @@ const typeDefs = gql`
   }
 
   input AddAstrologerInput {
-  astroname: String!
-  displayName: String!
-  gender: Gender!
+    astroname: String!
+    displayName: String!
+    gender: Gender!
 
-  dateOfBirth: String
+    dateOfBirth: String
 
-  email: String!
-  phoneNumber: String!
-  experience: Int!
-  status: Boolean
+    email: String!
+    phoneNumber: String!
+    experience: Int!
+    status: Boolean
 
-  profilePic: String
-  expertise: [String!]!
-  languages: [String!]!
-  problems: [String!]!
+    profilePic: String
+    expertise: [String!]!
+    languages: [String!]!
+    problems: [String!]!
 
-  about: String
+    about: String
 
-  tags: String
-  vtags: String
+    tags: String
+    vtags: String
 
-  address: AddressInput
+    address: AddressInput
 
-  bankDetails: BankDetailsInput
-  documents: DocumentsInput
+    bankDetails: BankDetailsInput
+    documents: DocumentsInput
 
-  pricing: [PricingInput!]!
-}
+    pricing: [PricingInput!]!
+  }
 
   type Astrologer {
     id: ID!
@@ -491,33 +491,41 @@ const typeDefs = gql`
     id: ID!
     name: String!
     slug: String!
+    image: String
+
+    services: [Service!]
   }
 
   type Service {
     id: ID!
+
     name: String!
     slug: String!
-    type: String!
-
-    category: Category
 
     image: String
     description: String
     longText: String
     price: Float
+
+    category: Category
+  }
+  input CreateCategoryInput {
+    name: String!
+    slug: String!
+    image: String
   }
 
   input CreateServiceInput {
     name: String!
     slug: String!
-    type: String!
-
-    categoryId: ID
 
     image: String
     description: String
     longText: String
+
     price: Float
+
+    categoryId: ID
   }
 
   input CreateCategoryInput {
@@ -686,9 +694,9 @@ const typeDefs = gql`
 
   type PricingConfig {
     id: ID!
-     isGlobalOfferEnabled: Boolean
-  globalChatPrice: Int
-  globalCallPrice: Int
+    isGlobalOfferEnabled: Boolean
+    globalChatPrice: Int
+    globalCallPrice: Int
 
     isFirstOfferEnabled: Boolean
     firstChatPrice: Int
@@ -1046,37 +1054,37 @@ const typeDefs = gql`
     limit: Int
   }
 
- input UpdateAstrologerInput {
-  astroname: String
-  displayName: String
+  input UpdateAstrologerInput {
+    astroname: String
+    displayName: String
 
-  profilePic: String
+    profilePic: String
 
-  gender: Gender
-  dateOfBirth: String
+    gender: Gender
+    dateOfBirth: String
 
-  email: String
-  phoneNumber: String
+    email: String
+    phoneNumber: String
 
-  experience: Int
+    experience: Int
 
-  expertise: [String!]
-  languages: [String!]
-  problems: [String!]
+    expertise: [String!]
+    languages: [String!]
+    problems: [String!]
 
-  about: String
+    about: String
 
-  status: Boolean
+    status: Boolean
 
-  tags: String
-  vtags: String
+    tags: String
+    vtags: String
 
-  address: AddressInput
-  bankDetails: BankDetailsInput
-  documents: DocumentsInput
+    address: AddressInput
+    bankDetails: BankDetailsInput
+    documents: DocumentsInput
 
-  pricing: [PricingInput!]
-}
+    pricing: [PricingInput!]
+  }
 
   input UpdateUserInput {
     name: String
@@ -1527,44 +1535,44 @@ const typeDefs = gql`
   #--------END code for offer price-----------#
   #-------------------START OF GET ASTROLOGER BY ID-----------------#
   type Astrologer {
-  id: ID!
+    id: ID!
 
-  name: String!
-  displayName: String!
+    name: String!
+    displayName: String!
 
-  profilePic: String
+    profilePic: String
 
-  dateOfBirth: DateTime
+    dateOfBirth: DateTime
 
-  gender: Gender!
+    gender: Gender!
 
-  email: String!
-  contactNo: String!
+    email: String!
+    contactNo: String!
 
-  experience: Int!
+    experience: Int!
 
-  about: String
+    about: String
 
-  languages: [String!]!
-  skills: [String!]!
-  problems: [String!]!
+    languages: [String!]!
+    skills: [String!]!
+    problems: [String!]!
 
-  pricing: [AstrologerPricing!]!
+    pricing: [AstrologerPricing!]!
 
-  tags: String
-  vtags: String
+    tags: String
+    vtags: String
 
-  kycDetail: KycDetail
+    kycDetail: KycDetail
 
-  approvalStatus: ApprovalStatus!
+    approvalStatus: ApprovalStatus!
 
-  addresses: [Address!]!
-  experiences: [ExperiencePlatform!]!
-  interviews: [Interview!]!
+    addresses: [Address!]!
+    experiences: [ExperiencePlatform!]!
+    interviews: [Interview!]!
 
-  createdAt: DateTime
-  updatedAt: DateTime
-}
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
   #----END OF GET ASTROLOGER BY ID-----------------#
 
   type Query {
@@ -1603,8 +1611,15 @@ const typeDefs = gql`
 
     getGifts: [Gift]
 
-    getServices: [Service]
-    getCategories: [Category]
+    getCategories: [Category!]!
+
+    getCategory(id: ID!): Category
+
+    getServices: [Service!]!
+
+    getService(id: ID!): Service
+
+    getServiceBySlug(slug: String!): Service
 
     getCoupons: [Coupon]
     getSections: [String!]!
@@ -1727,10 +1742,17 @@ const typeDefs = gql`
     deleteGift(id: ID!): Boolean
     updateGift(id: ID!, input: GiftInput!): Gift
 
-    createService(input: CreateServiceInput!): Service
-    updateService(id: ID!, input: CreateServiceInput!): Service
-    deleteService(id: ID!): Boolean
-    createCategory(input: CreateCategoryInput!): Category
+    createCategory(input: CreateCategoryInput!): Category!
+
+    updateCategory(id: ID!, input: CreateCategoryInput!): Category!
+
+    deleteCategory(id: ID!): Boolean!
+
+    createService(input: CreateServiceInput!): Service!
+
+    updateService(id: ID!, input: CreateServiceInput!): Service!
+
+    deleteService(id: ID!): Boolean!
 
     addAstrologer(data: AddAstrologerInput!): AddAstrologerResponse!
     loginStaff(email: String!, password: String!): AuthPayload!
@@ -1891,8 +1913,8 @@ const typeDefs = gql`
     # pricing config mutation #
     updatePricingConfig(
       isGlobalOfferEnabled: Boolean
-  globalChatPrice: Int
-  globalCallPrice: Int
+      globalChatPrice: Int
+      globalCallPrice: Int
       isFirstOfferEnabled: Boolean
       firstChatPrice: Int
       firstCallPrice: Int

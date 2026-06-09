@@ -2673,17 +2673,48 @@ export const resolvers = {
       }
     },
 
-    getServices: async (_, __, context) => {
-      const { prisma } = context;
+    getCategories: async (_, __, { prisma }) => {
+      return prisma.category.findMany({
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
 
-      await checkPermission(context, "all-services.read");
+    getCategory: async (_, { id }, { prisma }) => {
+      return prisma.category.findUnique({
+        where: { id },
+        include: {
+          services: true,
+        },
+      });
+    },
 
+    getServices: async (_, __, { prisma }) => {
       return prisma.service.findMany({
         include: {
           category: true,
         },
         orderBy: {
           createdAt: "desc",
+        },
+      });
+    },
+
+    getService: async (_, { id }, { prisma }) => {
+      return prisma.service.findUnique({
+        where: { id },
+        include: {
+          category: true,
+        },
+      });
+    },
+
+    getServiceBySlug: async (_, { slug }, { prisma }) => {
+      return prisma.service.findUnique({
+        where: { slug },
+        include: {
+          category: true,
         },
       });
     },
@@ -4305,59 +4336,41 @@ export const resolvers = {
     },
 
     // dhwani services
-
-    createCategory: async (_, { input }, context) => {
-      await checkPermission(context, "categories.create");
-
-      const { prisma } = context;
-
-      const name = input.name.trim().toLowerCase();
-
-      const existing = await prisma.category.findFirst({
-        where: { name },
-      });
-
-      if (existing) return existing;
-
-      return prisma.category.create({
-        data: {
-          name,
-          slug: name.replace(/\s+/g, "-"),
-        },
-      });
-    },
-
-    createService: async (_, { input }, context) => {
-      const { prisma } = context;
-      await checkPermission(context, "all-services.create");
-
+    createService: async (_, { input }, { prisma }) => {
       return prisma.service.create({
         data: {
           name: input.name,
           slug: input.slug,
-          type: input.type,
-          categoryId: input.type === "CATEGORY" ? input.categoryId : null,
+
           image: input.image,
           description: input.description,
           longText: input.longText,
+
           price: input.price,
+
+          categoryId: input.categoryId || null,
         },
       });
     },
-
-    deleteService: async (_, { id }, context) => {
-      const { prisma } = context;
-
-      await checkPermission(context, "all-services.delete");
-
-      const service = await prisma.service.findUnique({
+    updateService: async (_, { id, input }, { prisma }) => {
+      return prisma.service.update({
         where: { id },
+
+        data: {
+          name: input.name,
+          slug: input.slug,
+
+          image: input.image,
+          description: input.description,
+          longText: input.longText,
+
+          price: input.price,
+
+          categoryId: input.categoryId || null,
+        },
       });
-
-      if (!service) {
-        throw new Error("Service not found");
-      }
-
+    },
+    deleteService: async (_, { id }, { prisma }) => {
       await prisma.service.delete({
         where: { id },
       });
@@ -4365,35 +4378,32 @@ export const resolvers = {
       return true;
     },
 
-    updateService: async (_, { id, input }, context) => {
-      const { prisma } = context;
-
-      await checkPermission(context, "all-services.update");
-
-      const existing = await prisma.service.findUnique({
-        where: { id },
-      });
-
-      if (!existing) throw new Error("Service not found");
-
-      const updated = await prisma.service.update({
-        where: { id },
+    createCategory: async (_, { input }, { prisma }) => {
+      return prisma.category.create({
         data: {
           name: input.name,
           slug: input.slug,
-          type: input.type,
-
-          //  FIXED
-          categoryId: input.type === "CATEGORY" ? input.categoryId : null,
-
           image: input.image,
-          description: input.description,
-          longText: input.longText,
-          price: input.price,
         },
       });
+    },
+    updateCategory: async (_, { id, input }, { prisma }) => {
+      return prisma.category.update({
+        where: { id },
 
-      return updated;
+        data: {
+          name: input.name,
+          slug: input.slug,
+          image: input.image,
+        },
+      });
+    },
+    deleteCategory: async (_, { id }, { prisma }) => {
+      await prisma.category.delete({
+        where: { id },
+      });
+
+      return true;
     },
 
     // gifts
