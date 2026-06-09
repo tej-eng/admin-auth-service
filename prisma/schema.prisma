@@ -1230,3 +1230,19 @@ model AstrologerOffer {
   @@index([offerId])
   @@index([isActive])
 }
+
+model GiftHistory {
+  id                String   @id @default(cuid())
+
+  userId            String
+  astrologerId      String
+  giftId            String
+
+  giftName          String
+  giftPrice         Float
+
+  createdAt         DateTime @default(now())
+
+  user              User       @relation(fields: [userId], references: [id])
+  astrologer        Astrologer @relation(fields: [astrologerId], references: [id])
+}
