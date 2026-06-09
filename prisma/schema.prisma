@@ -544,6 +544,7 @@ model Gift {
   amount    Float
   image     String?
   status    String   @default("active")
+  giftHistories GiftHistory[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -1245,15 +1246,13 @@ model GiftHistory {
 
   createdAt    DateTime @default(now())
 
-  user User @relation(
-    "UserGiftHistory",
-    fields: [userId],
-    references: [id]
-  )
+  user         User       @relation("UserGiftHistory", fields: [userId], references: [id])
 
-  astrologer Astrologer @relation(
-    "AstrologerGiftHistory",
-    fields: [astrologerId],
-    references: [id]
-  )
+  astrologer   Astrologer @relation("AstrologerGiftHistory", fields: [astrologerId], references: [id])
+
+  gift         Gift       @relation(fields: [giftId], references: [id])
+
+  @@index([userId])
+  @@index([astrologerId])
+  @@index([giftId])
 }
