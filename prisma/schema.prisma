@@ -1266,9 +1266,7 @@ model AstrologerFollow {
   astrologerId String
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
   astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
-
   createdAt DateTime @default(now())
 
   @@unique([userId, astrologerId])
