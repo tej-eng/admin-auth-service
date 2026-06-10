@@ -156,7 +156,8 @@ model User {
   paymentOrders PaymentOrder[]
   sessions      Session[]
   reviews       Review[]
- giftsSent GiftHistory[] @relation("UserGiftHistory")
+  giftsSent GiftHistory[] @relation("UserGiftHistory")
+  follows AstrologerFollow[]
 
   @@unique([countryCode, mobile])
 }
@@ -280,6 +281,7 @@ model Astrologer {
   applications     AstrologerApplication[]
   offers AstrologerOffer[]
  giftsReceived GiftHistory[] @relation("AstrologerGiftHistory")
+ followers AstrologerFollow[]
 
   @@index([rating])
   @@index([experience])
@@ -1255,4 +1257,23 @@ model GiftHistory {
   @@index([userId])
   @@index([astrologerId])
   @@index([giftId])
+}
+
+model AstrologerFollow {
+  id String @id @default(uuid())
+
+  userId String
+  astrologerId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, astrologerId])
+
+  @@index([userId])
+
+  @@index([astrologerId])
 }
