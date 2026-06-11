@@ -545,6 +545,7 @@ model Service {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  bookings ServiceBooking[]
 }
 
 model Gift {
