@@ -165,6 +165,7 @@ model User {
   reviews       Review[]
   giftsSent GiftHistory[] @relation("UserGiftHistory")
   follows AstrologerFollow[]
+  servicePaymentOrders ServicePaymentOrder[]
 
   @@unique([countryCode, mobile])
 }
@@ -1310,6 +1311,7 @@ model ServiceBooking {
 
   paymentStatus PaymentStatus @default(PENDING)
   bookingStatus BookingStatus @default(PENDING)
+  paymentOrders ServicePaymentOrder[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1318,4 +1320,28 @@ model ServiceBooking {
   @@index([astrologerId])
   @@index([paymentStatus])
   @@index([bookingStatus])
+}
+
+model ServicePaymentOrder {
+  id String @id @default(uuid())
+
+  userId String
+  user User @relation(fields: [userId], references: [id])
+
+  bookingId String
+  booking ServiceBooking @relation(fields: [bookingId], references: [id])
+
+  razorpayOrderId String @unique
+
+  amount Float
+
+  status PaymentOrderStatus @default(CREATED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([bookingId])
+  @@index([razorpayOrderId])
+  @@index([status])
 }
