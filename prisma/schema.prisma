@@ -1331,9 +1331,13 @@ model ServicePaymentOrder {
   bookingId String
   booking ServiceBooking @relation(fields: [bookingId], references: [id])
 
-  razorpayOrderId String @unique
+  razorpayOrderId String? @unique
 
-  amount Float
+  totalAmount Float
+
+  walletAmount Float @default(0)
+
+  payableAmount Float
 
   status PaymentOrderStatus @default(CREATED)
 
