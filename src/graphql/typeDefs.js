@@ -1630,6 +1630,70 @@ const typeDefs = gql`
 
     endDate: String
   }
+  type Blog {
+    id: ID!
+
+    title: String!
+    slug: String!
+
+    language: String!
+
+    shortDescription: String!
+    content: String!
+
+    featuredImage: String
+
+    publishDate: String
+
+    status: String!
+
+    hashtags: [String!]
+
+    metaTitle: String
+    metaDescription: String
+    metaKeywords: String
+
+    schemaMarkup: String
+
+    categories: [BlogCategory!]
+
+    createdAt: String
+    updatedAt: String
+  }
+  type BlogCategory {
+    id: ID!
+    name: String!
+    slug: String!
+  }
+  input CreateBlogInput {
+    title: String!
+    slug: String!
+
+    language: String!
+
+    shortDescription: String!
+    content: String!
+
+    featuredImage: String
+
+    publishDate: String
+
+    status: String!
+
+    hashtags: [String!]
+
+    metaTitle: String
+    metaDescription: String
+    metaKeywords: String
+
+    schemaMarkup: String
+
+    categoryIds: [String!]!
+  }
+  input CreateBlogCategoryInput {
+    name: String!
+    slug: String!
+  }
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -1788,6 +1852,15 @@ const typeDefs = gql`
     getNotices: [Notice]
 
     getAstrologerNotices: [Notice]
+    blogs(page: Int, limit: Int, search: String): [Blog!]!
+
+    blogs: [Blog!]!
+
+    blog(id: ID!): Blog
+
+    blogCategories: [BlogCategory!]!
+
+    blogCategory(id: ID!): BlogCategory
   }
 
   type Mutation {
@@ -2037,6 +2110,17 @@ const typeDefs = gql`
     deleteNotice(id: ID!): Boolean
 
     markNoticeRead(noticeId: ID!): Boolean
+    createBlog(input: CreateBlogInput!): Blog!
+
+    updateBlog(id: ID!, input: CreateBlogInput!): Blog!
+
+    deleteBlog(id: ID!): Boolean!
+
+    createBlogCategory(input: CreateBlogCategoryInput!): BlogCategory!
+
+    updateBlogCategory(id: ID!, input: CreateBlogCategoryInput!): BlogCategory!
+
+    deleteBlogCategory(id: ID!): Boolean!
   }
 `;
 
