@@ -3133,6 +3133,44 @@ export const resolvers = {
     throw new Error(error.message);
   }
 },
+
+
+getAstrologerNotices: async (
+  _,
+  __,
+  { astrologer }
+) => {
+  return await prisma.notice.findMany({
+    where: {
+      isActive: true,
+
+      OR: [
+        {
+          targetType: "ALL",
+        },
+
+        {
+          targetType: "SELECTED",
+
+          astrologers: {
+            some: {
+              astrologerId: astrologer.id,
+            },
+          },
+        },
+      ],
+    },
+
+    orderBy: [
+      {
+        isPinned: "desc",
+      },
+      {
+        createdAt: "desc",
+      },
+    ],
+  });
+},
   },
 
   // **********************************************START MUTATION**********************************
@@ -5375,5 +5413,30 @@ export const resolvers = {
         throw new Error(error.message || "Failed to delete offer");
       }
     },
+
+
+createNotice: async (_, { input }) => {
+  const {
+    astrologers,
+    ...noticeData
+  } = input;
+
+  return await prisma.notice.create({
+    data: {
+      ...noticeData,
+
+      astrologers: {
+        create:
+          astrologers?.map((id) => ({
+            astrologerId: id,
+          })) || [],
+      },
+    },
+
+    include: {
+      astrologers: true,
+    },
+  });
+},
   },
 };
