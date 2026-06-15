@@ -3046,131 +3046,119 @@ export const resolvers = {
       return astrologer;
     },
     getSendGiftHistory: async (
-  _,
-  {
-    page = 1,
-    limit = 10,
-    search,
-    astrologerId,
-    fromDate,
-    toDate,
-  },
-  context
-) => {
-  try {
-    const { prisma } = context;
+      _,
+      { page = 1, limit = 10, search, astrologerId, fromDate, toDate },
+      context,
+    ) => {
+      try {
+        const { prisma } = context;
 
-    await checkPermission(context, "gift-history.read");
+        await checkPermission(context, "gift-history.read");
 
-    const skip = (page - 1) * limit;
+        const skip = (page - 1) * limit;
 
-    const where = {};
+        const where = {};
 
-    if (astrologerId) {
-      where.astrologerId = astrologerId;
-    }
+        if (astrologerId) {
+          where.astrologerId = astrologerId;
+        }
 
-    if (fromDate || toDate) {
-      where.createdAt = {};
+        if (fromDate || toDate) {
+          where.createdAt = {};
 
-      if (fromDate) {
-        where.createdAt.gte = new Date(fromDate);
+          if (fromDate) {
+            where.createdAt.gte = new Date(fromDate);
+          }
+
+          if (toDate) {
+            where.createdAt.lte = new Date(toDate);
+          }
+        }
+
+        if (search) {
+          where.user = {
+            name: {
+              contains: search,
+              mode: "insensitive",
+            },
+          };
+        }
+
+        const [giftHistory, totalCount] = await Promise.all([
+          prisma.giftHistory.findMany({
+            where,
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  mobile: true,
+                },
+              },
+              astrologer: {
+                select: {
+                  id: true,
+                  name: true,
+                  profilePic: true,
+                },
+              },
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+            skip,
+            take: limit,
+          }),
+
+          prisma.giftHistory.count({
+            where,
+          }),
+        ]);
+
+        return {
+          data: giftHistory,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (error) {
+        console.error("getSendGiftHistory error:", error);
+        throw new Error(error.message);
       }
-
-      if (toDate) {
-        where.createdAt.lte = new Date(toDate);
-      }
-    }
-
-    if (search) {
-      where.user = {
-        name: {
-          contains: search,
-          mode: "insensitive",
-        },
-      };
-    }
-
-    const [giftHistory, totalCount] = await Promise.all([
-      prisma.giftHistory.findMany({
-        where,
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              mobile: true,
-            },
-          },
-          astrologer: {
-            select: {
-              id: true,
-              name: true,
-              profilePic: true,
-            },
-          },
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        skip,
-        take: limit,
-      }),
-
-      prisma.giftHistory.count({
-        where,
-      }),
-    ]);
-
-    return {
-      data: giftHistory,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
-    };
-  } catch (error) {
-    console.error("getSendGiftHistory error:", error);
-    throw new Error(error.message);
-  }
-},
-
-
-getAstrologerNotices: async (
-  _,
-  __,
-  { astrologer }
-) => {
-  return await prisma.notice.findMany({
-    where: {
-      isActive: true,
-
-      OR: [
-        {
-          targetType: "ALL",
-        },
-
-        {
-          targetType: "SELECTED",
-
-          astrologers: {
-            some: {
-              astrologerId: astrologer.id,
-            },
-          },
-        },
-      ],
     },
 
-    orderBy: [
-      {
-        isPinned: "desc",
-      },
-      {
-        createdAt: "desc",
-      },
-    ],
-  });
-},
+    getAstrologerNotices: async (_, __, { astrologer }) => {
+      return await prisma.notice.findMany({
+        where: {
+          isActive: true,
+
+          OR: [
+            {
+              targetType: "ALL",
+            },
+
+            {
+              targetType: "SELECTED",
+
+              astrologers: {
+                some: {
+                  astrologerId: astrologer.id,
+                },
+              },
+            },
+          ],
+        },
+
+        orderBy: [
+          {
+            isPinned: "desc",
+          },
+          {
+            createdAt: "desc",
+          },
+        ],
+      });
+    },
   },
 
   // **********************************************START MUTATION**********************************
@@ -5414,29 +5402,167 @@ getAstrologerNotices: async (
       }
     },
 
+    createNotice: async (_, { input }) => {
+      const { astrologers, ...noticeData } = input;
 
-createNotice: async (_, { input }) => {
-  const {
-    astrologers,
-    ...noticeData
-  } = input;
+      return await prisma.notice.create({
+        data: {
+          ...noticeData,
 
-  return await prisma.notice.create({
-    data: {
-      ...noticeData,
+          astrologers: {
+            create:
+              astrologers?.map((id) => ({
+                astrologerId: id,
+              })) || [],
+          },
+        },
 
-      astrologers: {
-        create:
-          astrologers?.map((id) => ({
-            astrologerId: id,
-          })) || [],
-      },
+        include: {
+          astrologers: true,
+        },
+      });
     },
 
-    include: {
-      astrologers: true,
+    createBlog: async (_, { input }) => {
+      const blog = await prisma.blog.create({
+        data: {
+          title: input.title,
+          slug: input.slug,
+
+          language: input.language,
+
+          shortDescription: input.shortDescription,
+
+          content: input.content,
+
+          featuredImage: input.featuredImage,
+
+          publishDate: input.publishDate ? new Date(input.publishDate) : null,
+
+          status: input.status,
+
+          hashtags: input.hashtags,
+
+          metaTitle: input.metaTitle,
+
+          metaDescription: input.metaDescription,
+
+          metaKeywords: input.metaKeywords,
+
+          schemaMarkup: input.schemaMarkup,
+
+          categories: {
+            create: input.categoryIds.map((categoryId) => ({
+              category: {
+                connect: {
+                  id: categoryId,
+                },
+              },
+            })),
+          },
+        },
+
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      });
+
+      return blog;
     },
-  });
-},
+
+    updateBlog: async (_, { id, input }) => {
+      await prisma.blogCategory.deleteMany({
+        where: {
+          blogId: id,
+        },
+      });
+
+      return prisma.blog.update({
+        where: {
+          id,
+        },
+
+        data: {
+          title: input.title,
+          slug: input.slug,
+
+          language: input.language,
+
+          shortDescription: input.shortDescription,
+
+          content: input.content,
+
+          featuredImage: input.featuredImage,
+
+          publishDate: input.publishDate ? new Date(input.publishDate) : null,
+
+          status: input.status,
+
+          hashtags: input.hashtags,
+
+          metaTitle: input.metaTitle,
+
+          metaDescription: input.metaDescription,
+
+          metaKeywords: input.metaKeywords,
+
+          schemaMarkup: input.schemaMarkup,
+
+          categories: {
+            create: input.categoryIds.map((categoryId) => ({
+              category: {
+                connect: {
+                  id: categoryId,
+                },
+              },
+            })),
+          },
+        },
+      });
+    },
+
+    deleteBlog: async (_, { id }) => {
+      await prisma.blog.delete({
+        where: {
+          id,
+        },
+      });
+
+      return true;
+    },
+
+    createBlogCategory: async (_, { input }) => {
+      return prisma.blogCategory.create({
+        data: {
+          name: input.name,
+          slug: input.slug,
+        },
+      });
+    },
+    updateBlogCategory: async (_, { id, input }) => {
+      return prisma.blogCategory.update({
+        where: {
+          id,
+        },
+
+        data: {
+          name: input.name,
+          slug: input.slug,
+        },
+      });
+    },
+    deleteBlogCategory: async (_, { id }) => {
+      await prisma.blogCategory.delete({
+        where: {
+          id,
+        },
+      });
+
+      return true;
+    },
   },
 };
