@@ -1852,7 +1852,8 @@ const typeDefs = gql`
     getNotices: [Notice]
 
     getAstrologerNotices: [Notice]
-    blogs(page: Int, limit: Int, search: String): [Blog!]!
+
+   
 
     blogs: [Blog!]!
 
