@@ -1856,6 +1856,7 @@ const typeDefs = gql`
     blogs: [Blog!]!
 
     blog(id: ID!): Blog
+      blogBySlug(slug: String!): Blog
 
     blogCategories: [BlogCategory!]!
 
