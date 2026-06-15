@@ -3175,21 +3175,21 @@ export const resolvers = {
         },
       });
     },
-    blog: async (_, { id }) => {
-      return await prisma.blog.findUnique({
-        where: {
-          id,
-        },
-
-        include: {
-          categories: {
-            include: {
-              category: true,
-            },
-          },
-        },
-      });
+blogBySlug: async (_, { slug }) => {
+  return await prisma.blog.findUnique({
+    where: {
+      slug,
     },
+
+    include: {
+      categories: {
+        include: {
+          category: true,
+        },
+      },
+    },
+  });
+},
     blogCategories: async () => {
       console.log("blogCategories called");
 
