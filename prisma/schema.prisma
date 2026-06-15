@@ -166,6 +166,7 @@ model User {
   giftsSent GiftHistory[] @relation("UserGiftHistory")
   follows AstrologerFollow[]
   servicePaymentOrders ServicePaymentOrder[]
+  noticesCreated Notice[] @relation("NoticeCreatedBy")
 
   @@unique([countryCode, mobile])
 }
