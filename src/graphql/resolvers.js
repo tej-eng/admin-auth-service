@@ -3159,6 +3159,46 @@ export const resolvers = {
         ],
       });
     },
+
+    blogs: async () => {
+      return await prisma.blog.findMany({
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
+    blog: async (_, { id }) => {
+      return await prisma.blog.findUnique({
+        where: {
+          id,
+        },
+
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      });
+    },
+    blogCategories: async () => {
+      console.log("blogCategories called");
+
+      const data = await prisma.blogCategory.findMany();
+
+      console.log(data);
+
+      return data;
+    },
   },
 
   // **********************************************START MUTATION**********************************

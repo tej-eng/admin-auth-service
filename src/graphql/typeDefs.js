@@ -1853,8 +1853,6 @@ const typeDefs = gql`
 
     getAstrologerNotices: [Notice]
 
-   
-
     blogs: [Blog!]!
 
     blog(id: ID!): Blog
