@@ -291,6 +291,7 @@ model Astrologer {
   giftsReceived GiftHistory[] @relation("AstrologerGiftHistory")
   followers AstrologerFollow[]
   serviceBookings ServiceBooking[]
+  noticeAstrologers NoticeAstrologer[]
 
   @@index([rating])
   @@index([experience])
@@ -1406,7 +1407,7 @@ model Blog {
   language String
 
   shortDescription String @db.Text
-  content          String @db.LongText
+  content          String @db.Text
 
   featuredImage String?
 
@@ -1420,7 +1421,7 @@ model Blog {
   metaDescription String? @db.Text
   metaKeywords    String?
 
-  schemaMarkup String? @db.LongText
+  schemaMarkup String? @db.Text
 
   categories BlogCategoryMapping[]
 
