@@ -1575,28 +1575,61 @@ const typeDefs = gql`
   }
   #----END OF GET ASTROLOGER BY ID-----------------#
   #-------------START code for send gift history----
-  
+
   type GiftHistory {
-  id: ID!
+    id: ID!
 
-  giftId: ID
-  giftName: String!
-  giftPrice: Float!
+    giftId: ID
+    giftName: String!
+    giftPrice: Float!
 
-  userId: ID!
-  astrologerId: ID!
+    userId: ID!
+    astrologerId: ID!
 
-  user: User
-  astrologer: Astrologer
+    user: User
+    astrologer: Astrologer
 
-  createdAt: DateTime!
-}
+    createdAt: DateTime!
+  }
   type GiftHistoryResponse {
-  data: [GiftHistory!]!
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
-}
+    data: [GiftHistory!]!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+  }
+
+  type Notice {
+    id: ID!
+    title: String!
+    description: String!
+
+    targetType: String!
+
+    astrologers: [Astrologer]
+
+    isPinned: Boolean
+    isActive: Boolean
+
+    startDate: String
+    endDate: String
+
+    createdAt: String
+  }
+  input CreateNoticeInput {
+    title: String!
+
+    description: String!
+
+    targetType: String!
+
+    astrologers: [ID]
+
+    isPinned: Boolean
+
+    startDate: String
+
+    endDate: String
+  }
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -1743,14 +1776,18 @@ const typeDefs = gql`
 
     getAstrologerById(id: ID!): Astrologer
 
-   getSendGiftHistory(
-    page: Int
-    limit: Int
-    search: String
-    astrologerId: String
-    fromDate: String
-    toDate: String
-  ): GiftHistoryResponse!
+    getSendGiftHistory(
+      page: Int
+      limit: Int
+      search: String
+      astrologerId: String
+      fromDate: String
+      toDate: String
+    ): GiftHistoryResponse!
+
+    getNotices: [Notice]
+
+    getAstrologerNotices: [Notice]
   }
 
   type Mutation {
@@ -1992,6 +2029,14 @@ const typeDefs = gql`
     updateOffer(id: String!, data: UpdateOfferInput!): OfferResponse!
 
     deleteOffer(id: String!): MessageResponse!
+
+    createNotice(input: CreateNoticeInput!): Notice
+
+    updateNotice(id: ID!, input: CreateNoticeInput!): Notice
+
+    deleteNotice(id: ID!): Boolean
+
+    markNoticeRead(noticeId: ID!): Boolean
   }
 `;
 
