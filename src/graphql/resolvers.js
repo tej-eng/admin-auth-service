@@ -5595,14 +5595,28 @@ export const resolvers = {
         },
       });
     },
-    deleteBlogCategory: async (_, { id }) => {
-      await prisma.blogCategory.delete({
-        where: {
-          id,
-        },
-      });
+  deleteBlog: async (_, { id }) => {
+  await prisma.blogCategoryMapping.deleteMany({
+    where: {
+      blogId: id,
+    },
+  });
 
-      return true;
+  await prisma.blog.delete({
+    where: {
+      id,
+    },
+  });
+
+  return true;
+},
+  },
+
+    Blog: {
+    categories: (parent) => {
+      return parent.categories.map(
+        (mapping) => mapping.category
+      );
     },
   },
 };
