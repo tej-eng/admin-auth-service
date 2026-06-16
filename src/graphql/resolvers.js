@@ -3175,21 +3175,21 @@ export const resolvers = {
         },
       });
     },
-blogBySlug: async (_, { slug }) => {
-  return await prisma.blog.findUnique({
-    where: {
-      slug,
-    },
-
-    include: {
-      categories: {
-        include: {
-          category: true,
+    blogBySlug: async (_, { slug }) => {
+      return await prisma.blog.findUnique({
+        where: {
+          slug,
         },
-      },
+
+        include: {
+          categories: {
+            include: {
+              category: true,
+            },
+          },
+        },
+      });
     },
-  });
-},
     blogCategories: async () => {
       console.log("blogCategories called");
 
@@ -5514,66 +5514,57 @@ blogBySlug: async (_, { slug }) => {
       return blog;
     },
 
-    updateBlog: async (_, { id, input }) => {
-      await prisma.blogCategory.deleteMany({
-        where: {
-          blogId: id,
-        },
-      });
+updateBlog: async (_, { id, input }) => {
+  await prisma.blogCategoryMapping.deleteMany({
+    where: {
+      blogId: id,
+    },
+  });
 
-      return prisma.blog.update({
-        where: {
-          id,
-        },
-
-        data: {
-          title: input.title,
-          slug: input.slug,
-
-          language: input.language,
-
-          shortDescription: input.shortDescription,
-
-          content: input.content,
-
-          featuredImage: input.featuredImage,
-
-          publishDate: input.publishDate ? new Date(input.publishDate) : null,
-
-          status: input.status,
-
-          hashtags: input.hashtags,
-
-          metaTitle: input.metaTitle,
-
-          metaDescription: input.metaDescription,
-
-          metaKeywords: input.metaKeywords,
-
-          schemaMarkup: input.schemaMarkup,
-
-          categories: {
-            create: input.categoryIds.map((categoryId) => ({
-              category: {
-                connect: {
-                  id: categoryId,
-                },
-              },
-            })),
-          },
-        },
-      });
+  return prisma.blog.update({
+    where: {
+      id,
     },
 
-    deleteBlog: async (_, { id }) => {
-      await prisma.blog.delete({
-        where: {
-          id,
-        },
-      });
+    data: {
+      title: input.title,
+      slug: input.slug,
 
-      return true;
+      language: input.language,
+
+      shortDescription: input.shortDescription,
+
+      content: input.content,
+
+      featuredImage: input.featuredImage,
+
+      publishDate: input.publishDate
+        ? new Date(input.publishDate)
+        : null,
+
+      status: input.status,
+
+      hashtags: input.hashtags,
+
+      metaTitle: input.metaTitle,
+
+      metaDescription: input.metaDescription,
+
+      metaKeywords: input.metaKeywords,
+
+      schemaMarkup: input.schemaMarkup,
+
+      categories: {
+        create: input.categoryIds.map(
+          (categoryId) => ({
+            blogCategoryId: categoryId,
+          })
+        ),
+      },
     },
+  });
+},
+
 
     createBlogCategory: async (_, { input }) => {
       return prisma.blogCategory.create({
@@ -5595,28 +5586,26 @@ blogBySlug: async (_, { slug }) => {
         },
       });
     },
-  deleteBlog: async (_, { id }) => {
-  await prisma.blogCategoryMapping.deleteMany({
-    where: {
-      blogId: id,
-    },
-  });
+    deleteBlog: async (_, { id }) => {
+      await prisma.blogCategoryMapping.deleteMany({
+        where: {
+          blogId: id,
+        },
+      });
 
-  await prisma.blog.delete({
-    where: {
-      id,
-    },
-  });
+      await prisma.blog.delete({
+        where: {
+          id,
+        },
+      });
 
-  return true;
-},
+      return true;
+    },
   },
 
-    Blog: {
+  Blog: {
     categories: (parent) => {
-      return parent.categories.map(
-        (mapping) => mapping.category
-      );
+      return parent.categories.map((mapping) => mapping.category);
     },
   },
 };
