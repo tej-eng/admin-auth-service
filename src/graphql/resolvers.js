@@ -5586,6 +5586,28 @@ updateBlog: async (_, { id, input }) => {
         },
       });
     },
+deleteBlogCategory: async (_, { id }) => {
+  const usageCount =
+    await prisma.blogCategoryMapping.count({
+      where: {
+        blogCategoryId: id,
+      },
+    });
+
+  if (usageCount > 0) {
+    throw new Error(
+      `Category is used in ${usageCount} blog(s). Remove it from blogs first.`
+    );
+  }
+
+  await prisma.blogCategory.delete({
+    where: {
+      id,
+    },
+  });
+
+  return true;
+},
     deleteBlog: async (_, { id }) => {
       await prisma.blogCategoryMapping.deleteMany({
         where: {
