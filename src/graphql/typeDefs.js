@@ -1722,6 +1722,14 @@ const typeDefs = gql`
 
     averageRating: Float!
   }
+    enum SessionStatus {
+  REQUESTED
+  ACCEPTED
+  ONGOING
+  COMPLETED
+  CANCELLED
+  FAILED
+}
 
   type AstrologerSessionHistory {
     sessionId: ID!
