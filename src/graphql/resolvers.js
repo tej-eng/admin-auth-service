@@ -622,6 +622,116 @@ export const resolvers = {
         throw new Error("Failed to fetch astrologer earnings");
       }
     },
+
+    getAstrologerDashboardStats: async (
+  _,
+  { astrologerId },
+  { prisma }
+) => {
+  const astrologer =
+    await prisma.astrologer.findUnique({
+      where: {
+        id: astrologerId,
+      },
+
+      include: {
+        wallet: true,
+        followers: true,
+        reviews: true,
+      },
+    });
+
+  if (!astrologer) {
+    throw new Error("Astrologer not found");
+  }
+
+  const sessions =
+    await prisma.session.findMany({
+      where: {
+        astrologerId,
+      },
+
+      select: {
+        type: true,
+        durationSec: true,
+        coinsEarned: true,
+        coinsDeducted: true,
+        commission: true,
+      },
+    });
+
+  const totalChats = sessions.filter(
+    (s) => s.type === "CHAT"
+  ).length;
+
+  const totalCalls = sessions.filter(
+    (s) => s.type === "CALL"
+  ).length;
+
+  const totalDurationMinutes =
+    Math.floor(
+      sessions.reduce(
+        (sum, s) =>
+          sum + (s.durationSec || 0),
+        0
+      ) / 60
+    );
+
+  const totalCoinsEarned =
+    sessions.reduce(
+      (sum, s) =>
+        sum + (s.coinsEarned || 0),
+      0
+    );
+
+  const totalCoinsDeducted =
+    sessions.reduce(
+      (sum, s) =>
+        sum + (s.coinsDeducted || 0),
+      0
+    );
+
+  const totalCommission =
+    sessions.reduce(
+      (sum, s) =>
+        sum + (s.commission || 0),
+      0
+    );
+
+  return {
+    totalChats,
+
+    totalCalls,
+
+    totalSessions: sessions.length,
+
+    totalCoinsEarned,
+
+    totalCoinsDeducted,
+
+    totalCommission,
+
+    totalDurationMinutes,
+
+    walletBalance:
+      astrologer.wallet?.balanceCoins || 0,
+
+    totalEarned:
+      astrologer.wallet?.totalEarned || 0,
+
+    totalWithdrawn:
+      astrologer.wallet?.totalWithdrawn || 0,
+
+    totalFollowers:
+      astrologer.followers.length,
+
+    totalReviews:
+      astrologer.reviews.length,
+
+    averageRating:
+      astrologer.rating || 0,
+  };
+},
     // -------------------- RESOLVER --------------------
 
     getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
