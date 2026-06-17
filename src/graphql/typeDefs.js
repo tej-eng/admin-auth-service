@@ -1694,6 +1694,34 @@ const typeDefs = gql`
     name: String!
     slug: String!
   }
+
+  type AstrologerDashboardStats {
+  totalChats: Int!
+
+  totalCalls: Int!
+
+  totalSessions: Int!
+
+  totalCoinsEarned: Int!
+
+  totalCoinsDeducted: Int!
+
+  totalCommission: Int!
+
+  totalDurationMinutes: Int!
+
+  walletBalance: Int!
+
+  totalEarned: Int!
+
+  totalWithdrawn: Int!
+
+  totalFollowers: Int!
+
+  totalReviews: Int!
+
+  averageRating: Float!
+}
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -1861,6 +1889,10 @@ const typeDefs = gql`
     blogCategories: [BlogCategory!]!
 
     blogCategory(id: ID!): BlogCategory
+
+      getAstrologerDashboardStats(
+    astrologerId: ID!
+  ): AstrologerDashboardStats!
   }
 
   type Mutation {
