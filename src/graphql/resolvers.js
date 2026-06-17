@@ -623,115 +623,220 @@ export const resolvers = {
       }
     },
 
-    getAstrologerDashboardStats: async (
-  _,
-  { astrologerId },
-  { prisma }
-) => {
-  const astrologer =
-    await prisma.astrologer.findUnique({
-      where: {
-        id: astrologerId,
-      },
+    getAstrologerDashboardStats: async (_, { astrologerId }, { prisma }) => {
+      const astrologer = await prisma.astrologer.findUnique({
+        where: {
+          id: astrologerId,
+        },
 
-      include: {
-        wallet: true,
-        followers: true,
-        reviews: true,
-      },
-    });
+        include: {
+          wallet: true,
+          followers: true,
+          reviews: true,
+        },
+      });
 
-  if (!astrologer) {
-    throw new Error("Astrologer not found");
-  }
+      if (!astrologer) {
+        throw new Error("Astrologer not found");
+      }
 
-  const sessions =
-    await prisma.session.findMany({
-      where: {
+      const sessions = await prisma.session.findMany({
+        where: {
+          astrologerId,
+        },
+
+        select: {
+          type: true,
+          durationSec: true,
+          coinsEarned: true,
+          coinsDeducted: true,
+          commission: true,
+        },
+      });
+
+      const totalChats = sessions.filter((s) => s.type === "CHAT").length;
+
+      const totalCalls = sessions.filter((s) => s.type === "CALL").length;
+
+      const totalDurationMinutes = Math.floor(
+        sessions.reduce((sum, s) => sum + (s.durationSec || 0), 0) / 60,
+      );
+
+      const totalCoinsEarned = sessions.reduce(
+        (sum, s) => sum + (s.coinsEarned || 0),
+        0,
+      );
+
+      const totalCoinsDeducted = sessions.reduce(
+        (sum, s) => sum + (s.coinsDeducted || 0),
+        0,
+      );
+
+      const totalCommission = sessions.reduce(
+        (sum, s) => sum + (s.commission || 0),
+        0,
+      );
+
+      return {
+        totalChats,
+
+        totalCalls,
+
+        totalSessions: sessions.length,
+
+        totalCoinsEarned,
+
+        totalCoinsDeducted,
+
+        totalCommission,
+
+        totalDurationMinutes,
+
+        walletBalance: astrologer.wallet?.balanceCoins || 0,
+
+        totalEarned: astrologer.wallet?.totalEarned || 0,
+
+        totalWithdrawn: astrologer.wallet?.totalWithdrawn || 0,
+
+        totalFollowers: astrologer.followers.length,
+
+        totalReviews: astrologer.reviews.length,
+
+        averageRating: astrologer.rating || 0,
+      };
+    },
+
+    getAstrologerChatHistory: async (
+      _,
+      { astrologerId, page = 1, limit = 10 },
+      { prisma },
+    ) => {
+      const skip = (page - 1) * limit;
+
+      const where = {
         astrologerId,
-      },
+        type: "CHAT",
+      };
 
-      select: {
-        type: true,
-        durationSec: true,
-        coinsEarned: true,
-        coinsDeducted: true,
-        commission: true,
-      },
-    });
+      const [sessions, totalCount] = await Promise.all([
+        prisma.session.findMany({
+          where,
 
-  const totalChats = sessions.filter(
-    (s) => s.type === "CHAT"
-  ).length;
+          include: {
+            user: true,
+          },
 
-  const totalCalls = sessions.filter(
-    (s) => s.type === "CALL"
-  ).length;
+          orderBy: {
+            createdAt: "desc",
+          },
 
-  const totalDurationMinutes =
-    Math.floor(
-      sessions.reduce(
-        (sum, s) =>
-          sum + (s.durationSec || 0),
-        0
-      ) / 60
-    );
+          skip,
+          take: limit,
+        }),
 
-  const totalCoinsEarned =
-    sessions.reduce(
-      (sum, s) =>
-        sum + (s.coinsEarned || 0),
-      0
-    );
+        prisma.session.count({
+          where,
+        }),
+      ]);
 
-  const totalCoinsDeducted =
-    sessions.reduce(
-      (sum, s) =>
-        sum + (s.coinsDeducted || 0),
-      0
-    );
+      return {
+        data: sessions.map((session) => ({
+          sessionId: session.id,
 
-  const totalCommission =
-    sessions.reduce(
-      (sum, s) =>
-        sum + (s.commission || 0),
-      0
-    );
+          userId: session.userId,
 
-  return {
-    totalChats,
+          userName: session.user?.name || "",
 
-    totalCalls,
+          ratePerMin: session.ratePerMin,
 
-    totalSessions: sessions.length,
+          durationSec: session.durationSec,
 
-    totalCoinsEarned,
+          coinsEarned: session.coinsEarned,
 
-    totalCoinsDeducted,
+          coinsDeducted: session.coinsDeducted,
 
-    totalCommission,
+          status: session.status,
 
-    totalDurationMinutes,
+          startedAt: session.startedAt?.toISOString(),
 
-    walletBalance:
-      astrologer.wallet?.balanceCoins || 0,
+          endedAt: session.endedAt?.toISOString(),
 
-    totalEarned:
-      astrologer.wallet?.totalEarned || 0,
+          createdAt: session.createdAt?.toISOString(),
+        })),
 
-    totalWithdrawn:
-      astrologer.wallet?.totalWithdrawn || 0,
+        totalCount,
 
-    totalFollowers:
-      astrologer.followers.length,
+        currentPage: page,
 
-    totalReviews:
-      astrologer.reviews.length,
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
 
-    averageRating:
-      astrologer.rating || 0,
-  };
-},
+    getAstrologerCallHistory: async (
+      _,
+      { astrologerId, page = 1, limit = 10 },
+      { prisma },
+    ) => {
+      const skip = (page - 1) * limit;
+
+      const where = {
+        astrologerId,
+        type: "CALL",
+      };
+
+      const [sessions, totalCount] = await Promise.all([
+        prisma.session.findMany({
+          where,
+
+          include: {
+            user: true,
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+
+          skip,
+          take: limit,
+        }),
+
+        prisma.session.count({
+          where,
+        }),
+      ]);
+
+      return {
+        data: sessions.map((session) => ({
+          sessionId: session.id,
+
+          userId: session.userId,
+
+          userName: session.user?.name || "",
+
+          ratePerMin: session.ratePerMin,
+
+          durationSec: session.durationSec,
+
+          coinsEarned: session.coinsEarned,
+
+          coinsDeducted: session.coinsDeducted,
+
+          status: session.status,
+
+          startedAt: session.startedAt?.toISOString(),
+
+          endedAt: session.endedAt?.toISOString(),
+
+          createdAt: session.createdAt?.toISOString(),
+        })),
+
+        totalCount,
+
+        currentPage: page,
+
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
     // -------------------- RESOLVER --------------------
 
     getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
@@ -5624,57 +5729,52 @@ export const resolvers = {
       return blog;
     },
 
-updateBlog: async (_, { id, input }) => {
-  await prisma.blogCategoryMapping.deleteMany({
-    where: {
-      blogId: id,
+    updateBlog: async (_, { id, input }) => {
+      await prisma.blogCategoryMapping.deleteMany({
+        where: {
+          blogId: id,
+        },
+      });
+
+      return prisma.blog.update({
+        where: {
+          id,
+        },
+
+        data: {
+          title: input.title,
+          slug: input.slug,
+
+          language: input.language,
+
+          shortDescription: input.shortDescription,
+
+          content: input.content,
+
+          featuredImage: input.featuredImage,
+
+          publishDate: input.publishDate ? new Date(input.publishDate) : null,
+
+          status: input.status,
+
+          hashtags: input.hashtags,
+
+          metaTitle: input.metaTitle,
+
+          metaDescription: input.metaDescription,
+
+          metaKeywords: input.metaKeywords,
+
+          schemaMarkup: input.schemaMarkup,
+
+          categories: {
+            create: input.categoryIds.map((categoryId) => ({
+              blogCategoryId: categoryId,
+            })),
+          },
+        },
+      });
     },
-  });
-
-  return prisma.blog.update({
-    where: {
-      id,
-    },
-
-    data: {
-      title: input.title,
-      slug: input.slug,
-
-      language: input.language,
-
-      shortDescription: input.shortDescription,
-
-      content: input.content,
-
-      featuredImage: input.featuredImage,
-
-      publishDate: input.publishDate
-        ? new Date(input.publishDate)
-        : null,
-
-      status: input.status,
-
-      hashtags: input.hashtags,
-
-      metaTitle: input.metaTitle,
-
-      metaDescription: input.metaDescription,
-
-      metaKeywords: input.metaKeywords,
-
-      schemaMarkup: input.schemaMarkup,
-
-      categories: {
-        create: input.categoryIds.map(
-          (categoryId) => ({
-            blogCategoryId: categoryId,
-          })
-        ),
-      },
-    },
-  });
-},
-
 
     createBlogCategory: async (_, { input }) => {
       return prisma.blogCategory.create({
@@ -5696,28 +5796,27 @@ updateBlog: async (_, { id, input }) => {
         },
       });
     },
-deleteBlogCategory: async (_, { id }) => {
-  const usageCount =
-    await prisma.blogCategoryMapping.count({
-      where: {
-        blogCategoryId: id,
-      },
-    });
+    deleteBlogCategory: async (_, { id }) => {
+      const usageCount = await prisma.blogCategoryMapping.count({
+        where: {
+          blogCategoryId: id,
+        },
+      });
 
-  if (usageCount > 0) {
-    throw new Error(
-      `Category is used in ${usageCount} blog(s). Remove it from blogs first.`
-    );
-  }
+      if (usageCount > 0) {
+        throw new Error(
+          `Category is used in ${usageCount} blog(s). Remove it from blogs first.`,
+        );
+      }
 
-  await prisma.blogCategory.delete({
-    where: {
-      id,
+      await prisma.blogCategory.delete({
+        where: {
+          id,
+        },
+      });
+
+      return true;
     },
-  });
-
-  return true;
-},
     deleteBlog: async (_, { id }) => {
       await prisma.blogCategoryMapping.deleteMany({
         where: {
