@@ -1696,32 +1696,60 @@ const typeDefs = gql`
   }
 
   type AstrologerDashboardStats {
-  totalChats: Int!
+    totalChats: Int!
 
-  totalCalls: Int!
+    totalCalls: Int!
 
-  totalSessions: Int!
+    totalSessions: Int!
 
-  totalCoinsEarned: Int!
+    totalCoinsEarned: Int!
 
-  totalCoinsDeducted: Int!
+    totalCoinsDeducted: Int!
 
-  totalCommission: Int!
+    totalCommission: Int!
 
-  totalDurationMinutes: Int!
+    totalDurationMinutes: Int!
 
-  walletBalance: Int!
+    walletBalance: Int!
 
-  totalEarned: Int!
+    totalEarned: Int!
 
-  totalWithdrawn: Int!
+    totalWithdrawn: Int!
 
-  totalFollowers: Int!
+    totalFollowers: Int!
 
-  totalReviews: Int!
+    totalReviews: Int!
 
-  averageRating: Float!
-}
+    averageRating: Float!
+  }
+
+  type AstrologerSessionHistory {
+    sessionId: ID!
+    userId: ID!
+
+    userName: String
+
+    ratePerMin: Int
+    durationSec: Int
+
+    coinsEarned: Int
+    coinsDeducted: Int
+
+    status: SessionStatus
+
+    startedAt: String
+    endedAt: String
+
+    createdAt: String
+  }
+
+  type AstrologerSessionHistoryList {
+    data: [AstrologerSessionHistory!]!
+
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+  }
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -1884,15 +1912,24 @@ const typeDefs = gql`
     blogs: [Blog!]!
 
     blog(id: ID!): Blog
-      blogBySlug(slug: String!): Blog
+    blogBySlug(slug: String!): Blog
 
     blogCategories: [BlogCategory!]!
 
     blogCategory(id: ID!): BlogCategory
 
-      getAstrologerDashboardStats(
-    astrologerId: ID!
-  ): AstrologerDashboardStats!
+    getAstrologerDashboardStats(astrologerId: ID!): AstrologerDashboardStats!
+    getAstrologerChatHistory(
+      astrologerId: ID!
+      page: Int
+      limit: Int
+    ): AstrologerSessionHistoryList!
+
+    getAstrologerCallHistory(
+      astrologerId: ID!
+      page: Int
+      limit: Int
+    ): AstrologerSessionHistoryList!
   }
 
   type Mutation {
