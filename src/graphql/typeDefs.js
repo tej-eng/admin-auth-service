@@ -1771,6 +1771,25 @@ const typeDefs = gql`
   success: Boolean!
   message: String!
 }
+
+type Message {
+  id: ID
+  msgId: String
+  roomId: String
+  senderId: String
+  receiverId: String
+  message: String
+  image: String
+  sender: String
+  replyTo: String
+  createdAt: String
+}
+
+type SessionMessagesResponse {
+  success: Boolean!
+  totalCount: Int!
+  data: [Message!]!
+}
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -1951,6 +1970,8 @@ const typeDefs = gql`
       page: Int
       limit: Int
     ): AstrologerSessionHistoryList!
+
+      adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
   }
 
   type Mutation {
