@@ -3909,7 +3909,8 @@ export const resolvers = {
       }
     },
 
-   updateAstrologerAvailability: async (_, data) => {
+updateAstrologerAvailability: async (_, data, context) => {
+  const { prisma } = context;
   const { astrologerId, ...updateData } = data;
 
   return prisma.astrologer.update({
@@ -3918,7 +3919,7 @@ export const resolvers = {
     },
     data: updateData,
   });
-},
+};
 
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
