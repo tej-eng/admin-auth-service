@@ -3924,6 +3924,9 @@ export const resolvers = {
         data: updateData,
       });
     },
+    data: updateData,
+  });
+},
 
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
