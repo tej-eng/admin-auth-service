@@ -828,17 +828,24 @@ model Coupon {
   description    String?
   type           CouponType
   visibility     CouponVisibility
+  couponCount    Int              @default(0)
+
   status         Boolean          @default(true)
+
   percentage     Float?
   flatAmount     Float?
   maxDiscount    Float?
   minOrderAmount Float?
+
   redeemLimit    Int?
   usedCount      Int              @default(0)
+
   startDate      DateTime
   endDate        DateTime
+
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+
   rechargePacks  RechargePack[]   @relation("CouponToRechargePack")
 }
 
