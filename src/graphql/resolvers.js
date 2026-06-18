@@ -3909,18 +3909,16 @@ export const resolvers = {
       }
     },
 
-    updateAstrologerAvailability: async (_, data, context) => {
-      return prisma.astrologer.update({
-        where: {
-          id: context.user.id,
-        },
-        data: {
-          isChatActive: data.isChatActive,
-          isCallActive: data.isCallActive,
-          isLiveActive: data.isLiveActive,
-        },
-      });
+   updateAstrologerAvailability: async (_, data) => {
+  const { astrologerId, ...updateData } = data;
+
+  return prisma.astrologer.update({
+    where: {
+      id: astrologerId,
     },
+    data: updateData,
+  });
+},
 
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
