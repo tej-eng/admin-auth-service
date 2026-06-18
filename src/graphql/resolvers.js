@@ -2195,16 +2195,6 @@ export const resolvers = {
       }
     },
 
-    toggleReviewFlag: async (_, { reviewId, isFlagged }, { prisma }) => {
-      return prisma.review.update({
-        where: {
-          id: reviewId,
-        },
-        data: {
-          isFlagged,
-        },
-      });
-    },
 
     getFraudFlags: async (_, { searchInput }, { prisma }) => {
       try {
@@ -5867,6 +5857,23 @@ export const resolvers = {
 
       return true;
     },
+
+    toggleReviewFlag: async (_, { reviewId, isFlagged }, { prisma }) => {
+  await prisma.review.update({
+    where: {
+      id: reviewId,
+    },
+    data: {
+      isFlagged,
+    },
+  });
+
+  return {
+    success: true,
+    message: "Review updated successfully",
+  };
+},
+
   },
 
   Blog: {

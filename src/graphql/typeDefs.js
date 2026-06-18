@@ -1114,7 +1114,7 @@ const typeDefs = gql`
 
     astrologerId: ID
     astrologerName: String
-      displayName: String
+    displayName: String
 
     sessionType: String
     sessionStatus: String
@@ -1767,6 +1767,10 @@ const typeDefs = gql`
     currentPage: Int!
     totalPages: Int!
   }
+  type ToggleReviewResponse {
+    success: Boolean!
+    message: String!
+  }
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -2214,7 +2218,7 @@ const typeDefs = gql`
       isCallActive: Boolean
       isLiveActive: Boolean
     ): Astrologer!
-    toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): Review!
+   toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): ToggleReviewResponse!
   }
 `;
 
