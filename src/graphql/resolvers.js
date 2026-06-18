@@ -3416,6 +3416,62 @@ export const resolvers = {
 
       return data;
     },
+
+ adminGetSessionMessages: async (_, { sessionId }, { user }) => {
+    try {
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+
+      // Admin check
+      if (user.role !== "ADMIN") {
+        throw new Error("Access denied");
+      }
+
+      const session = await prisma.session.findUnique({
+        where: {
+          id: sessionId,
+        },
+      });
+
+      if (!session) {
+        throw new Error("Session not found");
+      }
+
+      const messages = await prisma.message.findMany({
+        where: {
+          sessionId,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      });
+
+      return {
+        success: true,
+        totalCount: messages.length,
+        data: messages.map((msg) => ({
+          id: msg.id,
+          msgId: msg.msgId,
+          roomId: msg.roomId,
+          senderId: msg.senderId,
+          receiverId: msg.receiverId || null,
+          message: msg.message || null,
+          image: msg.image || null,
+          sender: msg.sender,
+          replyTo: msg.replyTo
+            ? JSON.stringify(msg.replyTo)
+            : null,
+          createdAt: msg.createdAt.toISOString(),
+        })),
+      };
+    } catch (error) {
+      console.error("adminGetSessionMessages:", error);
+      throw new Error(
+        error.message || "Failed to fetch messages"
+      );
+    }
+  },
   },
 
   // **********************************************START MUTATION**********************************
