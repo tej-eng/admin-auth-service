@@ -3919,7 +3919,7 @@ updateAstrologerAvailability: async (_, data, context) => {
     },
     data: updateData,
   });
-};
+},
 
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
