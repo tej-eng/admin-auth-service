@@ -373,6 +373,25 @@ type Coupon {
   createdAt: DateTime!
   updatedAt: DateTime!
 }
+  input UpdateCouponInput {
+  code: String
+  description: String
+
+  applicable: String
+
+  type: String
+  status: String
+
+  visibility: String
+  couponCount: Int
+
+  percentage: Float
+  max_discount: Float
+  redeem_limit: Int
+
+  start_date: String
+  end_date: String
+}
 
   #-----------------------------START Wallet MANAGEMENT-----------------#
   type Wallet {
