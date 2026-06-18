@@ -2209,7 +2209,8 @@ const typeDefs = gql`
 
     deleteBlogCategory(id: ID!): Boolean!
 
-      updateAstrologerAvailability(
+  updateAstrologerAvailability(
+    astrologerId: ID!
     isChatActive: Boolean
     isCallActive: Boolean
     isLiveActive: Boolean
