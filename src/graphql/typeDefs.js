@@ -30,6 +30,15 @@ const typeDefs = gql`
     APPROVED
     REJECTED
   }
+enum CouponType {
+  CASHBACK
+  DISCOUNT
+}
+
+enum CouponVisibility {
+  VISIBLE
+  HIDDEN
+}
 
   enum InterviewStatus {
     SCHEDULED
@@ -331,13 +340,12 @@ const typeDefs = gql`
 input CreateCouponInput {
   code: String!
   description: String
-
   applicable: String
 
   type: String!
-  status: String!
-
   visibility: String!
+
+  status: String!
 
   couponCount: Int
 
@@ -351,27 +359,27 @@ input CreateCouponInput {
 
 type Coupon {
   id: ID!
-
   code: String!
   description: String
 
   applicable: String
 
   type: String!
-  status: String!
-
   visibility: String!
+
   couponCount: Int
+
+  status: Boolean
 
   percentage: Float
   max_discount: Float
   redeem_limit: Int
 
-  start_date: String!
-  end_date: String!
+  start_date: String
+  end_date: String
 
-  createdAt: DateTime!
-  updatedAt: DateTime!
+  createdAt: DateTime
+  updatedAt: DateTime
 }
   input UpdateCouponInput {
   code: String

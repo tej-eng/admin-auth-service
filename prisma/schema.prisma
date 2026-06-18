@@ -82,13 +82,13 @@ enum PaymentOrderStatus {
 }
 
 enum CouponType {
-  PERCENTAGE
-  FLAT
+  CASHBACK
+  DISCOUNT
 }
 
 enum CouponVisibility {
-  PUBLIC
-  PRIVATE
+  VISIBLE
+  HIDDEN
 }
 
 enum PermissionType {
