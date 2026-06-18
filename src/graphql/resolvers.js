@@ -2153,10 +2153,9 @@ export const resolvers = {
 
           astrologerId: review.astrologer?.id || null,
 
-          
-  astrologerName: review.astrologer?.name || "",
+          astrologerName: review.astrologer?.name || "",
 
-  displayName: review.astrologer?.displayName || "",
+          displayName: review.astrologer?.displayName || "",
 
           userName: review.userName || review.user?.name || "",
 
@@ -2193,17 +2192,6 @@ export const resolvers = {
 
         throw new Error("Failed to fetch user reviews");
       }
-    },
-
-    toggleReviewFlag: async (_, { reviewId, isFlagged }, { prisma }) => {
-      return prisma.review.update({
-        where: {
-          id: reviewId,
-        },
-        data: {
-          isFlagged,
-        },
-      });
     },
 
     getFraudFlags: async (_, { searchInput }, { prisma }) => {
@@ -3934,7 +3922,6 @@ export const resolvers = {
         data: updateData,
       });
     },
-
 
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
@@ -5867,6 +5854,22 @@ export const resolvers = {
       });
 
       return true;
+    },
+
+    toggleReviewFlag: async (_, { reviewId, isFlagged }, { prisma }) => {
+      await prisma.review.update({
+        where: {
+          id: reviewId,
+        },
+        data: {
+          isFlagged,
+        },
+      });
+
+      return {
+        success: true,
+        message: "Review flag updated successfully",
+      };
     },
   },
 
