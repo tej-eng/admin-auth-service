@@ -4214,29 +4214,36 @@ export const resolvers = {
 
     createCoupon: async (_, { input }, context) => {
       const { prisma } = context;
+
       await checkPermission(context, "coupons.create");
 
-      try {
-        const coupon = await prisma.coupon.create({
-          data: {
-            code: input.code,
-            description: input.description,
-            applicable: input.applicable,
-            type: input.type,
-            status: input.status === "active",
-            visibility: input.visibility,
-            percentage: input.percentage,
-            max_discount: input.max_discount,
-            redeem_limit: input.redeem_limit,
-            start_date: new Date(input.start_date),
-            end_date: new Date(input.end_date),
-          },
-        });
+      return prisma.coupon.create({
+        data: {
+          code: input.code,
 
-        return coupon;
-      } catch (error) {
-        throw error;
-      }
+          description: input.description,
+
+          applicable: input.applicable,
+
+          type: input.type,
+
+          status: input.status === "active",
+
+          visibility: input.visibility,
+
+          couponCount: input.couponCount || 0,
+
+          percentage: input.percentage,
+
+          maxDiscount: input.max_discount,
+
+          redeemLimit: input.redeem_limit,
+
+          startDate: new Date(input.start_date),
+
+          endDate: new Date(input.end_date),
+        },
+      });
     },
 
     deleteCoupon: async (_, { id }, context) => {

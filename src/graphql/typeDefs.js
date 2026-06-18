@@ -328,36 +328,51 @@ const typeDefs = gql`
   #-----------END OF RECHARGE PACKS-----------------#
 
   #------------Coupon ____------------------------_#
-  input CreateCouponInput {
-    code: String!
-    description: String
-    applicable: String
-    type: String!
-    status: String!
-    visibility: String!
-    percentage: Float
-    max_discount: Float
-    redeem_limit: Int
-    start_date: String!
-    end_date: String!
-  }
+input CreateCouponInput {
+  code: String!
+  description: String
 
-  type Coupon {
-    id: ID!
-    code: String!
-    description: String
-    applicable: String
-    type: String!
-    status: String!
-    visibility: String!
-    percentage: Float
-    max_discount: Float
-    redeem_limit: Int
-    start_date: String!
-    end_date: String!
-    createdAt: DateTime!
-    updatedAt: DateTime!
-  }
+  applicable: String
+
+  type: String!
+  status: String!
+
+  visibility: String!
+
+  couponCount: Int
+
+  percentage: Float
+  max_discount: Float
+  redeem_limit: Int
+
+  start_date: String!
+  end_date: String!
+}
+
+type Coupon {
+  id: ID!
+
+  code: String!
+  description: String
+
+  applicable: String
+
+  type: String!
+  status: String!
+
+  visibility: String!
+  couponCount: Int
+
+  percentage: Float
+  max_discount: Float
+  redeem_limit: Int
+
+  start_date: String!
+  end_date: String!
+
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
 
   #-----------------------------START Wallet MANAGEMENT-----------------#
   type Wallet {
