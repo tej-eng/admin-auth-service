@@ -97,7 +97,7 @@ const typeDefs = gql`
   #--------------------------------------#
   input PricingInput {
     type: PricingType!
-    price: Float!
+    price: Float
     offerPrice: Float
     commissionPercent: Float
     isActive: Boolean!
@@ -131,6 +131,8 @@ const typeDefs = gql`
     documents: DocumentsInput
 
     pricing: [PricingInput!]!
+
+    
   }
 
   type Astrologer {
@@ -160,6 +162,12 @@ const typeDefs = gql`
     addresses: [Address!]!
     experiences: [ExperiencePlatform!]!
     interviews: [Interview!]!
+
+     isCallActive: Boolean!
+  isChatActive: Boolean!
+  isLiveActive: Boolean!
+  isBusy: Boolean!
+  isOnline: Boolean!
 
     createdAt: DateTime
     updatedAt: DateTime
@@ -621,12 +629,14 @@ const typeDefs = gql`
   }
 
   #-------------------- pricing --------------#
-  enum PricingType {
-    CHAT
-    CALL
-    VIDEO
-    AUDIO
-  }
+ enum PricingType {
+  CHAT
+  CALL
+  VIDEO
+  AUDIO
+  GIFT_COMMISSION
+  OFFER
+}
   type AstrologerPricing {
     id: ID!
     type: PricingType!
@@ -2198,6 +2208,12 @@ const typeDefs = gql`
     updateBlogCategory(id: ID!, input: CreateBlogCategoryInput!): BlogCategory!
 
     deleteBlogCategory(id: ID!): Boolean!
+
+      updateAstrologerAvailability(
+    isChatActive: Boolean
+    isCallActive: Boolean
+    isLiveActive: Boolean
+  ): Astrologer!
   }
 `;
 

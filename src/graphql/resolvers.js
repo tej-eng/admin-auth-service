@@ -3656,13 +3656,22 @@ export const resolvers = {
             pricing: {
               create: data.pricing
                 .filter((p) => p.isActive)
-                .map((p) => ({
-                  type: p.type,
-                  price: Number(p.price),
-                  offerPrice: p.offerPrice ? Number(p.offerPrice) : null,
-                  commissionPercent: Number(p.commissionPercent),
-                  isActive: p.isActive,
-                })),
+                .map((p) => {
+                  const isCommissionOnly =
+                    p.type === "GIFT_COMMISSION" || p.type === "OFFER";
+
+                  return {
+                    type: p.type,
+                    price: isCommissionOnly ? 0 : Number(p.price),
+                    offerPrice: isCommissionOnly
+                      ? null
+                      : p.offerPrice
+                        ? Number(p.offerPrice)
+                        : null,
+                    commissionPercent: Number(p.commissionPercent) || 0,
+                    isActive: p.isActive,
+                  };
+                }),
             },
 
             addresses: {
@@ -3898,6 +3907,19 @@ export const resolvers = {
       } catch (error) {
         throw new Error(error.message || "Failed to update astrologer");
       }
+    },
+
+    updateAstrologerAvailability: async (_, data, context) => {
+      return prisma.astrologer.update({
+        where: {
+          id: context.user.id,
+        },
+        data: {
+          isChatActive: data.isChatActive,
+          isCallActive: data.isCallActive,
+          isLiveActive: data.isLiveActive,
+        },
+      });
     },
 
     // ================= DELETE ASTROLOGER =================
