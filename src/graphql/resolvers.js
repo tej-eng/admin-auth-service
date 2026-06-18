@@ -585,7 +585,7 @@ export const resolvers = {
           return {
             astrologerId: wallet.astrologer?.id,
 
-            astrologerName: wallet.astrologer?.name || "",
+            astrologerName: wallet.astrologer?.displayName || "",
 
             email: wallet.astrologer?.email || "",
 
@@ -2150,20 +2150,23 @@ export const resolvers = {
           sessionId: review.session?.id || null,
 
           userId: review.user?.id || null,
-          userName: review.userName || review.user?.name || "",
-          mobile: review.user?.mobile || "",
 
           astrologerId: review.astrologer?.id || null,
 
-          astrologerName:
-            review.astroName ||
-            review.astrologer?.displayName ||
-            review.astrologer?.name ||
-            "",
+          
+  astrologerName: review.astrologer?.name || "",
+
+  displayName: review.astrologer?.displayName || "",
+
+          userName: review.userName || review.user?.name || "",
+
+          mobile: review.user?.mobile || "",
 
           sessionType: review.session?.type || "",
 
           sessionStatus: review.session?.status || "",
+
+          isFlagged: review.isFlagged,
 
           rating: review.rating,
 
@@ -2190,6 +2193,17 @@ export const resolvers = {
 
         throw new Error("Failed to fetch user reviews");
       }
+    },
+
+    toggleReviewFlag: async (_, { reviewId, isFlagged }, { prisma }) => {
+      return prisma.review.update({
+        where: {
+          id: reviewId,
+        },
+        data: {
+          isFlagged,
+        },
+      });
     },
 
     getFraudFlags: async (_, { searchInput }, { prisma }) => {
@@ -3909,13 +3923,16 @@ export const resolvers = {
       }
     },
 
-updateAstrologerAvailability: async (_, data, context) => {
-  const { prisma } = context;
-  const { astrologerId, ...updateData } = data;
+    updateAstrologerAvailability: async (_, data, context) => {
+      const { prisma } = context;
+      const { astrologerId, ...updateData } = data;
 
-  return prisma.astrologer.update({
-    where: {
-      id: astrologerId,
+      return prisma.astrologer.update({
+        where: {
+          id: astrologerId,
+        },
+        data: updateData,
+      });
     },
     data: updateData,
   });
