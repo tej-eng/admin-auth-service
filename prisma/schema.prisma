@@ -829,7 +829,7 @@ model Coupon {
   type           CouponType
   visibility     CouponVisibility
   couponCount    Int              @default(0)
-
+applicable  String?
   status         Boolean          @default(true)
 
   percentage     Float?
