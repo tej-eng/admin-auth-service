@@ -131,8 +131,6 @@ const typeDefs = gql`
     documents: DocumentsInput
 
     pricing: [PricingInput!]!
-
-    
   }
 
   type Astrologer {
@@ -163,11 +161,11 @@ const typeDefs = gql`
     experiences: [ExperiencePlatform!]!
     interviews: [Interview!]!
 
-     isCallActive: Boolean!
-  isChatActive: Boolean!
-  isLiveActive: Boolean!
-  isBusy: Boolean!
-  isOnline: Boolean!
+    isCallActive: Boolean!
+    isChatActive: Boolean!
+    isLiveActive: Boolean!
+    isBusy: Boolean!
+    isOnline: Boolean!
 
     createdAt: DateTime
     updatedAt: DateTime
@@ -629,14 +627,14 @@ const typeDefs = gql`
   }
 
   #-------------------- pricing --------------#
- enum PricingType {
-  CHAT
-  CALL
-  VIDEO
-  AUDIO
-  GIFT_COMMISSION
-  OFFER
-}
+  enum PricingType {
+    CHAT
+    CALL
+    VIDEO
+    AUDIO
+    GIFT_COMMISSION
+    OFFER
+  }
   type AstrologerPricing {
     id: ID!
     type: PricingType!
@@ -1116,10 +1114,11 @@ const typeDefs = gql`
 
     astrologerId: ID
     astrologerName: String
+      displayName: String
 
     sessionType: String
     sessionStatus: String
-
+    isFlagged: Boolean
     rating: Int
 
     comment: String
@@ -1732,14 +1731,14 @@ const typeDefs = gql`
 
     averageRating: Float!
   }
-    enum SessionStatus {
-  REQUESTED
-  ACCEPTED
-  ONGOING
-  COMPLETED
-  CANCELLED
-  FAILED
-}
+  enum SessionStatus {
+    REQUESTED
+    ACCEPTED
+    ONGOING
+    COMPLETED
+    CANCELLED
+    FAILED
+  }
 
   type AstrologerSessionHistory {
     sessionId: ID!
@@ -2209,12 +2208,13 @@ const typeDefs = gql`
 
     deleteBlogCategory(id: ID!): Boolean!
 
-  updateAstrologerAvailability(
-    astrologerId: ID!
-    isChatActive: Boolean
-    isCallActive: Boolean
-    isLiveActive: Boolean
-  ): Astrologer!
+    updateAstrologerAvailability(
+      astrologerId: ID!
+      isChatActive: Boolean
+      isCallActive: Boolean
+      isLiveActive: Boolean
+    ): Astrologer!
+    toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): Review!
   }
 `;
 
