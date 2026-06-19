@@ -4267,7 +4267,7 @@ updateCouponStatus: async (_, { id, status }, context) => {
       status: String(status).toUpperCase() === "ACTIVE",
     },
   });
-};
+},
 
     updateCoupon: async (_, { id, input }, context) => {
   const { prisma } = context;
