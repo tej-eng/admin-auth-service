@@ -279,6 +279,7 @@ model Astrologer {
   isLiveActive Boolean @default(false)
   isBusy       Boolean @default(false)
   isOnline     Boolean @default(false)
+  isPromotional     Boolean @default(false)
 
   approvedBy Staff?     @relation("ApprovedAstrologers", fields: [approvedById], references: [id])
   createdBy  Staff?     @relation("CreatedAstrologers", fields: [createdById], references: [id])
