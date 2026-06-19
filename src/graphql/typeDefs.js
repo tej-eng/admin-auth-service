@@ -94,13 +94,38 @@ const typeDefs = gql`
     birthDate: String
     birthTime: DateTime
     occupation: String
+
     isActive: Boolean
     isDeleted: Boolean
+
     createdAt: DateTime
     updatedAt: DateTime
+
     userCoins: Float
     lockedCoins: Float
+
     wallet: UserWallet
+
+    stats: UserStats
+  }
+
+  type UserProfileStats {
+    walletBalance: Float
+
+    totalRecharge: Float
+    totalRechargeCount: Int
+
+    totalCalls: Int
+    totalChats: Int
+
+    totalReviews: Int
+
+    totalFollowing: Int
+
+    totalBookings: Int
+
+    lastRechargeAmount: Float
+    lastRechargeDate: String
   }
 
   #--------------------------------------#
@@ -1831,18 +1856,18 @@ const typeDefs = gql`
     data: [Message!]!
   }
 
-type DashboardCounts {
-  totalAstrologers: Int!
-  totalUsers: Int!
-  totalStaff: Int!
+  type DashboardCounts {
+    totalAstrologers: Int!
+    totalUsers: Int!
+    totalStaff: Int!
 
-  totalCalls: Int!
-  totalChats: Int!
+    totalCalls: Int!
+    totalChats: Int!
 
-  totalRevenue: Float!
+    totalRevenue: Float!
 
-  totalApplications: Int!
-}
+    totalApplications: Int!
+  }
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -1897,7 +1922,7 @@ type DashboardCounts {
     getModulesBySection(section: String!): [Module!]!
     getMyAccess: [ModuleAccess!]!
     getUsersListBySearch(searchInput: UserSearchInput!): UserList!
-
+    getUserById(userId: ID!): User
     getPendingAstrologers(page: Int, limit: Int): PaginatedAstrologers!
 
     getAstrologerInterviews(
@@ -2025,7 +2050,7 @@ type DashboardCounts {
     ): AstrologerSessionHistoryList!
 
     adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
-     getDashboardCounts: DashboardCounts!
+    getDashboardCounts: DashboardCounts!
   }
 
   type Mutation {

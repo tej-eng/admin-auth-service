@@ -3522,6 +3522,91 @@ export const resolvers = {
     throw new Error("Failed to fetch dashboard counts");
   }
 },
+
+getUserProfile: async (_, { userId }, { prisma }) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+
+      include: {
+        wallet: true,
+
+        reviews: true,
+
+        follows: true,
+
+        serviceBookings: true,
+
+        payments: {
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+
+        sessions: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const calls = user.sessions.filter(
+      (s) => s.type === "CALL"
+    );
+
+    const chats = user.sessions.filter(
+      (s) => s.type === "CHAT"
+    );
+
+    const totalRecharge =
+      user.payments.reduce(
+        (sum, p) => sum + (p.amount || 0),
+        0
+      );
+
+    const lastRecharge =
+      user.payments?.[0];
+
+    return {
+      ...user,
+
+      stats: {
+        walletBalance:
+          user.wallet?.balanceCoins || 0,
+
+        totalRecharge,
+
+        totalRechargeCount:
+          user.payments.length,
+
+        totalCalls: calls.length,
+
+        totalChats: chats.length,
+
+        totalReviews:
+          user.reviews.length,
+
+        totalFollowing:
+          user.follows.length,
+
+        totalBookings:
+          user.serviceBookings.length,
+
+        lastRechargeAmount:
+          lastRecharge?.amount || 0,
+
+        lastRechargeDate:
+          lastRecharge?.createdAt?.toISOString() ||
+          null,
+      },
+    };
+  } catch (err) {
+    throw new Error(err.message);
+  }
+},
   },
 
   // **********************************************START MUTATION**********************************
