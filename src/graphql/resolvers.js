@@ -3377,6 +3377,20 @@ export const resolvers = {
         ],
       });
     },
+    getNotices: async (_, __, { prisma }) => {
+  return prisma.notice.findMany({
+    include: {
+      astrologers: {
+        include: {
+          astrologer: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+},
 
     blogs: async () => {
       return await prisma.blog.findMany({
@@ -5941,6 +5955,50 @@ export const resolvers = {
         },
       });
     },
+    updateNotice: async (
+  _,
+  { id, input },
+  { prisma }
+) => {
+  const { astrologers, ...data } = input;
+
+  await prisma.notice.update({
+    where: { id },
+    data,
+  });
+
+  if (astrologers) {
+    await prisma.noticeAstrologer.deleteMany({
+      where: {
+        noticeId: id,
+      },
+    });
+
+    await prisma.noticeAstrologer.createMany({
+      data: astrologers.map(
+        (astrologerId) => ({
+          noticeId: id,
+          astrologerId,
+        })
+      ),
+    });
+  }
+
+  return prisma.notice.findUnique({
+    where: { id },
+  });
+},
+deleteNotice: async (
+  _,
+  { id },
+  { prisma }
+) => {
+  await prisma.notice.delete({
+    where: { id },
+  });
+
+  return true;
+},
 
     createBlog: async (_, { input }) => {
       const blog = await prisma.blog.create({
