@@ -4211,7 +4211,6 @@ export const resolvers = {
     },
 
     // ===============Coupons ++++++++++++++++++++++
-
     createCoupon: async (_, { input }, context) => {
       const { prisma } = context;
 
@@ -4233,11 +4232,11 @@ export const resolvers = {
 
           percentage: input.percentage,
 
-          max_discount: coupon.maxDiscount,
-          redeem_limit: coupon.redeemLimit,
+          maxDiscount: input.maxDiscount,
+          redeemLimit: input.redeemLimit,
 
-          start_date: coupon.startDate?.toISOString(),
-          end_date: coupon.endDate?.toISOString(),
+          startDate: new Date(input.startDate),
+          endDate: new Date(input.endDate),
         },
       });
     },
