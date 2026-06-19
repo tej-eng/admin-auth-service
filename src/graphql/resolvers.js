@@ -4218,26 +4218,26 @@ export const resolvers = {
       await checkPermission(context, "coupons.create");
 
       return prisma.coupon.create({
-      data: {
-    code: input.code,
-    description: input.description,
+        data: {
+          code: input.code,
+          description: input.description,
 
-    applicable: input.applicable,
+          applicable: input.applicable,
 
-    type: input.type,
-    visibility: input.visibility,
+          type: input.type,
+          visibility: input.visibility,
 
-    couponCount: input.couponCount || 0,
+          couponCount: input.couponCount || 0,
 
-    status: input.status === "active",
+          status: input.status?.toUpperCase() === "ACTIVE",
 
-    percentage: input.percentage,
-    maxDiscount: input.max_discount,
-    redeemLimit: input.redeem_limit,
+          percentage: input.percentage,
+          maxDiscount: input.max_discount,
+          redeemLimit: input.redeem_limit,
 
-    startDate: new Date(input.start_date),
-    endDate: new Date(input.end_date),
-  },
+          startDate: new Date(input.start_date),
+          endDate: new Date(input.end_date),
+        },
       });
     },
 
