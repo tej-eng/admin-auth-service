@@ -368,15 +368,14 @@ type Coupon {
   visibility: String!
 
   couponCount: Int
-
   status: Boolean
 
   percentage: Float
-  max_discount: Float
-  redeem_limit: Int
+  maxDiscount: Float
+  redeemLimit: Int
 
-  start_date: String
-  end_date: String
+  startDate: String
+  endDate: String
 
   createdAt: DateTime
   updatedAt: DateTime

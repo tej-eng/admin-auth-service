@@ -4232,11 +4232,12 @@ export const resolvers = {
           status: input.status?.toUpperCase() === "ACTIVE",
 
           percentage: input.percentage,
-          maxDiscount: input.max_discount,
-          redeemLimit: input.redeem_limit,
 
-          startDate: new Date(input.start_date),
-          endDate: new Date(input.end_date),
+          max_discount: coupon.maxDiscount,
+          redeem_limit: coupon.redeemLimit,
+
+          start_date: coupon.startDate?.toISOString(),
+          end_date: coupon.endDate?.toISOString(),
         },
       });
     },
