@@ -3465,6 +3465,63 @@ export const resolvers = {
         throw new Error(error.message || "Failed to fetch messages");
       }
     },
+
+   getDashboardCounts: async (_, __, { prisma }) => {
+  try {
+    const [
+      totalAstrologers,
+      totalUsers,
+      totalStaff,
+      totalCalls,
+      totalChats,
+      totalApplications,
+      revenueResult,
+    ] = await Promise.all([
+      prisma.astrologer.count(),
+
+      prisma.user.count(),
+
+      prisma.staff.count(),
+
+      prisma.session.count({
+        where: {
+          type: "CALL",
+        },
+      }),
+
+      prisma.session.count({
+        where: {
+          type: "CHAT",
+        },
+      }),
+
+      prisma.astrologerApplication.count(),
+
+      prisma.session.aggregate({
+        _sum: {
+          coinsDeducted: true,
+        },
+      }),
+    ]);
+
+    return {
+      totalAstrologers,
+      totalUsers,
+      totalStaff,
+
+      totalCalls,
+      totalChats,
+
+      totalApplications,
+
+      totalRevenue:
+        revenueResult._sum.coinsDeducted || 0,
+    };
+  } catch (error) {
+    console.log(error);
+    throw new Error("Failed to fetch dashboard counts");
+  }
+},
   },
 
   // **********************************************START MUTATION**********************************
@@ -4256,85 +4313,85 @@ export const resolvers = {
       }
     },
 
-updateCouponStatus: async (_, { id, status }, context) => {
-  const { prisma } = context;
+    updateCouponStatus: async (_, { id, status }, context) => {
+      const { prisma } = context;
 
-  await checkPermission(context, "coupons.update");
+      await checkPermission(context, "coupons.update");
 
-  return prisma.coupon.update({
-    where: { id },
-    data: {
-      status: String(status).toUpperCase() === "ACTIVE",
+      return prisma.coupon.update({
+        where: { id },
+        data: {
+          status: String(status).toUpperCase() === "ACTIVE",
+        },
+      });
     },
-  });
-},
 
     updateCoupon: async (_, { id, input }, context) => {
-  const { prisma } = context;
+      const { prisma } = context;
 
-  await checkPermission(context, "coupons.update");
+      await checkPermission(context, "coupons.update");
 
-  const existingCoupon = await prisma.coupon.findUnique({
-    where: { id },
-  });
+      const existingCoupon = await prisma.coupon.findUnique({
+        where: { id },
+      });
 
-  if (!existingCoupon) {
-    throw new Error("Coupon not found");
-  }
+      if (!existingCoupon) {
+        throw new Error("Coupon not found");
+      }
 
-  return prisma.coupon.update({
-    where: { id },
-    data: {
-      ...(input.code !== undefined && {
-        code: input.code.trim(),
-      }),
+      return prisma.coupon.update({
+        where: { id },
+        data: {
+          ...(input.code !== undefined && {
+            code: input.code.trim(),
+          }),
 
-      ...(input.description !== undefined && {
-        description: input.description,
-      }),
+          ...(input.description !== undefined && {
+            description: input.description,
+          }),
 
-      ...(input.applicable !== undefined && {
-        applicable: input.applicable,
-      }),
+          ...(input.applicable !== undefined && {
+            applicable: input.applicable,
+          }),
 
-      ...(input.type !== undefined && {
-        type: input.type,
-      }),
+          ...(input.type !== undefined && {
+            type: input.type,
+          }),
 
-      ...(input.visibility !== undefined && {
-        visibility: input.visibility,
-      }),
+          ...(input.visibility !== undefined && {
+            visibility: input.visibility,
+          }),
 
-      ...(input.status !== undefined && {
-        status: input.status.toUpperCase() === "ACTIVE",
-      }),
+          ...(input.status !== undefined && {
+            status: input.status.toUpperCase() === "ACTIVE",
+          }),
 
-      ...(input.couponCount !== undefined && {
-        couponCount: input.couponCount,
-      }),
+          ...(input.couponCount !== undefined && {
+            couponCount: input.couponCount,
+          }),
 
-      ...(input.percentage !== undefined && {
-        percentage: input.percentage,
-      }),
+          ...(input.percentage !== undefined && {
+            percentage: input.percentage,
+          }),
 
-      ...(input.maxDiscount !== undefined && {
-        maxDiscount: input.maxDiscount,
-      }),
+          ...(input.maxDiscount !== undefined && {
+            maxDiscount: input.maxDiscount,
+          }),
 
-      ...(input.redeemLimit !== undefined && {
-        redeemLimit: input.redeemLimit,
-      }),
+          ...(input.redeemLimit !== undefined && {
+            redeemLimit: input.redeemLimit,
+          }),
 
-      ...(input.startDate && {
-        startDate: new Date(input.startDate),
-      }),
+          ...(input.startDate && {
+            startDate: new Date(input.startDate),
+          }),
 
-      ...(input.endDate && {
-        endDate: new Date(input.endDate),
-      }),
+          ...(input.endDate && {
+            endDate: new Date(input.endDate),
+          }),
+        },
+      });
     },
-  });
-},
 
     // ****************************** Modules ********************
 

@@ -1830,6 +1830,19 @@ const typeDefs = gql`
     totalCount: Int!
     data: [Message!]!
   }
+
+type DashboardCounts {
+  totalAstrologers: Int!
+  totalUsers: Int!
+  totalStaff: Int!
+
+  totalCalls: Int!
+  totalChats: Int!
+
+  totalRevenue: Float!
+
+  totalApplications: Int!
+}
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -2012,6 +2025,7 @@ const typeDefs = gql`
     ): AstrologerSessionHistoryList!
 
     adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
+     getDashboardCounts: DashboardCounts!
   }
 
   type Mutation {
