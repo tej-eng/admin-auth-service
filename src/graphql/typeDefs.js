@@ -94,7 +94,7 @@ const typeDefs = gql`
     birthDate: String
     birthTime: DateTime
     occupation: String
-
+ countryCode: String
     isActive: Boolean
     isDeleted: Boolean
 
@@ -111,7 +111,7 @@ const typeDefs = gql`
 
 type UserStats {
   totalRecharge: Float
-
+ walletBalance: Float
   totalRechargeCount: Int
 
   totalCalls: Int
