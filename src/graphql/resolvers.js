@@ -1021,6 +1021,7 @@ export const resolvers = {
 
         const formattedData = sessions.map((session) => ({
           sessionId: session.id,
+          userId: session.userId,
 
           userId: session.user?.id || null,
           userName: session.user?.name || "",
@@ -3466,147 +3467,132 @@ export const resolvers = {
       }
     },
 
-   getDashboardCounts: async (_, __, { prisma }) => {
-  try {
-    const [
-      totalAstrologers,
-      totalUsers,
-      totalStaff,
-      totalCalls,
-      totalChats,
-      totalApplications,
-      revenueResult,
-    ] = await Promise.all([
-      prisma.astrologer.count(),
+    getDashboardCounts: async (_, __, { prisma }) => {
+      try {
+        const [
+          totalAstrologers,
+          totalUsers,
+          totalStaff,
+          totalCalls,
+          totalChats,
+          totalApplications,
+          revenueResult,
+        ] = await Promise.all([
+          prisma.astrologer.count(),
 
-      prisma.user.count(),
+          prisma.user.count(),
 
-      prisma.staff.count(),
+          prisma.staff.count(),
 
-      prisma.session.count({
-        where: {
-          type: "CALL",
-        },
-      }),
+          prisma.session.count({
+            where: {
+              type: "CALL",
+            },
+          }),
 
-      prisma.session.count({
-        where: {
-          type: "CHAT",
-        },
-      }),
+          prisma.session.count({
+            where: {
+              type: "CHAT",
+            },
+          }),
 
-      prisma.astrologerApplication.count(),
+          prisma.astrologerApplication.count(),
 
-      prisma.session.aggregate({
-        _sum: {
-          coinsDeducted: true,
-        },
-      }),
-    ]);
+          prisma.session.aggregate({
+            _sum: {
+              coinsDeducted: true,
+            },
+          }),
+        ]);
 
-    return {
-      totalAstrologers,
-      totalUsers,
-      totalStaff,
+        return {
+          totalAstrologers,
+          totalUsers,
+          totalStaff,
 
-      totalCalls,
-      totalChats,
+          totalCalls,
+          totalChats,
 
-      totalApplications,
+          totalApplications,
 
-      totalRevenue:
-        revenueResult._sum.coinsDeducted || 0,
-    };
-  } catch (error) {
-    console.log(error);
-    throw new Error("Failed to fetch dashboard counts");
-  }
-},
+          totalRevenue: revenueResult._sum.coinsDeducted || 0,
+        };
+      } catch (error) {
+        console.log(error);
+        throw new Error("Failed to fetch dashboard counts");
+      }
+    },
 
-getUserProfile: async (_, { userId }, { prisma }) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: {
-        id: userId,
-      },
-
-      include: {
-        wallet: true,
-
-        reviews: true,
-
-        follows: true,
-
-        serviceBookings: true,
-
-        payments: {
-          orderBy: {
-            createdAt: "desc",
+    getUserProfile: async (_, { userId }, { prisma }) => {
+      try {
+        const user = await prisma.user.findUnique({
+          where: {
+            id: userId,
           },
-        },
 
-        sessions: true,
-      },
-    });
+          include: {
+            wallet: true,
 
-    if (!user) {
-      throw new Error("User not found");
-    }
+            reviews: true,
 
-    const calls = user.sessions.filter(
-      (s) => s.type === "CALL"
-    );
+            follows: true,
 
-    const chats = user.sessions.filter(
-      (s) => s.type === "CHAT"
-    );
+            serviceBookings: true,
 
-    const totalRecharge =
-      user.payments.reduce(
-        (sum, p) => sum + (p.amount || 0),
-        0
-      );
+            payments: {
+              orderBy: {
+                createdAt: "desc",
+              },
+            },
 
-    const lastRecharge =
-      user.payments?.[0];
+            sessions: true,
+          },
+        });
 
-    return {
-      ...user,
+        if (!user) {
+          throw new Error("User not found");
+        }
 
-      stats: {
-        walletBalance:
-          user.wallet?.balanceCoins || 0,
+        const calls = user.sessions.filter((s) => s.type === "CALL");
 
-        totalRecharge,
+        const chats = user.sessions.filter((s) => s.type === "CHAT");
 
-        totalRechargeCount:
-          user.payments.length,
+        const totalRecharge = user.payments.reduce(
+          (sum, p) => sum + (p.amount || 0),
+          0,
+        );
 
-        totalCalls: calls.length,
+        const lastRecharge = user.payments?.[0];
 
-        totalChats: chats.length,
+        return {
+          ...user,
 
-        totalReviews:
-          user.reviews.length,
+          stats: {
+            walletBalance: user.wallet?.balanceCoins || 0,
 
-        totalFollowing:
-          user.follows.length,
+            totalRecharge,
 
-        totalBookings:
-          user.serviceBookings.length,
+            totalRechargeCount: user.payments.length,
 
-        lastRechargeAmount:
-          lastRecharge?.amount || 0,
+            totalCalls: calls.length,
 
-        lastRechargeDate:
-          lastRecharge?.createdAt?.toISOString() ||
-          null,
-      },
-    };
-  } catch (err) {
-    throw new Error(err.message);
-  }
-},
+            totalChats: chats.length,
+
+            totalReviews: user.reviews.length,
+
+            totalFollowing: user.follows.length,
+
+            totalBookings: user.serviceBookings.length,
+
+            lastRechargeAmount: lastRecharge?.amount || 0,
+
+            lastRechargeDate: lastRecharge?.createdAt?.toISOString() || null,
+          },
+        };
+      } catch (err) {
+        throw new Error(err.message);
+      }
+    },
   },
 
   // **********************************************START MUTATION**********************************
