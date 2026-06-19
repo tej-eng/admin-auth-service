@@ -1686,7 +1686,7 @@ enum NoticeTargetType {
 
     astrologers: [Astrologer]
 
-    isPinned: Boolean
+    isPinned: Boolean!
     isActive: Boolean
 
     startDate: String
@@ -1703,7 +1703,7 @@ enum NoticeTargetType {
 
     astrologers: [ID]
 
-    isPinned: Boolean
+  isActive: Boolean
 
     startDate: String
 
