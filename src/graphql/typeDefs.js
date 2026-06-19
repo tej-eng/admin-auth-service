@@ -109,24 +109,25 @@ const typeDefs = gql`
     stats: UserStats
   }
 
-  type UserProfileStats {
-    walletBalance: Float
+type UserStats {
+  totalRecharge: Float
 
-    totalRecharge: Float
-    totalRechargeCount: Int
+  totalRechargeCount: Int
 
-    totalCalls: Int
-    totalChats: Int
+  totalCalls: Int
 
-    totalReviews: Int
+  totalChats: Int
 
-    totalFollowing: Int
+  totalReviews: Int
 
-    totalBookings: Int
+  totalFollowing: Int
 
-    lastRechargeAmount: Float
-    lastRechargeDate: String
-  }
+  totalBookings: Int
+
+  lastRechargeAmount: Float
+
+  lastRechargeDate: String
+}
 
   #--------------------------------------#
   input PricingInput {
@@ -1922,7 +1923,7 @@ const typeDefs = gql`
     getModulesBySection(section: String!): [Module!]!
     getMyAccess: [ModuleAccess!]!
     getUsersListBySearch(searchInput: UserSearchInput!): UserList!
-    getUserById(userId: ID!): User
+     getUserProfile(userId: ID!): User
     getPendingAstrologers(page: Int, limit: Int): PaginatedAstrologers!
 
     getAstrologerInterviews(
