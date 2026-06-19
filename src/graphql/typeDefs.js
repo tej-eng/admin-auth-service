@@ -30,15 +30,15 @@ const typeDefs = gql`
     APPROVED
     REJECTED
   }
-enum CouponType {
-  CASHBACK
-  DISCOUNT
-}
+  enum CouponType {
+    CASHBACK
+    DISCOUNT
+  }
 
-enum CouponVisibility {
-  VISIBLE
-  HIDDEN
-}
+  enum CouponVisibility {
+    VISIBLE
+    HIDDEN
+  }
 
   enum InterviewStatus {
     SCHEDULED
@@ -337,67 +337,67 @@ enum CouponVisibility {
   #-----------END OF RECHARGE PACKS-----------------#
 
   #------------Coupon ____------------------------_#
-input CreateCouponInput {
-  code: String!
-  description: String
-  applicable: String
+  input CreateCouponInput {
+    code: String!
+    description: String
+    applicable: String
 
-  type: String!
-  visibility: String!
-  status: String!
+    type: String!
+    visibility: String!
+    status: String!
 
-  couponCount: Int
+    couponCount: Int
 
-  percentage: Float
-  maxDiscount: Float
-  redeemLimit: Int
+    percentage: Float
+    maxDiscount: Float
+    redeemLimit: Int
 
-  startDate: String!
-  endDate: String!
-}
+    startDate: String!
+    endDate: String!
+  }
 
-type Coupon {
-  id: ID!
-  code: String!
-  description: String
+  type Coupon {
+    id: ID!
+    code: String!
+    description: String
 
-  applicable: String
+    applicable: String
 
-  type: String!
-  visibility: String!
+    type: String!
+    visibility: String!
 
-  couponCount: Int
-  status: Boolean
+    couponCount: Int
+    status: Boolean
 
-  percentage: Float
-  maxDiscount: Float
-  redeemLimit: Int
+    percentage: Float
+    maxDiscount: Float
+    redeemLimit: Int
 
-  startDate: String
-  endDate: String
+    startDate: String
+    endDate: String
 
-  createdAt: DateTime
-  updatedAt: DateTime
-}
-input UpdateCouponInput {
-  code: String
-  description: String
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
+  input UpdateCouponInput {
+    code: String
+    description: String
 
-  applicable: String
+    applicable: String
 
-  type: String
-  status: String
-  visibility: String
+    type: String
+    status: String
+    visibility: String
 
-  couponCount: Int
+    couponCount: Int
 
-  percentage: Float
-  maxDiscount: Float
-  redeemLimit: Int
+    percentage: Float
+    maxDiscount: Float
+    redeemLimit: Int
 
-  startDate: String
-  endDate: String
-}
+    startDate: String
+    endDate: String
+  }
 
   #-----------------------------START Wallet MANAGEMENT-----------------#
   type Wallet {
@@ -1154,7 +1154,7 @@ input UpdateCouponInput {
 
     astrologerId: ID
     astrologerName: String
-      displayName: String
+    displayName: String
 
     sessionType: String
     sessionStatus: String
@@ -1807,29 +1807,29 @@ input UpdateCouponInput {
     currentPage: Int!
     totalPages: Int!
   }
-    type ToggleReviewResponse {
-  success: Boolean!
-  message: String!
-}
+  type ToggleReviewResponse {
+    success: Boolean!
+    message: String!
+  }
 
-type Message {
-  id: ID
-  msgId: String
-  roomId: String
-  senderId: String
-  receiverId: String
-  message: String
-  image: String
-  sender: String
-  replyTo: String
-  createdAt: String
-}
+  type Message {
+    id: ID
+    msgId: String
+    roomId: String
+    senderId: String
+    receiverId: String
+    message: String
+    image: String
+    sender: String
+    replyTo: String
+    createdAt: String
+  }
 
-type SessionMessagesResponse {
-  success: Boolean!
-  totalCount: Int!
-  data: [Message!]!
-}
+  type SessionMessagesResponse {
+    success: Boolean!
+    totalCount: Int!
+    data: [Message!]!
+  }
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -2011,7 +2011,7 @@ type SessionMessagesResponse {
       limit: Int
     ): AstrologerSessionHistoryList!
 
-      adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
+    adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
   }
 
   type Mutation {
@@ -2279,7 +2279,8 @@ type SessionMessagesResponse {
       isCallActive: Boolean
       isLiveActive: Boolean
     ): Astrologer!
-  toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): ToggleReviewResponse!
+    toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): ToggleReviewResponse!
+    updateCoupon(id: ID!, input: UpdateCouponInput!): Coupon!
   }
 `;
 
