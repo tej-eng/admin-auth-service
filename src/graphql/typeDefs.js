@@ -201,6 +201,7 @@ type UserStats {
     isLiveActive: Boolean!
     isBusy: Boolean!
     isOnline: Boolean!
+      isPromotional: Boolean!
 
     createdAt: DateTime
     updatedAt: DateTime
@@ -1672,13 +1673,16 @@ type UserStats {
     currentPage: Int!
     totalPages: Int!
   }
-
+enum NoticeTargetType {
+  ALL
+  SELECTED
+}
   type Notice {
     id: ID!
     title: String!
     description: String!
 
-    targetType: String!
+    targetType: NoticeTargetType!
 
     astrologers: [Astrologer]
 
@@ -1695,7 +1699,7 @@ type UserStats {
 
     description: String!
 
-    targetType: String!
+    targetType: NoticeTargetType!
 
     astrologers: [ID]
 
@@ -1705,6 +1709,19 @@ type UserStats {
 
     endDate: String
   }
+    input UpdateNoticeInput {
+  title: String
+  description: String
+
+  targetType: NoticeTargetType
+
+  astrologers: [ID]
+
+  isActive: Boolean
+
+  startDate: String
+  endDate: String
+}
   type Blog {
     id: ID!
 
@@ -2024,7 +2041,7 @@ type UserStats {
       toDate: String
     ): GiftHistoryResponse!
 
-    getNotices: [Notice]
+  
 
     getAstrologerNotices: [Notice]
 
@@ -2052,6 +2069,12 @@ type UserStats {
 
     adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
     getDashboardCounts: DashboardCounts!
+    updateNotice(
+  id: ID!
+  input: UpdateNoticeInput!
+): Notice!
+deleteNotice(id: ID!): Boolean!
+  getNotices: [Notice!]!
   }
 
   type Mutation {
@@ -2313,12 +2336,13 @@ type UserStats {
 
     deleteBlogCategory(id: ID!): Boolean!
 
-    updateAstrologerAvailability(
-      astrologerId: ID!
-      isChatActive: Boolean
-      isCallActive: Boolean
-      isLiveActive: Boolean
-    ): Astrologer!
+   updateAstrologerAvailability(
+  astrologerId: ID!
+  isChatActive: Boolean
+  isCallActive: Boolean
+  isLiveActive: Boolean
+  isPromotional: Boolean
+): Astrologer!
     toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): ToggleReviewResponse!
     updateCoupon(id: ID!, input: UpdateCouponInput!): Coupon!
   }
