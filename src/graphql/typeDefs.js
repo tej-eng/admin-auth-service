@@ -379,7 +379,7 @@ type Coupon {
   createdAt: DateTime
   updatedAt: DateTime
 }
-  input UpdateCouponInput {
+input UpdateCouponInput {
   code: String
   description: String
 
@@ -387,8 +387,8 @@ type Coupon {
 
   type: String
   status: String
-
   visibility: String
+
   couponCount: Int
 
   percentage: Float

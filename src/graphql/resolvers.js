@@ -4256,23 +4256,85 @@ export const resolvers = {
       }
     },
 
-    updateCouponStatus: async (_, { id, status }, context) => {
-      const { prisma } = context;
-      await checkPermission(context, "coupons.update");
+updateCouponStatus: async (_, { id, status }, context) => {
+  const { prisma } = context;
 
-      try {
-        const updated = await prisma.coupon.update({
-          where: { id },
-          data: {
-            status: status === "active",
-          },
-        });
+  await checkPermission(context, "coupons.update");
 
-        return updated;
-      } catch (error) {
-        throw error;
-      }
+  return prisma.coupon.update({
+    where: { id },
+    data: {
+      status: String(status).toUpperCase() === "ACTIVE",
     },
+  });
+};
+
+    updateCoupon: async (_, { id, input }, context) => {
+  const { prisma } = context;
+
+  await checkPermission(context, "coupons.update");
+
+  const existingCoupon = await prisma.coupon.findUnique({
+    where: { id },
+  });
+
+  if (!existingCoupon) {
+    throw new Error("Coupon not found");
+  }
+
+  return prisma.coupon.update({
+    where: { id },
+    data: {
+      ...(input.code !== undefined && {
+        code: input.code.trim(),
+      }),
+
+      ...(input.description !== undefined && {
+        description: input.description,
+      }),
+
+      ...(input.applicable !== undefined && {
+        applicable: input.applicable,
+      }),
+
+      ...(input.type !== undefined && {
+        type: input.type,
+      }),
+
+      ...(input.visibility !== undefined && {
+        visibility: input.visibility,
+      }),
+
+      ...(input.status !== undefined && {
+        status: input.status.toUpperCase() === "ACTIVE",
+      }),
+
+      ...(input.couponCount !== undefined && {
+        couponCount: input.couponCount,
+      }),
+
+      ...(input.percentage !== undefined && {
+        percentage: input.percentage,
+      }),
+
+      ...(input.maxDiscount !== undefined && {
+        maxDiscount: input.maxDiscount,
+      }),
+
+      ...(input.redeemLimit !== undefined && {
+        redeemLimit: input.redeemLimit,
+      }),
+
+      ...(input.startDate && {
+        startDate: new Date(input.startDate),
+      }),
+
+      ...(input.endDate && {
+        endDate: new Date(input.endDate),
+      }),
+    },
+  });
+},
 
     // ****************************** Modules ********************
 
