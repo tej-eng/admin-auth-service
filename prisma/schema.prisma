@@ -1467,3 +1467,31 @@ model BlogCategoryMapping {
 
   @@id([blogId, blogCategoryId])
 }
+
+//------------tables for live streaming----------------
+model LiveStream {
+  id            String   @id @default(uuid())
+
+  astrologerId  String
+  astrologer    Astrologer @relation(fields: [astrologerId], references: [id])
+
+  title         String
+
+  channelName   String @unique
+
+  status        LiveStatus @default(LIVE)
+
+  viewersCount  Int @default(0)
+
+  startedAt     DateTime @default(now())
+
+  endedAt       DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum LiveStatus {
+  LIVE
+  ENDED
+}
