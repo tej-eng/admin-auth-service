@@ -1890,6 +1890,7 @@ enum NoticeTargetType {
 
   type Query {
     freeServices: [FreeService!]!
+      getAppVersions: [AppVersion!]!
     getLatestAppVersion(platform: PlatformType!): AppVersion
     #cmss page #
     getAboutPage: AboutPage
@@ -2085,7 +2086,7 @@ deleteNotice(id: ID!): Boolean!
     ): RefundPolicyPage
     upsertDisclaimerPage(input: UpdateDisclaimerPageInput!): DisclaimerPage
     uploadImage(file: Upload!): UploadResponse
-
+  deleteAppVersion(id: ID!): Boolean!
     createBanner(input: BannerInput!): Banner
     updateBanner(id: ID!, input: BannerInput!): Banner
     deleteBanner(id: ID!): Boolean
