@@ -1472,28 +1472,26 @@ model BlogCategoryMapping {
 
 //------------tables for live streaming----------------
 model LiveStream {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
 
   astrologerId  String
-  astrologer    Astrologer @relation(fields: [astrologerId], references: [id])
+  astrologer    Astrologer  @relation(fields: [astrologerId], references: [id])
 
   title         String
 
-  channelName   String @unique
+  channelName   String
 
-  status        LiveStatus @default(LIVE)
+  status        LiveStatus  @default(SCHEDULED)
 
-  viewersCount  Int @default(0)
+  scheduledAt   DateTime?
 
-  startedAt     DateTime @default(now())
+  createdAt     DateTime    @default(now())
 
   endedAt       DateTime?
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
 }
 
 enum LiveStatus {
+  SCHEDULED
   LIVE
   ENDED
 }
