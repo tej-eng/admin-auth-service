@@ -935,12 +935,12 @@ model KycDetail {
   aadhaarImage  String?
   panImage      String?
   passbookImage String?
-  astrologer    Astrologer     @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
+  astrologer    Astrologer?     @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
   status        DocumentStatus @default(PENDING)
 
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  astrologerId String   @unique
+  astrologerId String?   @unique
 }
 
 model Notification {
