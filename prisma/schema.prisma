@@ -302,6 +302,8 @@ model Astrologer {
   serviceBookings   ServiceBooking[]
   noticeAstrologers NoticeAstrologer[]
 
+  liveStreams LiveStream[]
+
   @@index([rating])
   @@index([experience])
 }
