@@ -2990,7 +2990,6 @@ export const resolvers = {
     },
 
     getBanners: async (_, __, context) => {
-      4;
       const { prisma } = context;
       await checkPermission(context, "banners.read");
 
@@ -5154,7 +5153,6 @@ export const resolvers = {
       });
     },
 
-
     updateFaq: async (_, { id, input }, context) => {
       await checkPermission(context, "faqs.update");
 
@@ -5180,9 +5178,10 @@ export const resolvers = {
     // banners
     createBanner: async (_, { input }, context) => {
       const { prisma } = context;
+
       await checkPermission(context, "banners.create");
 
-      return await prisma.banner.create({
+      return prisma.banner.create({
         data: {
           heading: input.heading,
           subheading: input.subheading,
@@ -5197,13 +5196,12 @@ export const resolvers = {
 
     updateBanner: async (_, { id, input }, context) => {
       const { prisma } = context;
+
       await checkPermission(context, "banners.update");
 
-      return await prisma.banner.update({
+      return prisma.banner.update({
         where: { id },
-        data: {
-          ...input,
-        },
+        data: input,
       });
     },
 
@@ -6169,12 +6167,12 @@ export const resolvers = {
       };
     },
     deleteAppVersion: async (_, { id }, { prisma }) => {
-  await prisma.appVersion.delete({
-    where: { id },
-  });
+      await prisma.appVersion.delete({
+        where: { id },
+      });
 
-  return true;
-},
+      return true;
+    },
   },
 
   Blog: {
