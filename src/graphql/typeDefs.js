@@ -94,7 +94,7 @@ const typeDefs = gql`
     birthDate: String
     birthTime: DateTime
     occupation: String
- countryCode: String
+    countryCode: String
     isActive: Boolean
     isDeleted: Boolean
 
@@ -109,25 +109,25 @@ const typeDefs = gql`
     stats: UserStats
   }
 
-type UserStats {
-  totalRecharge: Float
- walletBalance: Float
-  totalRechargeCount: Int
+  type UserStats {
+    totalRecharge: Float
+    walletBalance: Float
+    totalRechargeCount: Int
 
-  totalCalls: Int
+    totalCalls: Int
 
-  totalChats: Int
+    totalChats: Int
 
-  totalReviews: Int
+    totalReviews: Int
 
-  totalFollowing: Int
+    totalFollowing: Int
 
-  totalBookings: Int
+    totalBookings: Int
 
-  lastRechargeAmount: Float
+    lastRechargeAmount: Float
 
-  lastRechargeDate: String
-}
+    lastRechargeDate: String
+  }
 
   #--------------------------------------#
   input PricingInput {
@@ -201,7 +201,7 @@ type UserStats {
     isLiveActive: Boolean!
     isBusy: Boolean!
     isOnline: Boolean!
-      isPromotional: Boolean!
+    isPromotional: Boolean!
 
     createdAt: DateTime
     updatedAt: DateTime
@@ -683,7 +683,7 @@ type UserStats {
     updatedAt: String
   }
 
-  input BannerInput {
+  input CreateBannerInput {
     heading: String!
     subheading: String
     slug: String!
@@ -691,6 +691,17 @@ type UserStats {
     bannerlink: String
     language: String
     imageUrl: String
+  }
+
+  input UpdateBannerInput {
+    heading: String
+    subheading: String
+    slug: String
+    sortorder: Int
+    bannerlink: String
+    language: String
+    imageUrl: String
+    status: Boolean
   }
 
   #-------------------- pricing --------------#
@@ -1673,10 +1684,10 @@ type UserStats {
     currentPage: Int!
     totalPages: Int!
   }
-enum NoticeTargetType {
-  ALL
-  SELECTED
-}
+  enum NoticeTargetType {
+    ALL
+    SELECTED
+  }
   type Notice {
     id: ID!
     title: String!
@@ -1703,25 +1714,25 @@ enum NoticeTargetType {
 
     astrologers: [ID]
 
-  isActive: Boolean
+    isActive: Boolean
 
     startDate: String
 
     endDate: String
   }
-    input UpdateNoticeInput {
-  title: String
-  description: String
+  input UpdateNoticeInput {
+    title: String
+    description: String
 
-  targetType: NoticeTargetType
+    targetType: NoticeTargetType
 
-  astrologers: [ID]
+    astrologers: [ID]
 
-  isActive: Boolean
+    isActive: Boolean
 
-  startDate: String
-  endDate: String
-}
+    startDate: String
+    endDate: String
+  }
   type Blog {
     id: ID!
 
@@ -1890,7 +1901,7 @@ enum NoticeTargetType {
 
   type Query {
     freeServices: [FreeService!]!
-      getAppVersions: [AppVersion!]!
+    getAppVersions: [AppVersion!]!
     getLatestAppVersion(platform: PlatformType!): AppVersion
     #cmss page #
     getAboutPage: AboutPage
@@ -1915,7 +1926,7 @@ enum NoticeTargetType {
     getPendingApplications: [AstrologerApplication]
     getInterviewers: [Staff]
 
-    getBanners: [Banner]
+    getBanners: [Banner!]!
 
     faqs: [Faq!]!
     faq(id: ID!): Faq
@@ -1941,7 +1952,7 @@ enum NoticeTargetType {
     getModulesBySection(section: String!): [Module!]!
     getMyAccess: [ModuleAccess!]!
     getUsersListBySearch(searchInput: UserSearchInput!): UserList!
-     getUserProfile(userId: ID!): User
+    getUserProfile(userId: ID!): User
     getPendingAstrologers(page: Int, limit: Int): PaginatedAstrologers!
 
     getAstrologerInterviews(
@@ -2042,8 +2053,6 @@ enum NoticeTargetType {
       toDate: String
     ): GiftHistoryResponse!
 
-  
-
     getAstrologerNotices: [Notice]
 
     blogs: [Blog!]!
@@ -2070,12 +2079,9 @@ enum NoticeTargetType {
 
     adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
     getDashboardCounts: DashboardCounts!
-    updateNotice(
-  id: ID!
-  input: UpdateNoticeInput!
-): Notice!
-deleteNotice(id: ID!): Boolean!
-  getNotices: [Notice!]!
+    updateNotice(id: ID!, input: UpdateNoticeInput!): Notice!
+    deleteNotice(id: ID!): Boolean!
+    getNotices: [Notice!]!
   }
 
   type Mutation {
@@ -2086,10 +2092,10 @@ deleteNotice(id: ID!): Boolean!
     ): RefundPolicyPage
     upsertDisclaimerPage(input: UpdateDisclaimerPageInput!): DisclaimerPage
     uploadImage(file: Upload!): UploadResponse
-  deleteAppVersion(id: ID!): Boolean!
-    createBanner(input: BannerInput!): Banner
-    updateBanner(id: ID!, input: BannerInput!): Banner
-    deleteBanner(id: ID!): Boolean
+    deleteAppVersion(id: ID!): Boolean!
+    createBanner(input: CreateBannerInput!): Banner!
+    updateBanner(id: ID!, input: UpdateBannerInput!): Banner!
+    deleteBanner(id: ID!): Boolean!
 
     createFaq(input: CreateFaqInput!): Faq!
     updateFaq(id: ID!, input: UpdateFaqInput!): Faq!
@@ -2337,13 +2343,13 @@ deleteNotice(id: ID!): Boolean!
 
     deleteBlogCategory(id: ID!): Boolean!
 
-   updateAstrologerAvailability(
-  astrologerId: ID!
-  isChatActive: Boolean
-  isCallActive: Boolean
-  isLiveActive: Boolean
-  isPromotional: Boolean
-): Astrologer!
+    updateAstrologerAvailability(
+      astrologerId: ID!
+      isChatActive: Boolean
+      isCallActive: Boolean
+      isLiveActive: Boolean
+      isPromotional: Boolean
+    ): Astrologer!
     toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): ToggleReviewResponse!
     updateCoupon(id: ID!, input: UpdateCouponInput!): Coupon!
   }
