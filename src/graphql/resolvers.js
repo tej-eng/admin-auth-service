@@ -3211,6 +3211,13 @@ export const resolvers = {
         },
       });
     },
+    getAppVersions: async (_, __, { prisma }) => {
+      return prisma.appVersion.findMany({
+        orderBy: {
+          updatedAt: "desc",
+        },
+      });
+    },
 
     freeServices: async () => {
       return await prisma.freeService.findMany({
@@ -3378,19 +3385,19 @@ export const resolvers = {
       });
     },
     getNotices: async (_, __, { prisma }) => {
-  return prisma.notice.findMany({
-    include: {
-      astrologers: {
+      return prisma.notice.findMany({
         include: {
-          astrologer: true,
+          astrologers: {
+            include: {
+              astrologer: true,
+            },
+          },
         },
-      },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-},
 
     blogs: async () => {
       return await prisma.blog.findMany({
@@ -5147,6 +5154,7 @@ export const resolvers = {
       });
     },
 
+
     updateFaq: async (_, { id, input }, context) => {
       await checkPermission(context, "faqs.update");
 
@@ -5955,50 +5963,40 @@ export const resolvers = {
         },
       });
     },
-    updateNotice: async (
-  _,
-  { id, input },
-  { prisma }
-) => {
-  const { astrologers, ...data } = input;
+    updateNotice: async (_, { id, input }, { prisma }) => {
+      const { astrologers, ...data } = input;
 
-  await prisma.notice.update({
-    where: { id },
-    data,
-  });
+      await prisma.notice.update({
+        where: { id },
+        data,
+      });
 
-  if (astrologers) {
-    await prisma.noticeAstrologer.deleteMany({
-      where: {
-        noticeId: id,
-      },
-    });
+      if (astrologers) {
+        await prisma.noticeAstrologer.deleteMany({
+          where: {
+            noticeId: id,
+          },
+        });
 
-    await prisma.noticeAstrologer.createMany({
-      data: astrologers.map(
-        (astrologerId) => ({
-          noticeId: id,
-          astrologerId,
-        })
-      ),
-    });
-  }
+        await prisma.noticeAstrologer.createMany({
+          data: astrologers.map((astrologerId) => ({
+            noticeId: id,
+            astrologerId,
+          })),
+        });
+      }
 
-  return prisma.notice.findUnique({
-    where: { id },
-  });
-},
-deleteNotice: async (
-  _,
-  { id },
-  { prisma }
-) => {
-  await prisma.notice.delete({
-    where: { id },
-  });
+      return prisma.notice.findUnique({
+        where: { id },
+      });
+    },
+    deleteNotice: async (_, { id }, { prisma }) => {
+      await prisma.notice.delete({
+        where: { id },
+      });
 
-  return true;
-},
+      return true;
+    },
 
     createBlog: async (_, { input }) => {
       const blog = await prisma.blog.create({
@@ -6170,6 +6168,13 @@ deleteNotice: async (
         message: "Review flag updated successfully",
       };
     },
+    deleteAppVersion: async (_, { id }, { prisma }) => {
+  await prisma.appVersion.delete({
+    where: { id },
+  });
+
+  return true;
+},
   },
 
   Blog: {
