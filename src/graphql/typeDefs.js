@@ -2352,6 +2352,11 @@ const typeDefs = gql`
     ): Astrologer!
     toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): ToggleReviewResponse!
     updateCoupon(id: ID!, input: UpdateCouponInput!): Coupon!
+
+      updateReviewComment(
+    reviewId: ID!
+    comment: String!
+  ): UserReview!
   }
 `;
 

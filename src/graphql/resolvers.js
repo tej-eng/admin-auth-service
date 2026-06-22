@@ -6173,6 +6173,19 @@ export const resolvers = {
 
       return true;
     },
+
+    updateReviewComment: async (_, { reviewId, comment }, { prisma }) => {
+      const review = await prisma.userReview.update({
+        where: {
+          reviewId,
+        },
+        data: {
+          comment,
+        },
+      });
+
+      return review;
+    },
   },
 
   Blog: {
