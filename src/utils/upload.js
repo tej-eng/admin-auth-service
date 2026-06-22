@@ -31,8 +31,8 @@ const storage = multer.diskStorage({
     } else if (req.originalUrl.includes("upload-gifts")) {
       uploadPath = getUploadPath("gifts");
     }
-    else if (req.originalUrl.includes("upload-gifts")) {
-      uploadPath = getUploadPath("gifts");
+    else if (req.originalUrl.includes("upload-testimonials")) {
+      uploadPath = getUploadPath("testimonials");
     }
     else if (req.originalUrl.includes("upload-services")) {
       uploadPath = getUploadPath("services");
