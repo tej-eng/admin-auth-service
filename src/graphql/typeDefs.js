@@ -1625,7 +1625,7 @@ const typeDefs = gql`
   type Astrologer {
     id: ID!
 
-    name: String!
+    name: String
     displayName: String!
 
     profilePic: String
