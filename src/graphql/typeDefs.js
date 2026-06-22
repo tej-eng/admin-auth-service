@@ -2358,7 +2358,7 @@ type Gift {
     reviewId: ID!
     comment: String!
   ): UserReview!
-  type Mutation {
+ 
   updateGiftStatus(
     id: ID!
     status: String!
