@@ -6222,7 +6222,7 @@ updateGiftStatus: async (_, { id, status }, { prisma }) => {
     where: { id },
     data: { status },
   });
-};
+},
   },
 
   Blog: {
