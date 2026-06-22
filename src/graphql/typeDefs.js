@@ -606,14 +606,14 @@ const typeDefs = gql`
   }
 
   #----gifts -------#
-type Gift {
-  id: ID!
-  name: String!
-  amount: Float!
-  image: String
-  status: String!
-  createdAt: DateTime
-}
+  type Gift {
+    id: ID!
+    name: String!
+    amount: Float!
+    image: String
+    status: String!
+    createdAt: DateTime
+  }
 
   input GiftInput {
     name: String!
@@ -1768,6 +1768,7 @@ type Gift {
     id: ID!
     name: String!
     slug: String!
+    createdAt: String
   }
   input CreateBlogInput {
     title: String!
@@ -2354,15 +2355,9 @@ type Gift {
     toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): ToggleReviewResponse!
     updateCoupon(id: ID!, input: UpdateCouponInput!): Coupon!
 
-      updateReviewComment(
-    reviewId: ID!
-    comment: String!
-  ): UserReview!
- 
-  updateGiftStatus(
-    id: ID!
-    status: String!
-  ): Gift!
+    updateReviewComment(reviewId: ID!, comment: String!): UserReview!
+
+    updateGiftStatus(id: ID!, status: String!): Gift!
   }
 `;
 
