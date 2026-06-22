@@ -606,13 +606,14 @@ const typeDefs = gql`
   }
 
   #----gifts -------#
-  type Gift {
-    id: ID!
-    name: String!
-    amount: Float!
-    image: String
-    status: String!
-  }
+type Gift {
+  id: ID!
+  name: String!
+  amount: Float!
+  image: String
+  status: String!
+  createdAt: DateTime
+}
 
   input GiftInput {
     name: String!
@@ -2357,6 +2358,11 @@ const typeDefs = gql`
     reviewId: ID!
     comment: String!
   ): UserReview!
+  type Mutation {
+  updateGiftStatus(
+    id: ID!
+    status: String!
+  ): Gift!
   }
 `;
 

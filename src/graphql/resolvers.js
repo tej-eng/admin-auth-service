@@ -6213,6 +6213,16 @@ export const resolvers = {
         createdAt: review.createdAt,
       };
     },
+updateGiftStatus: async (_, { id, status }, { prisma }) => {
+  if (!["active", "inactive"].includes(status)) {
+    throw new Error("Invalid status");
+  }
+
+  return await prisma.gift.update({
+    where: { id },
+    data: { status },
+  });
+};
   },
 
   Blog: {
