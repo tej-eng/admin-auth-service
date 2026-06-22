@@ -6177,14 +6177,41 @@ export const resolvers = {
     updateReviewComment: async (_, { reviewId, comment }, { prisma }) => {
       const review = await prisma.review.update({
         where: {
-          reviewId,
+          id: reviewId,
         },
         data: {
           comment,
         },
+        include: {
+          user: true,
+          astrologer: true,
+          session: true,
+        },
       });
 
-      return review;
+      return {
+        reviewId: review.id,
+
+        sessionId: review.session?.id || null,
+
+        userId: review.user?.id || null,
+        userName: review.userName || review.user?.name || "",
+        mobile: review.user?.mobile || "",
+
+        astrologerId: review.astrologer?.id || null,
+        astrologerName: review.astrologer?.name || "",
+        displayName: review.astrologer?.displayName || "",
+
+        sessionType: review.session?.type || "",
+        sessionStatus: review.session?.status || "",
+
+        isFlagged: review.isFlagged,
+        rating: review.rating,
+
+        comment: review.comment,
+
+        createdAt: review.createdAt,
+      };
     },
   },
 
