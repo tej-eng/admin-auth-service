@@ -1015,21 +1015,24 @@ const typeDefs = gql`
     CUSTOM
   }
 
-  input UserChatHistorySearchInput {
-    query: String
-    mobile: String
-    astrologerName: String
-    type: String
-    status: String
+input UserChatHistorySearchInput {
+  query: String
+  mobile: String
+  astrologerName: String
 
-    filterType: SessionFilterType
+  userId: ID
 
-    startDate: String
-    endDate: String
+  type: String
+  status: String
 
-    page: Int
-    limit: Int
-  }
+  filterType: SessionFilterType
+
+  startDate: String
+  endDate: String
+
+  page: Int
+  limit: Int
+}
 
   type UserChatHistory {
     sessionId: ID!
