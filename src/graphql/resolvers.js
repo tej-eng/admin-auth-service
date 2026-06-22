@@ -841,17 +841,18 @@ export const resolvers = {
 
     getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
       try {
-        const {
-          query,
-          mobile,
-          astrologerName,
-          status,
-          filterType,
-          startDate,
-          endDate,
-          page = 1,
-          limit = 10,
-        } = searchInput;
+       const {
+  query,
+  mobile,
+  astrologerName,
+  userId,
+  status,
+  filterType,
+  startDate,
+  endDate,
+  page = 1,
+  limit = 10,
+} = searchInput;
 
         const safePage = Math.max(page, 1);
         const safeLimit = Math.min(limit, 50);
@@ -863,6 +864,9 @@ export const resolvers = {
         const where = {
           type: "CHAT", // ONLY CHAT DATA
         };
+        if (userId) {
+  where.userId = userId;
+}
 
         // ---------------- USER SEARCH FILTER ----------------
 
