@@ -3383,20 +3383,27 @@ export const resolvers = {
         ],
       });
     },
-    getNotices: async (_, __, { prisma }) => {
-      return prisma.notice.findMany({
+getNotices: async (_, __, { prisma }) => {
+  const notices = await prisma.notice.findMany({
+    include: {
+      astrologers: {
         include: {
-          astrologers: {
-            include: {
-              astrologer: true,
-            },
-          },
+          astrologer: true,
         },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+      },
     },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return notices.map((notice) => ({
+    ...notice,
+    astrologers: notice.astrologers.map(
+      (item) => item.astrologer
+    ),
+  }));
+},
 
     blogs: async () => {
       return await prisma.blog.findMany({
