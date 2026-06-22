@@ -6175,7 +6175,7 @@ export const resolvers = {
     },
 
     updateReviewComment: async (_, { reviewId, comment }, { prisma }) => {
-      const review = await prisma.userReview.update({
+      const review = await prisma.review.update({
         where: {
           reviewId,
         },
