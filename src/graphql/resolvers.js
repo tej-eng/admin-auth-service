@@ -3031,6 +3031,9 @@ export const resolvers = {
     getApplications: (_, { status }, { prisma }) => {
       return prisma.astrologerApplication.findMany({
         where: status ? { applicationStatus: status } : {},
+            include: {
+      kycDetail: true,
+    },
       });
     },
 
