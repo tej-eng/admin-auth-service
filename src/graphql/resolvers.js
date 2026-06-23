@@ -5390,10 +5390,12 @@ export const resolvers = {
         },
         update: {
           ...input,
+          documentRemarks: remarks,
         },
         create: {
           astrologerApplicationId: astrologerId,
           ...input,
+          documentRemarks: remarks,
         },
       });
 
@@ -5401,7 +5403,6 @@ export const resolvers = {
         where: { id: astrologerId },
         data: {
           documentStatus: input.status,
-          documentRemarks: remarks,
         },
       });
       console.log("KYC SAVED AND VERIFIED:", kyc);
