@@ -3954,6 +3954,17 @@ export const resolvers = {
             // createdBy: context.user.id,
           },
         });
+        if (data.applicationId) {
+          await prisma.astrologerApplication.update({
+            where: {
+              id: data.applicationId,
+            },
+            data: {
+              astrologerId: astrologer.id,
+              approvalStatus: "APPROVED",
+            },
+          });
+        }
 
         return {
           success: true,
@@ -5381,31 +5392,31 @@ export const resolvers = {
         },
       });
 
-await prisma.astrologerApplication.update({
-  where: { id: astrologerId },
-  data: {
-    documentStatus: input.status,
-    documentRemarks: remarks,
-  },
-});
+      await prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: {
+          documentStatus: input.status,
+          documentRemarks: remarks,
+        },
+      });
       console.log("KYC SAVED AND VERIFIED:", kyc);
       return kyc;
     },
 
-rejectKyc: async (_, { astrologerId, remarks }, context) => {
-  if (!context.user) throw new Error("Unauthorized");
+    rejectKyc: async (_, { astrologerId, remarks }, context) => {
+      if (!context.user) throw new Error("Unauthorized");
 
-await prisma.astrologerApplication.update({
-  where: { id: astrologerId },
-  data: {
-    documentStatus: "REJECTED",
-    approvalStatus: "REJECTED",
-    documentRemarks: remarks,
-  },
-});
+      await prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: {
+          documentStatus: "REJECTED",
+          approvalStatus: "REJECTED",
+          documentRemarks: remarks,
+        },
+      });
 
-  return true;
-},
+      return true;
+    },
 
     createFraudFlag: async (_, { keyword }, { prisma }) => {
       try {
