@@ -751,7 +751,7 @@ const typeDefs = gql`
     skills: [String]
     languages: [String]
     problems: [String]
-dateOfBirth
+    dateOfBirth: [String]
     experience: Int
     applicationStatus: String!
     interviewStatus: String
@@ -1015,24 +1015,24 @@ dateOfBirth
     CUSTOM
   }
 
-input UserChatHistorySearchInput {
-  query: String
-  mobile: String
-  astrologerName: String
+  input UserChatHistorySearchInput {
+    query: String
+    mobile: String
+    astrologerName: String
 
-  userId: ID
+    userId: ID
 
-  type: String
-  status: String
+    type: String
+    status: String
 
-  filterType: SessionFilterType
+    filterType: SessionFilterType
 
-  startDate: String
-  endDate: String
+    startDate: String
+    endDate: String
 
-  page: Int
-  limit: Int
-}
+    page: Int
+    limit: Int
+  }
 
   type UserChatHistory {
     sessionId: ID!
@@ -2251,15 +2251,15 @@ input UserChatHistorySearchInput {
 
     deleteStaff(staffId: ID!): Boolean!
 
-scheduleInterview(
-  astrologerId: ID!
-  astrologerNumber: String!
-  astrologerMail: String!
-  interviewerId: String!
-  interviewDate: String!
-  interviewTime: String!
-  round: Int!
-): AstrologerApplication
+    scheduleInterview(
+      astrologerId: ID!
+      astrologerNumber: String!
+      astrologerMail: String!
+      interviewerId: String!
+      interviewDate: String!
+      interviewTime: String!
+      round: Int!
+    ): AstrologerApplication
 
     updateInterviewStatus(
       astrologerId: ID!
