@@ -5295,7 +5295,12 @@ export const resolvers = {
     updateApprovalStatus: async (_, { astrologerId, status }, { prisma }) => {
       return prisma.astrologerApplication.update({
         where: { id: astrologerId },
-        data: { approvalStatus: status },
+        data: {
+  approvalStatus: status,
+  ...(status === "APPROVED" && {
+    applicationStatus: "APPROVED",
+  }),
+}
       });
     },
 
