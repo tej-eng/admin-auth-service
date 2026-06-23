@@ -756,6 +756,7 @@ const typeDefs = gql`
     applicationStatus: String!
     interviewStatus: String
     interviewRemarks: String
+     documentRemarks: String
     documentStatus: DocumentStatus
     approvalStatus: ApprovalStatus
 
@@ -2301,8 +2302,16 @@ const typeDefs = gql`
     markOfferUsed(userId: String!): Boolean
 
     #---- Save bank details & docs -----#
-    saveAndVerifyKyc(astrologerId: String!, input: KycDetailInput!): KycDetail
-    rejectKyc(astrologerId: String!): KycDetail
+  saveAndVerifyKyc(
+  astrologerId: String!
+  input: KycDetailInput!
+  remarks: String
+): KycDetail
+
+rejectKyc(
+  astrologerId: String!
+  remarks: String
+): Boolean
     createFraudFlag(keyword: String!): FraudFlag!
 
     deleteFraudFlag(id: ID!): Boolean!

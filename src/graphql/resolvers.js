@@ -5365,7 +5365,7 @@ export const resolvers = {
     saveAndVerifyKyc: async (_, args, context) => {
       if (!context.user) throw new Error("Unauthorized");
 
-      const { astrologerId, input } = args;
+      const { astrologerId, input, remarks } = args;
       console.log("KYC INPUTTTTTTTTTTTTTTTTTTTTTTTTT:", input);
 
       const kyc = await prisma.kycDetail.upsert({
@@ -5381,26 +5381,28 @@ export const resolvers = {
         },
       });
 
-      await prisma.astrologerApplication.update({
-        where: { id: astrologerId },
-        data: {
-          documentStatus: input.status,
-        },
-      });
+await prisma.astrologerApplication.update({
+  where: { id: astrologerId },
+  data: {
+    documentStatus: input.status,
+    documentRemarks: remarks,
+  },
+});
       console.log("KYC SAVED AND VERIFIED:", kyc);
       return kyc;
     },
 
-rejectKyc: async (_, { astrologerId }, context) => {
+rejectKyc: async (_, { astrologerId, remarks }, context) => {
   if (!context.user) throw new Error("Unauthorized");
 
-  await prisma.astrologerApplication.update({
-    where: { id: astrologerId },
-    data: {
-      documentStatus: "REJECTED",
-      approvalStatus: "REJECTED",
-    },
-  });
+await prisma.astrologerApplication.update({
+  where: { id: astrologerId },
+  data: {
+    documentStatus: "REJECTED",
+    approvalStatus: "REJECTED",
+    documentRemarks: remarks,
+  },
+});
 
   return true;
 },

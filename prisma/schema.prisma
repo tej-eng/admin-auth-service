@@ -903,6 +903,7 @@ model AstrologerApplication {
   interviewTime        String?
   round                Int?
   interviewRemarks     String?
+  documentRemarks      String?
   interviewTakenAt     DateTime?
   interviewScheduledAt DateTime?
   staffId              String?
