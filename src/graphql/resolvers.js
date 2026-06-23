@@ -4069,8 +4069,6 @@ export const resolvers = {
 
                         panNumber: data.bankDetails?.panCardNumber,
 
-                        profileImage: data.documents?.profilePic,
-
                         aadhaarImage: data.documents?.aadhaar,
 
                         panImage: data.documents?.panCard,
@@ -4090,8 +4088,6 @@ export const resolvers = {
                         branchName: data.bankDetails?.branchName,
 
                         panNumber: data.bankDetails?.panCardNumber,
-
-                        profileImage: data.documents?.profilePic,
 
                         aadhaarImage: data.documents?.aadhaar,
 
@@ -4311,7 +4307,7 @@ export const resolvers = {
           experience: app.experience,
           languages: app.languages,
           skills: app.skills,
-          profilePic: app.kyc?.profileImage,
+          // profilePic: app.kyc?.profileImage,
           approvalStatus: "APPROVED",
         },
       });
