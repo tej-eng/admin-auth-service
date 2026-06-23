@@ -759,7 +759,7 @@ const typeDefs = gql`
      documentRemarks: String
     documentStatus: DocumentStatus
     approvalStatus: ApprovalStatus
-
+ astrologerId: String
     about: String
     address: String
     pincode: String
