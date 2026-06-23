@@ -2251,13 +2251,15 @@ input UserChatHistorySearchInput {
 
     deleteStaff(staffId: ID!): Boolean!
 
-    scheduleInterview(
-      astrologerId: ID!
-      interviewerId: String!
-      interviewDate: String!
-      interviewTime: String!
-      round: Int!
-    ): AstrologerApplication
+scheduleInterview(
+  astrologerId: ID!
+  astrologerNumber: String!
+  astrologerMail: String!
+  interviewerId: String!
+  interviewDate: String!
+  interviewTime: String!
+  round: Int!
+): AstrologerApplication
 
     updateInterviewStatus(
       astrologerId: ID!
