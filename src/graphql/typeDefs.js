@@ -828,7 +828,7 @@ const typeDefs = gql`
     branchName: String
     panNumber: String
 
-    profileImage: String
+  
     aadhaarImage: String
     panImage: String
     passbookImage: String
