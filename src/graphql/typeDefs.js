@@ -751,7 +751,7 @@ const typeDefs = gql`
     skills: [String]
     languages: [String]
     problems: [String]
-    dateOfBirth: [String]
+    dob: [DateTime]
     experience: Int
     applicationStatus: String!
     interviewStatus: String
