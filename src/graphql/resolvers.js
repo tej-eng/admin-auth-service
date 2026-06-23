@@ -5252,20 +5252,24 @@ export const resolvers = {
         },
       });
     },
-    updateInterviewResult: async (
-      _,
-      { astrologerId, status, remarks },
-      { prisma },
-    ) => {
-      return prisma.astrologerApplication.update({
-        where: { id: astrologerId },
-        data: {
-          interviewStatus: status,
-          interviewRemarks: remarks,
-          interviewTakenAt: new Date(),
-        },
-      });
+ updateInterviewResult: async (
+  _,
+  { astrologerId, status, remarks },
+  { prisma }
+) => {
+  return prisma.astrologerApplication.update({
+    where: { id: astrologerId },
+    data: {
+      interviewStatus: status,
+      interviewRemarks: remarks,
+      interviewTakenAt: new Date(),
+
+      ...(status === "REJECTED" && {
+        approvalStatus: "REJECTED",
+      }),
     },
+  });
+},
 
     updateDocumentStatus: async (_, { astrologerId, status }, { prisma }) => {
       return prisma.astrologerApplication.update({
@@ -5392,11 +5396,13 @@ export const resolvers = {
         data: { status: "REJECTED" },
       });
 
-      await prisma.astrologerApplication.update({
-        where: { id: astrologerId },
-        data: { documentStatus: "REJECTED" },
-      });
-
+    await prisma.astrologerApplication.update({
+  where: { id: astrologerId },
+  data: {
+    documentStatus: "REJECTED",
+    approvalStatus: "REJECTED",
+  },
+});
       return kyc;
     },
 
