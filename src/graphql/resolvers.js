@@ -841,18 +841,18 @@ export const resolvers = {
 
     getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
       try {
-       const {
-  query,
-  mobile,
-  astrologerName,
-  userId,
-  status,
-  filterType,
-  startDate,
-  endDate,
-  page = 1,
-  limit = 10,
-} = searchInput;
+        const {
+          query,
+          mobile,
+          astrologerName,
+          userId,
+          status,
+          filterType,
+          startDate,
+          endDate,
+          page = 1,
+          limit = 10,
+        } = searchInput;
 
         const safePage = Math.max(page, 1);
         const safeLimit = Math.min(limit, 50);
@@ -865,8 +865,8 @@ export const resolvers = {
           type: "CHAT", // ONLY CHAT DATA
         };
         if (userId) {
-  where.userId = userId;
-}
+          where.userId = userId;
+        }
 
         // ---------------- USER SEARCH FILTER ----------------
 
@@ -3002,20 +3002,25 @@ export const resolvers = {
       });
     },
 
-    getInterviewers: async (_, __, { prisma }) => {
-      return prisma.staff.findMany({
-        where: {
-          role: {
-            slug: "interviewer",
-          },
-        },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      });
+getMyInterviews: async (_, __, { prisma, user }) => {
+  return prisma.astrologerApplication.findMany({
+    where: {
+      interviewerId: user.id,
+      interviewStatus: "SCHEDULED",
     },
+    select: {
+      id: true,
+      name: true,
+      phoneNumber: true,
+      email: true,
+      skills: true,
+      experience: true,
+      interviewDate: true,
+      interviewTime: true,
+      round: true,
+    },
+  });
+},
 
     getPendingApplications: async (_, __, { prisma }) => {
       return await prisma.astrologerApplication.findMany({
@@ -3387,27 +3392,25 @@ export const resolvers = {
         ],
       });
     },
-getNotices: async (_, __, { prisma }) => {
-  const notices = await prisma.notice.findMany({
-    include: {
-      astrologers: {
+    getNotices: async (_, __, { prisma }) => {
+      const notices = await prisma.notice.findMany({
         include: {
-          astrologer: true,
+          astrologers: {
+            include: {
+              astrologer: true,
+            },
+          },
         },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
 
-  return notices.map((notice) => ({
-    ...notice,
-    astrologers: notice.astrologers.map(
-      (item) => item.astrologer
-    ),
-  }));
-},
+      return notices.map((notice) => ({
+        ...notice,
+        astrologers: notice.astrologers.map((item) => item.astrologer),
+      }));
+    },
 
     blogs: async () => {
       return await prisma.blog.findMany({
@@ -5230,7 +5233,15 @@ getNotices: async (_, __, { prisma }) => {
     // hiring astrologer
     scheduleInterview: async (
       _,
-      { astrologerId, interviewerId, interviewDate, interviewTime, round },
+      {
+        astrologerId,
+        astrologerNumber,
+        astrologerMail,
+        interviewerId,
+        interviewDate,
+        interviewTime,
+        round,
+      },
       { prisma },
     ) => {
       return prisma.astrologerApplication.update({
@@ -6224,16 +6235,16 @@ getNotices: async (_, __, { prisma }) => {
         createdAt: review.createdAt,
       };
     },
-updateGiftStatus: async (_, { id, status }, { prisma }) => {
-  if (!["active", "inactive"].includes(status)) {
-    throw new Error("Invalid status");
-  }
+    updateGiftStatus: async (_, { id, status }, { prisma }) => {
+      if (!["active", "inactive"].includes(status)) {
+        throw new Error("Invalid status");
+      }
 
-  return await prisma.gift.update({
-    where: { id },
-    data: { status },
-  });
-},
+      return await prisma.gift.update({
+        where: { id },
+        data: { status },
+      });
+    },
   },
 
   Blog: {
