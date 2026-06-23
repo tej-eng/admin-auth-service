@@ -142,7 +142,7 @@ const typeDefs = gql`
     astroname: String!
     displayName: String!
     gender: Gender!
-
+  applicationId: String
     dateOfBirth: String
 
     email: String!
