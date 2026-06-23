@@ -3002,25 +3002,20 @@ export const resolvers = {
       });
     },
 
-getMyInterviews: async (_, __, { prisma, user }) => {
-  return prisma.astrologerApplication.findMany({
-    where: {
-      interviewerId: user.id,
-      interviewStatus: "SCHEDULED",
+    getInterviewers: async (_, __, { prisma }) => {
+      return prisma.staff.findMany({
+        where: {
+          role: {
+            slug: "interviewer",
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      });
     },
-    select: {
-      id: true,
-      name: true,
-      phoneNumber: true,
-      email: true,
-      skills: true,
-      experience: true,
-      interviewDate: true,
-      interviewTime: true,
-      round: true,
-    },
-  });
-},
 
     getPendingApplications: async (_, __, { prisma }) => {
       return await prisma.astrologerApplication.findMany({
@@ -3139,17 +3134,25 @@ getMyInterviews: async (_, __, { prisma, user }) => {
       };
     },
 
-    getMyInterviews: async (_, __, { prisma, userId }) => {
-      return prisma.astrologerApplication.findMany({
-        where: {
-          interviewerId: userId,
-          interviewStatus: "SCHEDULED",
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+getMyInterviews: async (_, __, { prisma, user }) => {
+  return prisma.astrologerApplication.findMany({
+    where: {
+      interviewerId: user.id,
+      interviewStatus: "SCHEDULED",
     },
+    select: {
+      id: true,
+      name: true,
+      phoneNumber: true,
+      email: true,
+      skills: true,
+      experience: true,
+      interviewDate: true,
+      interviewTime: true,
+      round: true,
+    },
+  });
+},
 
     getApplicationById: async (_, { id }) => {
       return await prisma.astrologerApplication.findUnique({
