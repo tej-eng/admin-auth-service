@@ -842,8 +842,9 @@ const typeDefs = gql`
     ifsc: String
     branchName: String
     panNumber: String
+ documentRemarks: String
 
-    profileImage: String
+   
     aadhaarImage: String
     panImage: String
     passbookImage: String
