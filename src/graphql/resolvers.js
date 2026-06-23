@@ -3031,9 +3031,9 @@ export const resolvers = {
     getApplications: (_, { status }, { prisma }) => {
       return prisma.astrologerApplication.findMany({
         where: status ? { applicationStatus: status } : {},
-            include: {
-      kycDetail: true,
-    },
+        include: {
+          kycDetail: true,
+        },
       });
     },
 
@@ -5255,24 +5255,24 @@ export const resolvers = {
         },
       });
     },
- updateInterviewResult: async (
-  _,
-  { astrologerId, status, remarks },
-  { prisma }
-) => {
-  return prisma.astrologerApplication.update({
-    where: { id: astrologerId },
-    data: {
-      interviewStatus: status,
-      interviewRemarks: remarks,
-      interviewTakenAt: new Date(),
+    updateInterviewResult: async (
+      _,
+      { astrologerId, status, remarks },
+      { prisma },
+    ) => {
+      return prisma.astrologerApplication.update({
+        where: { id: astrologerId },
+        data: {
+          interviewStatus: status,
+          interviewRemarks: remarks,
+          interviewTakenAt: new Date(),
 
-      ...(status === "REJECTED" && {
-        approvalStatus: "REJECTED",
-      }),
+          ...(status === "REJECTED" && {
+            approvalStatus: "REJECTED",
+          }),
+        },
+      });
     },
-  });
-},
 
     updateDocumentStatus: async (_, { astrologerId, status }, { prisma }) => {
       return prisma.astrologerApplication.update({
@@ -5391,23 +5391,19 @@ export const resolvers = {
       return kyc;
     },
 
-    rejectKyc: async (_, { astrologerId }, context) => {
-      if (!context.user) throw new Error("Unauthorized");
+rejectKyc: async (_, { astrologerId }, context) => {
+  if (!context.user) throw new Error("Unauthorized");
 
-      const kyc = await prisma.kycDetail.update({
-        where: { astrologerApplicationId: astrologerId },
-        data: { status: "REJECTED" },
-      });
-
-    await prisma.astrologerApplication.update({
-  where: { id: astrologerId },
-  data: {
-    documentStatus: "REJECTED",
-    approvalStatus: "REJECTED",
-  },
-});
-      return kyc;
+  await prisma.astrologerApplication.update({
+    where: { id: astrologerId },
+    data: {
+      documentStatus: "REJECTED",
+      approvalStatus: "REJECTED",
     },
+  });
+
+  return true;
+},
 
     createFraudFlag: async (_, { keyword }, { prisma }) => {
       try {
