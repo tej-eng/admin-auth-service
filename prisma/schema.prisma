@@ -747,7 +747,7 @@ model Session {
   coinsDeducted Int @default(0)
   coinsEarned   Int @default(0)
   commission    Int @default(0)
-
+  source        String?
   review    Review?
   startedAt DateTime?
   endedAt   DateTime?
