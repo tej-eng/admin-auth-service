@@ -756,7 +756,7 @@ const typeDefs = gql`
     applicationStatus: String!
     interviewStatus: String
     interviewRemarks: String
-     documentRemarks: String
+    
     documentStatus: DocumentStatus
     approvalStatus: ApprovalStatus
  astrologerId: String
@@ -827,7 +827,7 @@ const typeDefs = gql`
     ifsc: String
     branchName: String
     panNumber: String
-
+ documentRemarks: String
   
     aadhaarImage: String
     panImage: String

@@ -903,7 +903,6 @@ model AstrologerApplication {
   interviewTime        String?
   round                Int?
   interviewRemarks     String?
-  documentRemarks      String?
   interviewTakenAt     DateTime?
   interviewScheduledAt DateTime?
   staffId              String?
@@ -932,6 +931,7 @@ model KycDetail {
   ifsc              String?
   branchName        String?
   panNumber         String?
+  documentRemarks      String?
 
   aadhaarImage  String?
   panImage      String?

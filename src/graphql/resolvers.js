@@ -5296,11 +5296,11 @@ export const resolvers = {
       return prisma.astrologerApplication.update({
         where: { id: astrologerId },
         data: {
-  approvalStatus: status,
-  ...(status === "APPROVED" && {
-    applicationStatus: "APPROVED",
-  }),
-}
+          approvalStatus: status,
+          ...(status === "APPROVED" && {
+            applicationStatus: "APPROVED",
+          }),
+        },
       });
     },
 
