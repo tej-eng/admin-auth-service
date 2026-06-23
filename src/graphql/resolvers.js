@@ -3134,25 +3134,17 @@ export const resolvers = {
       };
     },
 
-getMyInterviews: async (_, __, { prisma, user }) => {
-  return prisma.astrologerApplication.findMany({
-    where: {
-      interviewerId: user.id,
-      interviewStatus: "SCHEDULED",
+    getMyInterviews: async (_, __, { prisma, userId }) => {
+      return prisma.astrologerApplication.findMany({
+        where: {
+          interviewerId: userId,
+          interviewStatus: "SCHEDULED",
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
     },
-    select: {
-      id: true,
-      name: true,
-      phoneNumber: true,
-      email: true,
-      skills: true,
-      experience: true,
-      interviewDate: true,
-      interviewTime: true,
-      round: true,
-    },
-  });
-},
 
     getApplicationById: async (_, { id }) => {
       return await prisma.astrologerApplication.findUnique({
