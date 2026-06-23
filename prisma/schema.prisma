@@ -1477,7 +1477,7 @@ model LiveStream {
   id            String      @id @default(uuid())
 
   astrologerId  String
-  astrologer    Astrologer  @relation(fields: [astrologerId], references: [id])
+  astrologer    Astrologer  @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
 
   title         String
 
