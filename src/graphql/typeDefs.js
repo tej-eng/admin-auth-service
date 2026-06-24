@@ -2380,6 +2380,10 @@ input ServiceAstrologerInput {
   serviceId: ID!
   astrologers: [ServiceAstrologerInput!]!
 ): Boolean!
+updateUserStatus(
+  userId: ID!
+  isActive: Boolean!
+): User!
   }
 `;
 

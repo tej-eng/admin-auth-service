@@ -35,12 +35,7 @@ const handleUpload = async (file) => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
 
-    const DOCUMENTS_DIR = path.join(
-      __dirname,
-      "..",
-      "uploads",
-      "documents"
-    );
+    const DOCUMENTS_DIR = path.join(__dirname, "..", "uploads", "documents");
 
     console.log("Documents Dir:", DOCUMENTS_DIR);
 
@@ -67,7 +62,7 @@ const handleUpload = async (file) => {
         if (size > MAX_SIZE) {
           stream.destroy();
           out.destroy();
-          fs.unlink(uploadPath, () => { });
+          fs.unlink(uploadPath, () => {});
           reject(new Error("File too large (max 5MB)"));
         }
       });
@@ -358,12 +353,12 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              { name: { contains: query, mode: "insensitive" } },
-              { skills: { has: query } },
-              { languages: { has: query } },
-            ],
-          }
+              OR: [
+                { name: { contains: query, mode: "insensitive" } },
+                { skills: { has: query } },
+                { languages: { has: query } },
+              ],
+            }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -1033,7 +1028,7 @@ export const resolvers = {
         const formattedData = sessions.map((session) => ({
           sessionId: session.id,
           userId: session.userId,
- source: session.source,
+          source: session.source,
           userId: session.user?.id || null,
           userName: session.user?.name || "",
           mobile: session.user?.mobile || "",
@@ -1269,7 +1264,7 @@ export const resolvers = {
           userId: session.user?.id || null,
           userName: session.user?.name || "",
           mobile: session.user?.mobile || "",
- source: session.source,
+          source: session.source,
           astrologerId: session.astrologer?.id || null,
           astrologerName:
             session.astrologer?.displayName || session.astrologer?.name || "",
@@ -2919,28 +2914,28 @@ export const resolvers = {
       });
     },
 
-getServices: async (_, __, { prisma }) => {
-  return prisma.service.findMany({
-    include: {
-      category: true,
-
-      astrologerMappings: {
+    getServices: async (_, __, { prisma }) => {
+      return prisma.service.findMany({
         include: {
-          astrologer: {
-            select: {
-              id: true,
-              displayName: true,
+          category: true,
+
+          astrologerMappings: {
+            include: {
+              astrologer: {
+                select: {
+                  id: true,
+                  displayName: true,
+                },
+              },
             },
           },
         },
-      },
-    },
 
-    orderBy: {
-      createdAt: "desc",
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
     },
-  });
-},
 
     getService: async (_, { id }, { prisma }) => {
       return prisma.service.findUnique({
@@ -2951,15 +2946,15 @@ getServices: async (_, __, { prisma }) => {
       });
     },
     getServiceAstrologers: async (_, { serviceId }, { prisma }) => {
-  return prisma.serviceAstrologer.findMany({
-    where: {
-      serviceId,
+      return prisma.serviceAstrologer.findMany({
+        where: {
+          serviceId,
+        },
+        include: {
+          astrologer: true,
+        },
+      });
     },
-    include: {
-      astrologer: true,
-    },
-  });
-},
 
     getServiceBySlug: async (_, { slug }, { prisma }) => {
       return prisma.service.findUnique({
@@ -3890,9 +3885,7 @@ getServices: async (_, __, { prisma }) => {
         });
 
         if (application?.astrologerId) {
-          throw new Error(
-            "Astrologer already created for this application"
-          );
+          throw new Error("Astrologer already created for this application");
         }
       }
 
@@ -3959,56 +3952,56 @@ getServices: async (_, __, { prisma }) => {
             // FIX: Only create documents if present
             documents: data.documents
               ? {
-                create: [
-                  ...(data.documents?.aadhaar
-                    ? [
-                      {
-                        documentType: "AADHAAR",
-                        documentUrl: data.documents.aadhaar,
-                      },
-                    ]
-                    : []),
+                  create: [
+                    ...(data.documents?.aadhaar
+                      ? [
+                          {
+                            documentType: "AADHAAR",
+                            documentUrl: data.documents.aadhaar,
+                          },
+                        ]
+                      : []),
 
-                  ...(data.documents?.panCard
-                    ? [
-                      {
-                        documentType: "PAN",
-                        documentUrl: data.documents.panCard,
-                      },
-                    ]
-                    : []),
+                    ...(data.documents?.panCard
+                      ? [
+                          {
+                            documentType: "PAN",
+                            documentUrl: data.documents.panCard,
+                          },
+                        ]
+                      : []),
 
-                  ...(data.documents?.passbook
-                    ? [
-                      {
-                        documentType: "PASSBOOK",
-                        documentUrl: data.documents.passbook,
-                      },
-                    ]
-                    : []),
-                ],
-              }
+                    ...(data.documents?.passbook
+                      ? [
+                          {
+                            documentType: "PASSBOOK",
+                            documentUrl: data.documents.passbook,
+                          },
+                        ]
+                      : []),
+                  ],
+                }
               : undefined,
 
             // FIX: Move bankDetails → KYC
             kycDetail: data.bankDetails
               ? {
-                create: {
-                  accountHolderName: data.bankDetails.accountHolderName,
-                  accountNumber: data.bankDetails.accountNumber,
-                  bankName: data.bankDetails.bankName,
-                  ifsc: data.bankDetails.ifscCode,
-                  panNumber: data.bankDetails.panCardNumber,
-                  branchName: data.bankDetails.branchName,
-                  status: data.bankDetails.status,
+                  create: {
+                    accountHolderName: data.bankDetails.accountHolderName,
+                    accountNumber: data.bankDetails.accountNumber,
+                    bankName: data.bankDetails.bankName,
+                    ifsc: data.bankDetails.ifscCode,
+                    panNumber: data.bankDetails.panCardNumber,
+                    branchName: data.bankDetails.branchName,
+                    status: data.bankDetails.status,
 
-                  ...(data.applicationId && {
-                    application: {
-                      connect: { id: data.applicationId },
-                    },
-                  }),
-                },
-              }
+                    ...(data.applicationId && {
+                      application: {
+                        connect: { id: data.applicationId },
+                      },
+                    }),
+                  },
+                }
               : undefined,
 
             // optional audit
@@ -4100,79 +4093,79 @@ getServices: async (_, __, { prisma }) => {
             // ADDRESS
             addresses: data.address
               ? {
-                deleteMany: {},
+                  deleteMany: {},
 
-                create: {
-                  street: data.address.street,
-                  city: data.address.city,
-                  state: data.address.state,
-                  country: data.address.country,
-                  pincode: data.address.pincode,
-                },
-              }
+                  create: {
+                    street: data.address.street,
+                    city: data.address.city,
+                    state: data.address.state,
+                    country: data.address.country,
+                    pincode: data.address.pincode,
+                  },
+                }
               : undefined,
 
             // KYC
             kycDetail:
               data.bankDetails || data.documents
                 ? {
-                  upsert: {
-                    create: {
-                      accountHolderName: data.bankDetails?.accountHolderName,
+                    upsert: {
+                      create: {
+                        accountHolderName: data.bankDetails?.accountHolderName,
 
-                      accountNumber: data.bankDetails?.accountNumber,
+                        accountNumber: data.bankDetails?.accountNumber,
 
-                      bankName: data.bankDetails?.bankName,
+                        bankName: data.bankDetails?.bankName,
 
-                      ifsc: data.bankDetails?.ifscCode,
+                        ifsc: data.bankDetails?.ifscCode,
 
-                      branchName: data.bankDetails?.branchName,
+                        branchName: data.bankDetails?.branchName,
 
-                      panNumber: data.bankDetails?.panCardNumber,
+                        panNumber: data.bankDetails?.panCardNumber,
 
-                      aadhaarImage: data.documents?.aadhaar,
+                        aadhaarImage: data.documents?.aadhaar,
 
-                      panImage: data.documents?.panCard,
+                        panImage: data.documents?.panCard,
 
-                      passbookImage: data.documents?.passbook,
+                        passbookImage: data.documents?.passbook,
+                      },
+
+                      update: {
+                        accountHolderName: data.bankDetails?.accountHolderName,
+
+                        accountNumber: data.bankDetails?.accountNumber,
+
+                        bankName: data.bankDetails?.bankName,
+
+                        ifsc: data.bankDetails?.ifscCode,
+
+                        branchName: data.bankDetails?.branchName,
+
+                        panNumber: data.bankDetails?.panCardNumber,
+
+                        aadhaarImage: data.documents?.aadhaar,
+
+                        panImage: data.documents?.panCard,
+
+                        passbookImage: data.documents?.passbook,
+                      },
                     },
-
-                    update: {
-                      accountHolderName: data.bankDetails?.accountHolderName,
-
-                      accountNumber: data.bankDetails?.accountNumber,
-
-                      bankName: data.bankDetails?.bankName,
-
-                      ifsc: data.bankDetails?.ifscCode,
-
-                      branchName: data.bankDetails?.branchName,
-
-                      panNumber: data.bankDetails?.panCardNumber,
-
-                      aadhaarImage: data.documents?.aadhaar,
-
-                      panImage: data.documents?.panCard,
-
-                      passbookImage: data.documents?.passbook,
-                    },
-                  },
-                }
+                  }
                 : undefined,
 
             // PRICING
             pricing: data.pricing?.length
               ? {
-                deleteMany: {},
+                  deleteMany: {},
 
-                create: data.pricing.map((item) => ({
-                  type: item.type,
-                  price: Number(item.price),
-                  offerPrice: Number(item.offerPrice),
-                  commissionPercent: Number(item.commissionPercent),
-                  isActive: item.isActive,
-                })),
-              }
+                  create: data.pricing.map((item) => ({
+                    type: item.type,
+                    price: Number(item.price),
+                    offerPrice: Number(item.offerPrice),
+                    commissionPercent: Number(item.commissionPercent),
+                    isActive: item.isActive,
+                  })),
+                }
               : undefined,
           },
           include: {
@@ -5069,19 +5062,19 @@ getServices: async (_, __, { prisma }) => {
     },
 
     // dhwani services
-createService: async (_, { input }, { prisma }) => {
-  return prisma.service.create({
-    data: {
-      name: input.name,
-      slug: input.slug,
-      image: input.image,
-      description: input.description,
-      longText: input.longText,
-      price: input.price,
-      categoryId: input.categoryId || null,
+    createService: async (_, { input }, { prisma }) => {
+      return prisma.service.create({
+        data: {
+          name: input.name,
+          slug: input.slug,
+          image: input.image,
+          description: input.description,
+          longText: input.longText,
+          price: input.price,
+          categoryId: input.categoryId || null,
+        },
+      });
     },
-  });
-},
     updateService: async (_, { id, input }, { prisma }) => {
       return prisma.service.update({
         where: { id },
@@ -6319,24 +6312,34 @@ createService: async (_, { input }, { prisma }) => {
       });
     },
     saveServiceAstrologers: async (
-  _,
-  { serviceId, astrologers },
-  { prisma }
-) => {
-  await prisma.serviceAstrologer.deleteMany({
-    where: { serviceId },
-  });
+      _,
+      { serviceId, astrologers },
+      { prisma },
+    ) => {
+      await prisma.serviceAstrologer.deleteMany({
+        where: { serviceId },
+      });
 
-  await prisma.serviceAstrologer.createMany({
-    data: astrologers.map((a) => ({
-      serviceId,
-      astrologerId: a.astrologerId,
-      price: Number(a.price),
-    })),
-  });
+      await prisma.serviceAstrologer.createMany({
+        data: astrologers.map((a) => ({
+          serviceId,
+          astrologerId: a.astrologerId,
+          price: Number(a.price),
+        })),
+      });
 
-  return true;
-},
+      return true;
+    },
+    updateUserStatus: async (_, { userId, isActive }, { prisma }) => {
+      return prisma.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          isActive,
+        },
+      });
+    },
   },
 
   Blog: {
