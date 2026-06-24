@@ -302,11 +302,26 @@ model Astrologer {
   followers         AstrologerFollow[]
   serviceBookings   ServiceBooking[]
   noticeAstrologers NoticeAstrologer[]
- services Service[]
+serviceMappings ServiceAstrologer[]
   liveStreams LiveStream[]
 
   @@index([rating])
   @@index([experience])
+}
+model ServiceAstrologer {
+  id String @id @default(cuid())
+
+  serviceId String
+  astrologerId String
+
+  price Float
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  astrologer Astrologer @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([serviceId, astrologerId])
 }
 
 model AstrologerApproved {
@@ -557,7 +572,7 @@ model Service {
   categoryId String?
 
   category Category? @relation(fields: [categoryId], references: [id])
- astrologers Astrologer[]
+   astrologerMappings ServiceAstrologer[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   bookings  ServiceBooking[]
