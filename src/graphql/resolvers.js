@@ -16,6 +16,7 @@ import { generateAccessToken, generateRefreshToken } from "../config/jwt.js";
 const prisma = new PrismaClient();
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
 const handleUpload = async (file) => {
   try {
