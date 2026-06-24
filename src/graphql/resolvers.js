@@ -31,11 +31,17 @@ const handleUpload = async (file) => {
       throw new Error("Invalid file type");
     }
 
-    const UPLOAD_ROOT = path.join(process.cwd(), "uploads");
-    const DOCUMENTS_DIR = path.join(UPLOAD_ROOT, "documents");
+    const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-    console.log("Upload Root:", UPLOAD_ROOT);
-    console.log("Documents Dir:", DOCUMENTS_DIR);
+const DOCUMENTS_DIR = path.join(
+  __dirname,
+  "..",
+  "uploads",
+  "documents"
+);
+
+   console.log("Documents Dir:", DOCUMENTS_DIR);
 
     if (!fs.existsSync(DOCUMENTS_DIR)) {
       fs.mkdirSync(DOCUMENTS_DIR, { recursive: true });
@@ -3854,6 +3860,18 @@ export const resolvers = {
     // ================= ADD ASTROLOGER =================
     addAstrologer: async (_, { data }, context) => {
       const { prisma } = context;
+
+      if (data.applicationId) {
+  const application = await prisma.astrologerApplication.findUnique({
+    where: { id: data.applicationId },
+  });
+
+  if (application?.astrologerId) {
+    throw new Error(
+      "Astrologer already created for this application"
+    );
+  }
+}
 
       try {
         console.log("addAstrologer called", {
