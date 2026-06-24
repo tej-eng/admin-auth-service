@@ -2001,6 +2001,7 @@ getUserWalletTransactions(
   amount: Float
   mobile: String
   userId: ID
+   onlyRecharge: Boolean
   filterType: String
   startDate: String
   endDate: String
