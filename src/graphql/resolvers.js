@@ -3255,47 +3255,47 @@ export const resolvers = {
         throw new Error(error.message || "Failed to fetch offers");
       }
     },
-  getAstrologerById: async (_, { id }, context) => {
-  const { prisma } = context;
+    getAstrologerById: async (_, { id }, context) => {
+      const { prisma } = context;
 
-  await checkPermission(context, "astrologer.read");
+      await checkPermission(context, "astrologer.read");
 
-  const astrologer = await prisma.astrologer.findUnique({
-    where: { id },
-    include: {
-      pricing: true,
-      addresses: true,
-      kycDetail: true,
-      documents: true,
+      const astrologer = await prisma.astrologer.findUnique({
+        where: { id },
+        include: {
+          pricing: true,
+          addresses: true,
+          kycDetail: true,
+          documents: true,
+        },
+      });
+
+      if (!astrologer) {
+        throw new Error("Astrologer not found");
+      }
+
+      const aadhaarDoc = astrologer.documents?.find(
+        (doc) => doc.documentType === "AADHAAR",
+      );
+
+      const panDoc = astrologer.documents?.find(
+        (doc) => doc.documentType === "PAN",
+      );
+
+      const passbookDoc = astrologer.documents?.find(
+        (doc) => doc.documentType === "PASSBOOK",
+      );
+
+      return {
+        ...astrologer,
+        kycDetail: {
+          ...(astrologer.kycDetail || {}),
+          aadhaarImage: aadhaarDoc?.documentUrl || null,
+          panImage: panDoc?.documentUrl || null,
+          passbookImage: passbookDoc?.documentUrl || null,
+        },
+      };
     },
-  });
-
-  if (!astrologer) {
-    throw new Error("Astrologer not found");
-  }
-
-  const aadhaarDoc = astrologer.documents?.find(
-    (doc) => doc.documentType === "AADHAAR"
-  );
-
-  const panDoc = astrologer.documents?.find(
-    (doc) => doc.documentType === "PAN"
-  );
-
-  const passbookDoc = astrologer.documents?.find(
-    (doc) => doc.documentType === "PASSBOOK"
-  );
-
-  return {
-    ...astrologer,
-    kycDetail: {
-      ...(astrologer.kycDetail || {}),
-      aadhaarImage: aadhaarDoc?.documentUrl || null,
-      panImage: panDoc?.documentUrl || null,
-      passbookImage: passbookDoc?.documentUrl || null,
-    },
-  };
-},
     getSendGiftHistory: async (
       _,
       { page = 1, limit = 10, search, astrologerId, fromDate, toDate },
@@ -5406,12 +5406,10 @@ export const resolvers = {
         },
         update: {
           ...input,
-          astrologerId: actualAstrologerId,
           documentRemarks: remarks,
         },
         create: {
           astrologerApplicationId: astrologerId,
-          astrologerId: actualAstrologerId,
           ...input,
           documentRemarks: remarks,
         },
