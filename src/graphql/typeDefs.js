@@ -574,7 +574,7 @@ const typeDefs = gql`
 
     name: String!
     slug: String!
-
+astrologers: [Astrologer!]
     image: String
     description: String
     longText: String
@@ -595,7 +595,7 @@ const typeDefs = gql`
     image: String
     description: String
     longText: String
-
+  astrologerIds: [ID!]
     price: Float
 
     categoryId: ID
