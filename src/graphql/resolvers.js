@@ -6336,7 +6336,7 @@ createService: async (_, { input }, { prisma }) => {
   });
 
   return true;
-};
+},
   },
 
   Blog: {
