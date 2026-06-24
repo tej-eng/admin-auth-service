@@ -1994,16 +1994,17 @@ input ServiceAstrologerInput {
 
     getUserWallet(userId: ID!): UserWallet
 
-    getUserWalletTransactions(
-      page: Int
-      limit: Int
-      type: String
-      amount: Float
-      mobile: String
-      filterType: String
-      startDate: String
-      endDate: String
-    ): WalletTransactionList!
+getUserWalletTransactions(
+  page: Int
+  limit: Int
+  type: String
+  amount: Float
+  mobile: String
+  userId: ID
+  filterType: String
+  startDate: String
+  endDate: String
+): WalletTransactionList!
 
     getAstrologerWalletTransactions(
       page: Int
