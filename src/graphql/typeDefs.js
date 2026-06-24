@@ -78,6 +78,12 @@ const typeDefs = gql`
     limit: Int
     page: Int
   }
+    type ServiceAstrologer {
+  id: ID!
+  price: Float!
+
+  astrologer: Astrologer!
+}
 
   type AstrologerList {
     data: [Astrologer!]!
@@ -574,7 +580,7 @@ const typeDefs = gql`
 
     name: String!
     slug: String!
-astrologers: [Astrologer!]
+  astrologerMappings: [ServiceAstrologer!]
     image: String
     description: String
     longText: String
@@ -588,19 +594,19 @@ astrologers: [Astrologer!]
     image: String
   }
 
-  input CreateServiceInput {
-    name: String!
-    slug: String!
-
-    image: String
-    description: String
-    longText: String
-  astrologerIds: [ID!]
-    price: Float
-
-    categoryId: ID
-  }
-
+input CreateServiceInput {
+  name: String!
+  slug: String!
+  image: String
+  description: String
+  longText: String
+  price: Float
+  categoryId: ID
+}
+input ServiceAstrologerInput {
+  astrologerId: ID!
+  price: Float!
+}
   input CreateCategoryInput {
     name: String!
   }
@@ -2088,6 +2094,7 @@ astrologers: [Astrologer!]
     updateNotice(id: ID!, input: UpdateNoticeInput!): Notice!
     deleteNotice(id: ID!): Boolean!
     getNotices: [Notice!]!
+    getServiceAstrologers(serviceId: ID!): [ServiceAstrologer!]!
   }
 
   type Mutation {
@@ -2369,6 +2376,10 @@ astrologers: [Astrologer!]
     updateReviewComment(reviewId: ID!, comment: String!): UserReview!
 
     updateGiftStatus(id: ID!, status: String!): Gift!
+    saveServiceAstrologers(
+  serviceId: ID!
+  astrologers: [ServiceAstrologerInput!]!
+): Boolean!
   }
 `;
 
