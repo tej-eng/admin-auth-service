@@ -1050,7 +1050,7 @@ input ServiceAstrologerInput {
 
     astrologerId: ID!
     astrologerName: String
-
+  source: String
     type: String
     status: String
 
@@ -1099,7 +1099,7 @@ input ServiceAstrologerInput {
 
   type UserCallHistory {
     sessionId: ID!
-
+  source: String
     userId: ID!
     userName: String
     mobile: String
