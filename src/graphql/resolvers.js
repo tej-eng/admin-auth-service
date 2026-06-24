@@ -1537,17 +1537,17 @@ export const resolvers = {
     },
     getUserWalletTransactions: async (
       _,
-{
-  page = 1,
-  limit = 20,
-  type,
-  amount,
-  mobile,
-  userId,
-  filterType,
-  startDate,
-  endDate,
-}
+      {
+        page = 1,
+        limit = 20,
+        type,
+        amount,
+        mobile,
+        userId,
+        filterType,
+        startDate,
+        endDate,
+      },
     ) => {
       try {
         const skip = (page - 1) * limit;
@@ -1557,6 +1557,7 @@ export const resolvers = {
           userWalletId: {
             not: null,
           },
+           rechargePack: true,
         };
 
         // Transaction type filter
@@ -1579,19 +1580,24 @@ export const resolvers = {
             },
           };
         }
+        if (onlyRecharge) {
+          whereClause.rechargePackId = {
+            not: null,
+          };
+        }
         if (userId) {
-  whereClause.userWallet = {
-    userId,
-  };
-} else if (mobile) {
-  whereClause.userWallet = {
-    user: {
-      mobile: {
-        contains: mobile,
-      },
-    },
-  };
-}
+          whereClause.userWallet = {
+            userId,
+          };
+        } else if (mobile) {
+          whereClause.userWallet = {
+            user: {
+              mobile: {
+                contains: mobile,
+              },
+            },
+          };
+        }
 
         // =========================
         // DATE FILTERS
