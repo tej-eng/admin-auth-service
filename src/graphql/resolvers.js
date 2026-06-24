@@ -1033,7 +1033,7 @@ export const resolvers = {
         const formattedData = sessions.map((session) => ({
           sessionId: session.id,
           userId: session.userId,
-
+ source: session.source,
           userId: session.user?.id || null,
           userName: session.user?.name || "",
           mobile: session.user?.mobile || "",
@@ -1269,7 +1269,7 @@ export const resolvers = {
           userId: session.user?.id || null,
           userName: session.user?.name || "",
           mobile: session.user?.mobile || "",
-
+ source: session.source,
           astrologerId: session.astrologer?.id || null,
           astrologerName:
             session.astrologer?.displayName || session.astrologer?.name || "",
