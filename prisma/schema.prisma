@@ -302,7 +302,7 @@ model Astrologer {
   followers         AstrologerFollow[]
   serviceBookings   ServiceBooking[]
   noticeAstrologers NoticeAstrologer[]
-
+ services Service[]
   liveStreams LiveStream[]
 
   @@index([rating])
@@ -557,7 +557,7 @@ model Service {
   categoryId String?
 
   category Category? @relation(fields: [categoryId], references: [id])
-
+ astrologers Astrologer[]
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   bookings  ServiceBooking[]

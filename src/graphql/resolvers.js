@@ -2921,9 +2921,15 @@ export const resolvers = {
 
     getServices: async (_, __, { prisma }) => {
       return prisma.service.findMany({
-        include: {
-          category: true,
-        },
+       include: {
+  category: true,
+  astrologers: {
+    select: {
+      id: true,
+      displayName: true,
+    },
+  },
+},
         orderBy: {
           createdAt: "desc",
         },
@@ -5048,20 +5054,24 @@ export const resolvers = {
 
     // dhwani services
     createService: async (_, { input }, { prisma }) => {
-      return prisma.service.create({
-        data: {
-          name: input.name,
-          slug: input.slug,
+     return prisma.service.create({
+  data: {
+    name: input.name,
+    slug: input.slug,
+    image: input.image,
+    description: input.description,
+    longText: input.longText,
+    price: input.price,
+    categoryId: input.categoryId || null,
 
-          image: input.image,
-          description: input.description,
-          longText: input.longText,
-
-          price: input.price,
-
-          categoryId: input.categoryId || null,
-        },
-      });
+    astrologers: {
+      connect:
+        input.astrologerIds?.map((id) => ({
+          id,
+        })) || [],
+    },
+  },
+});
     },
     updateService: async (_, { id, input }, { prisma }) => {
       return prisma.service.update({
@@ -5078,6 +5088,12 @@ export const resolvers = {
           price: input.price,
 
           categoryId: input.categoryId || null,
+          astrologers: {
+  set:
+    input.astrologerIds?.map((id) => ({
+      id,
+    })) || [],
+},
         },
       });
     },
