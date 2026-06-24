@@ -142,7 +142,7 @@ const typeDefs = gql`
     astroname: String!
     displayName: String!
     gender: Gender!
-  applicationId: String
+    applicationId: String
     dateOfBirth: String
 
     email: String!
@@ -756,10 +756,10 @@ const typeDefs = gql`
     applicationStatus: String!
     interviewStatus: String
     interviewRemarks: String
-    
+
     documentStatus: DocumentStatus
     approvalStatus: ApprovalStatus
- astrologerId: String
+    astrologerId: String
     about: String
     address: String
     pincode: String
@@ -827,8 +827,8 @@ const typeDefs = gql`
     ifsc: String
     branchName: String
     panNumber: String
- documentRemarks: String
-  
+    documentRemarks: String
+
     aadhaarImage: String
     panImage: String
     passbookImage: String
@@ -842,9 +842,8 @@ const typeDefs = gql`
     ifsc: String
     branchName: String
     panNumber: String
- documentRemarks: String
+    documentRemarks: String
 
-   
     aadhaarImage: String
     panImage: String
     passbookImage: String
@@ -2303,16 +2302,13 @@ const typeDefs = gql`
     markOfferUsed(userId: String!): Boolean
 
     #---- Save bank details & docs -----#
-  saveAndVerifyKyc(
-  astrologerId: String!
-  input: KycDetailInput!
-  remarks: String
-): KycDetail
+    saveAndVerifyKyc(
+      astrologerId: String!
+      input: KycDetailInput!
+      remarks: String
+    ): KycDetail
 
-rejectKyc(
-  astrologerId: String!
-  remarks: String
-): Boolean
+    rejectKyc(astrologerId: String!, remarks: String): Boolean
     createFraudFlag(keyword: String!): FraudFlag!
 
     deleteFraudFlag(id: ID!): Boolean!
