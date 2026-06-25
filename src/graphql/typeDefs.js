@@ -1690,7 +1690,7 @@ enum TransactionType {
 
     user: User
     astrologer: Astrologer
-
+ gift: Gift  
     createdAt: DateTime!
   }
   type GiftHistoryResponse {
@@ -1927,6 +1927,7 @@ enum TransactionType {
 
     createdAt: String!
 }
+
   #-----End code for send gift history-----------------#
 
   type Query {
