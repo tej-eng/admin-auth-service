@@ -774,80 +774,68 @@ export const resolvers = {
       };
     },
     getAstrologerFollowers: async (
-  _,
-  {
-    astrologerId,
-    page = 1,
-    limit = 20,
-    search,
-  },
-  { prisma }
-) => {
-  try {
-    const skip = (page - 1) * limit;
+      _,
+      { astrologerId, page = 1, limit = 20, search },
+      { prisma },
+    ) => {
+      try {
+        const skip = (page - 1) * limit;
 
-    const where = {
-      astrologerId,
-    };
+        const where = {
+          astrologerId,
+        };
 
-    if (search) {
-      where.user = {
-        OR: [
-          {
-            name: {
-              contains: search,
-              mode: "insensitive",
-            },
-          },
-          {
-            mobile: {
-              contains: search,
-            },
-          },
-        ],
-      };
-    }
+        if (search) {
+          where.user = {
+            OR: [
+              {
+                name: {
+                  contains: search,
+                  mode: "insensitive",
+                },
+              },
+              {
+                mobile: {
+                  contains: search,
+                },
+              },
+            ],
+          };
+        }
 
-    const [followers, totalCount] = await Promise.all([
-      prisma.astrologerFollow.findMany({
-        where,
+        const [followers, totalCount] = await Promise.all([
+          prisma.astrologerFollow.findMany({
+            where,
 
         include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              mobile: true,
-              gender: true,
-              profileImage: true, // agar field hai
-            },
-          },
-        },
-
-        orderBy: {
-          createdAt: "desc",
-        },
-
-        skip,
-        take: limit,
-      }),
-
-      prisma.astrologerFollow.count({
-        where,
-      }),
-    ]);
-
-    return {
-      data: followers,
-      totalCount,
-      currentPage: page,
-      totalPages: Math.ceil(totalCount / limit),
-    };
-  } catch (err) {
-    console.error(err);
-    throw new Error("Failed to fetch followers");
-  }
+  user: true,
+  astrologer: true,
 },
+
+            orderBy: {
+              createdAt: "desc",
+            },
+
+            skip,
+            take: limit,
+          }),
+
+          prisma.astrologerFollow.count({
+            where,
+          }),
+        ]);
+
+        return {
+          data: followers,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
+        };
+      } catch (err) {
+        console.error(err);
+        throw new Error(err.message);
+      }
+    },
 
     getAstrologerCallHistory: async (
       _,
@@ -3452,47 +3440,46 @@ export const resolvers = {
           };
         }
 
-      const [giftHistory, totalCount] = await Promise.all([
-  prisma.giftHistory.findMany({
-    where,
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          mobile: true,
-        },
-      },
+        const [giftHistory, totalCount] = await Promise.all([
+          prisma.giftHistory.findMany({
+            where,
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  mobile: true,
+                },
+              },
 
-      astrologer: {
-        select: {
-          id: true,
-          name: true,
-          profilePic: true,
-        },
-        
-      },
+              astrologer: {
+                select: {
+                  id: true,
+                  name: true,
+                  profilePic: true,
+                },
+              },
 
-      gift: {
-        select: {
-          id: true,
-          name: true,
-          image: true,
-          amount: true,
-        },
-      },
-    },
+              gift: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                  amount: true,
+                },
+              },
+            },
 
-    orderBy: {
-      createdAt: "desc",
-    },
+            orderBy: {
+              createdAt: "desc",
+            },
 
-    skip,
-    take: limit,
-  }),
+            skip,
+            take: limit,
+          }),
 
-  prisma.giftHistory.count({ where }),
-]);
+          prisma.giftHistory.count({ where }),
+        ]);
 
         return {
           data: giftHistory,
@@ -3506,63 +3493,63 @@ export const resolvers = {
       }
     },
     getAstrologerGiftHistory: async (
-  _,
-  { astrologerId, page = 1, limit = 20 }
-) => {
-  const skip = (page - 1) * limit;
+      _,
+      { astrologerId, page = 1, limit = 20 },
+    ) => {
+      const skip = (page - 1) * limit;
 
-  const where = {
-    astrologerWallet: {
-      astrologerId,
-    },
+      const where = {
+        astrologerWallet: {
+          astrologerId,
+        },
 
-    description: {
-      startsWith: "Gift Received",
-    },
-  };
+        description: {
+          startsWith: "Gift Received",
+        },
+      };
 
-  const [data, totalCount] = await Promise.all([
-    prisma.walletTransaction.findMany({
-      where,
-      include: {
-        session: {
+      const [data, totalCount] = await Promise.all([
+        prisma.walletTransaction.findMany({
+          where,
           include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
+            session: {
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                  },
+                },
               },
             },
           },
-        },
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-      skip,
-      take: limit,
-    }),
+          orderBy: {
+            createdAt: "desc",
+          },
+          skip,
+          take: limit,
+        }),
 
-    prisma.walletTransaction.count({
-      where,
-    }),
-  ]);
+        prisma.walletTransaction.count({
+          where,
+        }),
+      ]);
 
-  return {
-    totalCount,
+      return {
+        totalCount,
 
-    data: data.map((item) => ({
-      id: item.id,
-      coins: item.coins,
-      amount: item.amount,
-      description: item.description,
-      createdAt: item.createdAt.toISOString(),
-      sessionId: item.sessionId,
-      userId: item.session?.user?.id,
-      userName: item.session?.user?.name,
-    })),
-  };
-},
+        data: data.map((item) => ({
+          id: item.id,
+          coins: item.coins,
+          amount: item.amount,
+          description: item.description,
+          createdAt: item.createdAt.toISOString(),
+          sessionId: item.sessionId,
+          userId: item.session?.user?.id,
+          userName: item.session?.user?.name,
+        })),
+      };
+    },
 
     getAstrologerNotices: async (_, __, { astrologer }) => {
       return await prisma.notice.findMany({
@@ -3832,43 +3819,41 @@ export const resolvers = {
       }
     },
     getAstrologerReviews: async (_, { astrologerId }) => {
+      return prisma.review
+        .findMany({
+          where: {
+            astrologerId,
+          },
 
-   return prisma.review.findMany({
+          include: {
+            user: true,
+            session: true,
+          },
 
-      where:{
-         astrologerId
-      },
+          orderBy: {
+            createdAt: "desc",
+          },
+        })
+        .then((reviews) =>
+          reviews.map((r) => ({
+            reviewId: r.id,
 
-      include:{
-         user:true,
-         session:true
-      },
+            sessionId: r.sessionId,
 
-      orderBy:{
-         createdAt:"desc"
-      }
+            userId: r.userId,
 
-   }).then(reviews=>reviews.map(r=>({
+            userName: r.user?.name,
 
-      reviewId:r.id,
+            rating: r.rating,
 
-      sessionId:r.sessionId,
+            comment: r.comment,
 
-      userId:r.userId,
+            sessionType: r.session?.type,
 
-      userName:r.user?.name,
-
-      rating:r.rating,
-
-      comment:r.comment,
-
-      sessionType:r.session?.type,
-
-      createdAt:r.createdAt
-
-   })));
-
-}
+            createdAt: r.createdAt,
+          })),
+        );
+    },
   },
 
   // **********************************************START MUTATION**********************************
