@@ -1923,7 +1923,7 @@ enum TransactionType {
     rating: Float!
     comment: String
 
-    sessionType: SessionType
+    sessionType: String
 
     createdAt: String!
 }
