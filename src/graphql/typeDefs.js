@@ -1913,6 +1913,20 @@ enum TransactionType {
 
     totalApplications: Int!
   }
+    type AstrologerReview {
+    reviewId: ID!
+    sessionId: ID
+
+    userId: ID!
+    userName: String!
+
+    rating: Float!
+    comment: String
+
+    sessionType: SessionType
+
+    createdAt: String!
+}
   #-----End code for send gift history-----------------#
 
   type Query {
@@ -2101,6 +2115,9 @@ enum TransactionType {
     deleteNotice(id: ID!): Boolean!
     getNotices: [Notice!]!
     getServiceAstrologers(serviceId: ID!): [ServiceAstrologer!]!
+    getAstrologerReviews(
+    astrologerId: ID!
+): [AstrologerReview!]!
   }
 
   type Mutation {
