@@ -47,11 +47,7 @@ const typeDefs = gql`
     RESCHEDULED
   }
 
-  enum DocumentStatus {
-    PENDING
-    VERIFIED
-    REJECTED
-  }
+
 
   enum DocumentType {
     AADHAAR
@@ -78,12 +74,12 @@ const typeDefs = gql`
     limit: Int
     page: Int
   }
-    type ServiceAstrologer {
-  id: ID!
-  price: Float!
+  type ServiceAstrologer {
+    id: ID!
+    price: Float!
 
-  astrologer: Astrologer!
-}
+    astrologer: Astrologer!
+  }
 
   type AstrologerList {
     data: [Astrologer!]!
@@ -510,7 +506,14 @@ const typeDefs = gql`
     currentPage: Int!
     totalPages: Int!
   }
-
+enum TransactionType {
+  CREDIT
+  DEBIT
+}type WalletResponse {
+  success: Boolean!
+  message: String!
+  walletBalance: Float!
+}
   #------------------------------Department ____________#
   type Department {
     id: ID!
@@ -581,7 +584,7 @@ const typeDefs = gql`
 
     name: String!
     slug: String!
-  astrologerMappings: [ServiceAstrologer!]
+    astrologerMappings: [ServiceAstrologer!]
     image: String
     description: String
     longText: String
@@ -595,19 +598,19 @@ const typeDefs = gql`
     image: String
   }
 
-input CreateServiceInput {
-  name: String!
-  slug: String!
-  image: String
-  description: String
-  longText: String
-  price: Float
-  categoryId: ID
-}
-input ServiceAstrologerInput {
-  astrologerId: ID!
-  price: Float!
-}
+  input CreateServiceInput {
+    name: String!
+    slug: String!
+    image: String
+    description: String
+    longText: String
+    price: Float
+    categoryId: ID
+  }
+  input ServiceAstrologerInput {
+    astrologerId: ID!
+    price: Float!
+  }
   input CreateCategoryInput {
     name: String!
   }
@@ -879,7 +882,7 @@ input ServiceAstrologerInput {
 
     userWalletId: ID
     astrologerWalletId: ID
-rechargePack: RechargePack
+    rechargePack: RechargePack
     rechargePackId: ID
     sessionId: ID
     paymentId: ID
@@ -956,7 +959,7 @@ rechargePack: RechargePack
 
     userWalletId: ID
     astrologerWalletId: ID
-rechargePack: RechargePack
+    rechargePack: RechargePack
     rechargePackId: ID
     sessionId: ID
     paymentId: ID
@@ -1051,7 +1054,7 @@ rechargePack: RechargePack
 
     astrologerId: ID!
     astrologerName: String
-  source: String
+    source: String
     type: String
     status: String
 
@@ -1088,7 +1091,7 @@ rechargePack: RechargePack
     astrologerName: String
     type: String
     status: String
- userId: ID
+    userId: ID
     filterType: SessionFilterType
 
     startDate: String
@@ -1100,7 +1103,7 @@ rechargePack: RechargePack
 
   type UserCallHistory {
     sessionId: ID!
-  source: String
+    source: String
     userId: ID!
     userName: String
     mobile: String
@@ -1142,7 +1145,7 @@ rechargePack: RechargePack
     userName: String
     astrologerName: String
     rating: Int
- userId: ID
+    userId: ID
     filterType: SessionFilterType
 
     startDate: String
@@ -1995,18 +1998,18 @@ rechargePack: RechargePack
 
     getUserWallet(userId: ID!): UserWallet
 
-getUserWalletTransactions(
-  page: Int
-  limit: Int
-  type: String
-  amount: Float
-  mobile: String
-  userId: ID
-   onlyRecharge: Boolean
-  filterType: String
-  startDate: String
-  endDate: String
-): WalletTransactionList!
+    getUserWalletTransactions(
+      page: Int
+      limit: Int
+      type: String
+      amount: Float
+      mobile: String
+      userId: ID
+      onlyRecharge: Boolean
+      filterType: String
+      startDate: String
+      endDate: String
+    ): WalletTransactionList!
 
     getAstrologerWalletTransactions(
       page: Int
@@ -2380,13 +2383,22 @@ getUserWalletTransactions(
 
     updateGiftStatus(id: ID!, status: String!): Gift!
     saveServiceAstrologers(
-  serviceId: ID!
-  astrologers: [ServiceAstrologerInput!]!
-): Boolean!
-updateUserStatus(
+      serviceId: ID!
+      astrologers: [ServiceAstrologerInput!]!
+    ): Boolean!
+    updateUserStatus(userId: ID!, isActive: Boolean!): User!
+   manageAstrologerWallet(
+  astrologerId: ID!
+  amount: Float!
+  remarks: String
+  type: TransactionType!
+): WalletResponse!
+manageUserWallet(
   userId: ID!
-  isActive: Boolean!
-): User!
+  amount: Float!
+  remarks: String
+  type: TransactionType!
+): WalletResponse!
   }
 `;
 
