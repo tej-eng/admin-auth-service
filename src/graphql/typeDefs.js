@@ -1941,6 +1941,19 @@ enum TransactionType {
   userId: ID
   sessionId: ID
 }
+  type AstrologerFollowerResponse {
+  data: [AstrologerFollower!]!
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
+
+type AstrologerFollower {
+  id: ID!
+  createdAt: DateTime!
+
+  user: User!
+}
 
   #-----End code for send gift history-----------------#
 
@@ -2138,6 +2151,12 @@ enum TransactionType {
     getAstrologerReviews(
     astrologerId: ID!
 ): [AstrologerReview!]!
+ getAstrologerFollowers(
+    astrologerId: ID!
+    page: Int
+    limit: Int
+    search: String
+  ): AstrologerFollowerResponse!
   }
 
   type Mutation {
