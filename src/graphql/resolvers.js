@@ -1535,157 +1535,146 @@ export const resolvers = {
         orderBy: { createdAt: "desc" },
       });
     },
-    getUserWalletTransactions: async (
-      _,
-      {
-        page = 1,
-        limit = 20,
-        type,
-        amount,
-        mobile,
-        userId,
-        filterType,
-        startDate,
-        endDate,
+getUserWalletTransactions: async (
+  _,
+  {
+    page = 1,
+    limit = 20,
+    type,
+    amount,
+    mobile,
+    userId,
+    filterType,
+    startDate,
+    endDate,
+    onlyRecharge = false,
+  }
+) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const whereClause = {
+      userWalletId: {
+        not: null,
       },
-    ) => {
-      try {
-        const skip = (page - 1) * limit;
+    };
 
-        // Only USER transactions
-        const whereClause = {
-          userWalletId: {
-            not: null,
+    // Only recharge transactions
+    if (onlyRecharge) {
+      whereClause.rechargePackId = {
+        not: null,
+      };
+    }
+
+    // Transaction type
+    if (type) {
+      whereClause.type = type.toUpperCase();
+    }
+
+    // Amount
+    if (amount) {
+      whereClause.amount = Number(amount);
+    }
+
+    // User filter
+    if (userId || mobile) {
+      whereClause.userWallet = {};
+
+      if (userId) {
+        whereClause.userWallet.userId = userId;
+      }
+
+      if (mobile) {
+        whereClause.userWallet.user = {
+          mobile: {
+            contains: mobile,
           },
-           rechargePack: true,
         };
+      }
+    }
 
-        // Transaction type filter
-        if (type) {
-          whereClause.type = type.toUpperCase();
-        }
+    // =========================
+    // DATE FILTERS
+    // =========================
 
-        // Amount filter
-        if (amount) {
-          whereClause.amount = Number(amount);
-        }
+    const now = new Date();
 
-        // Mobile filter
-        if (mobile) {
-          whereClause.userWallet = {
-            user: {
-              mobile: {
-                contains: mobile,
-              },
-            },
-          };
-        }
-        if (onlyRecharge) {
-          whereClause.rechargePackId = {
-            not: null,
-          };
-        }
-        if (userId) {
-          whereClause.userWallet = {
-            userId,
-          };
-        } else if (mobile) {
-          whereClause.userWallet = {
-            user: {
-              mobile: {
-                contains: mobile,
-              },
-            },
-          };
-        }
+    if (filterType === "WEEK") {
+      const weekStart = new Date();
+      weekStart.setDate(now.getDate() - 7);
 
-        // =========================
-        // DATE FILTERS
-        // =========================
+      whereClause.createdAt = {
+        gte: weekStart,
+        lte: now,
+      };
+    }
 
-        const now = new Date();
+    if (filterType === "MONTH") {
+      const monthStart = new Date();
+      monthStart.setMonth(now.getMonth() - 1);
 
-        // Weekly filter
-        if (filterType === "WEEK") {
-          const weekStart = new Date();
-          weekStart.setDate(now.getDate() - 7);
+      whereClause.createdAt = {
+        gte: monthStart,
+        lte: now,
+      };
+    }
 
-          whereClause.createdAt = {
-            gte: weekStart,
-            lte: now,
-          };
-        }
+    if (filterType === "YEAR") {
+      const yearStart = new Date();
+      yearStart.setFullYear(now.getFullYear() - 1);
 
-        // Monthly filter
-        if (filterType === "MONTH") {
-          const monthStart = new Date();
-          monthStart.setMonth(now.getMonth() - 1);
+      whereClause.createdAt = {
+        gte: yearStart,
+        lte: now,
+      };
+    }
 
-          whereClause.createdAt = {
-            gte: monthStart,
-            lte: now,
-          };
-        }
+    if (filterType === "CUSTOM" && startDate && endDate) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
 
-        // Yearly filter
-        if (filterType === "YEAR") {
-          const yearStart = new Date();
-          yearStart.setFullYear(now.getFullYear() - 1);
-
-          whereClause.createdAt = {
-            gte: yearStart,
-            lte: now,
-          };
-        }
-
-        // Custom date filter
-        if (filterType === "CUSTOM" && startDate && endDate) {
-          whereClause.createdAt = {
-            gte: new Date(startDate),
-            lte: new Date(endDate),
-          };
-        }
-
-        const [data, totalCount] = await Promise.all([
-          prisma.walletTransaction.findMany({
-            where: whereClause,
-
+    const [data, totalCount] = await Promise.all([
+      prisma.walletTransaction.findMany({
+        where: whereClause,
+        include: {
+          userWallet: {
             include: {
-              userWallet: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                      mobile: true,
-                    },
-                  },
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  mobile: true,
                 },
               },
             },
+          },
+          rechargePack: true,
+          payment: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        skip,
+        take: limit,
+      }),
 
-            orderBy: {
-              createdAt: "desc",
-            },
+      prisma.walletTransaction.count({
+        where: whereClause,
+      }),
+    ]);
 
-            skip,
-            take: limit,
-          }),
-
-          prisma.walletTransaction.count({
-            where: whereClause,
-          }),
-        ]);
-
-        return {
-          data,
-          totalCount,
-        };
-      } catch (err) {
-        console.error("getUserWalletTransactions error:", err);
-        throw new Error("Failed to fetch transactions");
-      }
-    },
+    return {
+      data,
+      totalCount,
+    };
+  } catch (err) {
+    console.error("getUserWalletTransactions error:", err);
+    throw new Error("Failed to fetch transactions");
+  }
+},
 
     getAstrologerWalletTransactions: async (
       _,
