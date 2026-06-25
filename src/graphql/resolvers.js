@@ -6361,112 +6361,113 @@ export const resolvers = {
       });
     },
 
-  manageAstrologerWallet: async (
-  _,
-  { astrologerId, amount, remarks, type }
-) => {
-  const amt = Number(amount);
+    manageAstrologerWallet: async (
+      _,
+      { astrologerId, amount, remarks, type },
+    ) => {
+      const amt = Number(amount);
 
-  if (isNaN(amt) || amt <= 0) {
-    throw new Error("Invalid amount");
-  }
+      if (isNaN(amt) || amt <= 0) {
+        throw new Error("Invalid amount");
+      }
 
-  const wallet = await prisma.astrologerWallet.findUnique({
-    where: {
-      astrologerId,
+      const wallet = await prisma.astrologerWallet.findUnique({
+        where: {
+          astrologerId,
+        },
+      });
+
+      if (!wallet) {
+        throw new Error("Wallet not found");
+      }
+
+      const updatedBalance =
+        type === "CREDIT"
+          ? wallet.balanceCoins + amt
+          : wallet.balanceCoins - amt;
+
+      await prisma.$transaction(async (tx) => {
+        await tx.astrologerWallet.update({
+          where: {
+            id: wallet.id,
+          },
+          data: {
+            balanceCoins: updatedBalance,
+          },
+        });
+
+        await tx.walletTransaction.create({
+          data: {
+            astrologerWalletId: wallet.id,
+            type,
+            coins: Math.round(amt),
+            amount: amt,
+            description: remarks,
+          },
+        });
+      });
+
+      return {
+        success: true,
+        message:
+          type === "CREDIT"
+            ? "Wallet credited successfully"
+            : "Wallet debited successfully",
+        walletBalance: updatedBalance,
+      };
     },
-  });
+    manageUserWallet: async (_, { userId, amount, remarks, type }) => {
+      const amt = Number(amount);
 
-  if (!wallet) {
-    throw new Error("Wallet not found");
-  }
+      if (isNaN(amt) || amt <= 0) {
+        throw new Error("Invalid amount");
+      }
 
-  const updatedBalance =
-     type === "CREDIT"
-      ? wallet.balanceCoins + amt
-      : wallet.balanceCoins - amt;
+      const wallet = await prisma.userWallet.findUnique({
+        where: {
+          userId,
+        },
+      });
 
-  await prisma.$transaction(async (tx) => {
-    await tx.astrologerWallet.update({
-      where: {
-        id: wallet.id,
-      },
-      data: {
-        balanceCoins: updatedBalance,
-      },
-    });
+      if (!wallet) {
+        throw new Error("User wallet not found");
+      }
 
-await tx.walletTransaction.create({
-  data: {
-    astrologerWalletId: wallet.id,
-    type,
-    coins: Math.round(amt),
-    amount: amt,
-    description: remarks,
-  },
-});
-  });
+      const updatedBalance =
+        type === "CREDIT"
+          ? wallet.balanceCoins + amt
+          : wallet.balanceCoins - amt;
 
-  return {
-    success: true,
-    message: `Wallet ${
-      action === "ADD" ? "credited" : "debited"
-    } successfully`,
-    walletBalance: updatedBalance,
-  };
-},
-manageUserWallet: async (_, { userId, amount, remarks, type }) => {
-  const amt = Number(amount);
+      await prisma.$transaction(async (tx) => {
+        await tx.userWallet.update({
+          where: {
+            id: wallet.id,
+          },
+          data: {
+            balanceCoins: updatedBalance,
+          },
+        });
 
-  if (isNaN(amt) || amt <= 0) {
-    throw new Error("Invalid amount");
-  }
+        await tx.walletTransaction.create({
+          data: {
+            userWalletId: wallet.id,
+            type,
+            coins: Math.round(amt),
+            amount: amt,
+            description: remarks,
+          },
+        });
+      });
 
-  const wallet = await prisma.userWallet.findUnique({
-    where: {
-      userId,
+      return {
+        success: true,
+        message:
+          type === "CREDIT"
+            ? "Wallet credited successfully"
+            : "Wallet debited successfully",
+        walletBalance: updatedBalance,
+      };
     },
-  });
-
-  if (!wallet) {
-    throw new Error("User wallet not found");
-  }
-
-  const updatedBalance =
-    type === "CREDIT"
-      ? wallet.balanceCoins + amt
-      : wallet.balanceCoins - amt;
-
-  await prisma.$transaction(async (tx) => {
-    await tx.userWallet.update({
-      where: {
-        id: wallet.id,
-      },
-      data: {
-        balanceCoins: updatedBalance,
-      },
-    });
-
-    await tx.walletTransaction.create({
-      data: {
-        userWalletId: wallet.id,
-        type,
-        coins: Math.round(amt),
-        amount: amt,
-        description: remarks,
-      },
-    });
-  });
-
-  return {
-    success: true,
-    message:
-      type === "CREDIT"
-        ? "Wallet credited successfully"
-        : "Wallet debited successfully",
-    walletBalance: updatedBalance,
-  };
-},
   },
 
   Blog: {
