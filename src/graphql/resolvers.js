@@ -1535,146 +1535,146 @@ export const resolvers = {
         orderBy: { createdAt: "desc" },
       });
     },
-getUserWalletTransactions: async (
-  _,
-  {
-    page = 1,
-    limit = 20,
-    type,
-    amount,
-    mobile,
-    userId,
-    filterType,
-    startDate,
-    endDate,
-    onlyRecharge = false,
-  }
-) => {
-  try {
-    const skip = (page - 1) * limit;
-
-    const whereClause = {
-      userWalletId: {
-        not: null,
+    getUserWalletTransactions: async (
+      _,
+      {
+        page = 1,
+        limit = 20,
+        type,
+        amount,
+        mobile,
+        userId,
+        filterType,
+        startDate,
+        endDate,
+        onlyRecharge = false,
       },
-    };
+    ) => {
+      try {
+        const skip = (page - 1) * limit;
 
-    // Only recharge transactions
-    if (onlyRecharge) {
-      whereClause.rechargePackId = {
-        not: null,
-      };
-    }
-
-    // Transaction type
-    if (type) {
-      whereClause.type = type.toUpperCase();
-    }
-
-    // Amount
-    if (amount) {
-      whereClause.amount = Number(amount);
-    }
-
-    // User filter
-    if (userId || mobile) {
-      whereClause.userWallet = {};
-
-      if (userId) {
-        whereClause.userWallet.userId = userId;
-      }
-
-      if (mobile) {
-        whereClause.userWallet.user = {
-          mobile: {
-            contains: mobile,
+        const whereClause = {
+          userWalletId: {
+            not: null,
           },
         };
-      }
-    }
 
-    // =========================
-    // DATE FILTERS
-    // =========================
+        // Only recharge transactions
+        if (onlyRecharge) {
+          whereClause.rechargePackId = {
+            not: null,
+          };
+        }
 
-    const now = new Date();
+        // Transaction type
+        if (type) {
+          whereClause.type = type.toUpperCase();
+        }
 
-    if (filterType === "WEEK") {
-      const weekStart = new Date();
-      weekStart.setDate(now.getDate() - 7);
+        // Amount
+        if (amount) {
+          whereClause.amount = Number(amount);
+        }
 
-      whereClause.createdAt = {
-        gte: weekStart,
-        lte: now,
-      };
-    }
+        // User filter
+        if (userId || mobile) {
+          whereClause.userWallet = {};
 
-    if (filterType === "MONTH") {
-      const monthStart = new Date();
-      monthStart.setMonth(now.getMonth() - 1);
+          if (userId) {
+            whereClause.userWallet.userId = userId;
+          }
 
-      whereClause.createdAt = {
-        gte: monthStart,
-        lte: now,
-      };
-    }
+          if (mobile) {
+            whereClause.userWallet.user = {
+              mobile: {
+                contains: mobile,
+              },
+            };
+          }
+        }
 
-    if (filterType === "YEAR") {
-      const yearStart = new Date();
-      yearStart.setFullYear(now.getFullYear() - 1);
+        // =========================
+        // DATE FILTERS
+        // =========================
 
-      whereClause.createdAt = {
-        gte: yearStart,
-        lte: now,
-      };
-    }
+        const now = new Date();
 
-    if (filterType === "CUSTOM" && startDate && endDate) {
-      whereClause.createdAt = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
-    }
+        if (filterType === "WEEK") {
+          const weekStart = new Date();
+          weekStart.setDate(now.getDate() - 7);
 
-    const [data, totalCount] = await Promise.all([
-      prisma.walletTransaction.findMany({
-        where: whereClause,
-        include: {
-          userWallet: {
+          whereClause.createdAt = {
+            gte: weekStart,
+            lte: now,
+          };
+        }
+
+        if (filterType === "MONTH") {
+          const monthStart = new Date();
+          monthStart.setMonth(now.getMonth() - 1);
+
+          whereClause.createdAt = {
+            gte: monthStart,
+            lte: now,
+          };
+        }
+
+        if (filterType === "YEAR") {
+          const yearStart = new Date();
+          yearStart.setFullYear(now.getFullYear() - 1);
+
+          whereClause.createdAt = {
+            gte: yearStart,
+            lte: now,
+          };
+        }
+
+        if (filterType === "CUSTOM" && startDate && endDate) {
+          whereClause.createdAt = {
+            gte: new Date(startDate),
+            lte: new Date(endDate),
+          };
+        }
+
+        const [data, totalCount] = await Promise.all([
+          prisma.walletTransaction.findMany({
+            where: whereClause,
             include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  mobile: true,
+              userWallet: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      mobile: true,
+                    },
+                  },
                 },
               },
+              rechargePack: true,
+              payment: true,
             },
-          },
-          rechargePack: true,
-          payment: true,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-        skip,
-        take: limit,
-      }),
+            orderBy: {
+              createdAt: "desc",
+            },
+            skip,
+            take: limit,
+          }),
 
-      prisma.walletTransaction.count({
-        where: whereClause,
-      }),
-    ]);
+          prisma.walletTransaction.count({
+            where: whereClause,
+          }),
+        ]);
 
-    return {
-      data,
-      totalCount,
-    };
-  } catch (err) {
-    console.error("getUserWalletTransactions error:", err);
-    throw new Error("Failed to fetch transactions");
-  }
-},
+        return {
+          data,
+          totalCount,
+        };
+      } catch (err) {
+        console.error("getUserWalletTransactions error:", err);
+        throw new Error("Failed to fetch transactions");
+      }
+    },
 
     getAstrologerWalletTransactions: async (
       _,
@@ -1978,6 +1978,7 @@ getUserWalletTransactions: async (
         const {
           query,
           userName,
+          userId,
           astrologerName,
           rating,
           filterType,
@@ -1995,6 +1996,9 @@ getUserWalletTransactions: async (
         // ---------------- WHERE CONDITION ----------------
 
         const where = {};
+        if (userId) {
+          where.userId = userId;
+        }
 
         // ---------------- SEARCH FILTER ----------------
 
@@ -2165,6 +2169,8 @@ getUserWalletTransactions: async (
 
           sessionId: review.session?.id || null,
 
+          orderId: review.session?.orderId || null, // agar Session model me hai
+
           userId: review.user?.id || null,
 
           astrologerId: review.astrologer?.id || null,
@@ -2173,15 +2179,11 @@ getUserWalletTransactions: async (
 
           displayName: review.astrologer?.displayName || "",
 
-          userName: review.userName || review.user?.name || "",
-
           mobile: review.user?.mobile || "",
 
           sessionType: review.session?.type || "",
 
           sessionStatus: review.session?.status || "",
-
-          isFlagged: review.isFlagged,
 
           rating: review.rating,
 
