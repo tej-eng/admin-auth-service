@@ -3687,6 +3687,44 @@ export const resolvers = {
         throw new Error(err.message);
       }
     },
+    getAstrologerReviews: async (_, { astrologerId }) => {
+
+   return prisma.review.findMany({
+
+      where:{
+         astrologerId
+      },
+
+      include:{
+         user:true,
+         session:true
+      },
+
+      orderBy:{
+         createdAt:"desc"
+      }
+
+   }).then(reviews=>reviews.map(r=>({
+
+      reviewId:r.id,
+
+      sessionId:r.sessionId,
+
+      userId:r.userId,
+
+      userName:r.user?.name,
+
+      rating:r.rating,
+
+      comment:r.comment,
+
+      sessionType:r.session?.type,
+
+      createdAt:r.createdAt
+
+   })));
+
+}
   },
 
   // **********************************************START MUTATION**********************************
