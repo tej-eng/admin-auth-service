@@ -1084,6 +1084,7 @@ export const resolvers = {
           query,
           mobile,
           astrologerName,
+          userId,
           status,
           filterType,
           startDate,
@@ -1104,39 +1105,45 @@ export const resolvers = {
         };
 
         // ---------------- USER SEARCH FILTER ----------------
+const userWhere = {};
 
-        const userFilters = [];
+if (userId) {
+  userWhere.id = userId;
+}
 
-        if (query) {
-          userFilters.push(
-            {
-              name: {
-                contains: query,
-                mode: "insensitive",
-              },
-            },
-            {
-              mobile: {
-                contains: query,
-              },
-            },
-          );
-        }
+const userFilters = [];
 
-        if (mobile) {
-          userFilters.push({
-            mobile: {
-              contains: mobile,
-            },
-          });
-        }
+if (query) {
+  userFilters.push(
+    {
+      name: {
+        contains: query,
+        mode: "insensitive",
+      },
+    },
+    {
+      mobile: {
+        contains: query,
+      },
+    }
+  );
+}
 
-        if (userFilters.length > 0) {
-          where.user = {
-            OR: userFilters,
-          };
-        }
+if (mobile) {
+  userFilters.push({
+    mobile: {
+      contains: mobile,
+    },
+  });
+}
 
+if (userFilters.length) {
+  userWhere.OR = userFilters;
+}
+
+if (Object.keys(userWhere).length) {
+  where.user = userWhere;
+}
         // ---------------- ASTROLOGER FILTER ----------------
 
         if (astrologerName) {
@@ -4410,23 +4417,23 @@ export const resolvers = {
         throw error;
       }
     },
-deleteRechargePack: async (_, { id }, context) => {
-  const { prisma } = context;
-  await checkPermission(context, "walletpackages.delete");
+    deleteRechargePack: async (_, { id }, context) => {
+      const { prisma } = context;
+      await checkPermission(context, "walletpackages.delete");
 
-  try {
-    await prisma.rechargePack.update({
-      where: { id },
-      data: {
-        isActive: false,
-      },
-    });
+      try {
+        await prisma.rechargePack.update({
+          where: { id },
+          data: {
+            isActive: false,
+          },
+        });
 
-    return true;
-  } catch (error) {
-    throw error;
-  }
-},
+        return true;
+      } catch (error) {
+        throw error;
+      }
+    },
 
     updateRechargePack: async (_, { id, input }, context) => {
       const { prisma } = context;

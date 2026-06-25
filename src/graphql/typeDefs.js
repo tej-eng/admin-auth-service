@@ -1087,7 +1087,7 @@ rechargePack: RechargePack
     astrologerName: String
     type: String
     status: String
-
+ userId: ID
     filterType: SessionFilterType
 
     startDate: String
