@@ -3377,36 +3377,47 @@ export const resolvers = {
           };
         }
 
-        const [giftHistory, totalCount] = await Promise.all([
-          prisma.giftHistory.findMany({
-            where,
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  mobile: true,
-                },
-              },
-              astrologer: {
-                select: {
-                  id: true,
-                  name: true,
-                  profilePic: true,
-                },
-              },
-            },
-            orderBy: {
-              createdAt: "desc",
-            },
-            skip,
-            take: limit,
-          }),
+      const [giftHistory, totalCount] = await Promise.all([
+  prisma.giftHistory.findMany({
+    where,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          mobile: true,
+        },
+      },
 
-          prisma.giftHistory.count({
-            where,
-          }),
-        ]);
+      astrologer: {
+        select: {
+          id: true,
+          name: true,
+          profilePic: true,
+        },
+          gift: true, 
+      },
+
+      gift: {
+        select: {
+          id: true,
+          name: true,
+          image: true,
+          price: true,
+        },
+      },
+    },
+
+    orderBy: {
+      createdAt: "desc",
+    },
+
+    skip,
+    take: limit,
+  }),
+
+  prisma.giftHistory.count({ where }),
+]);
 
         return {
           data: giftHistory,
@@ -3419,6 +3430,64 @@ export const resolvers = {
         throw new Error(error.message);
       }
     },
+    getAstrologerGiftHistory: async (
+  _,
+  { astrologerId, page = 1, limit = 20 }
+) => {
+  const skip = (page - 1) * limit;
+
+  const where = {
+    astrologerWallet: {
+      astrologerId,
+    },
+
+    description: {
+      startsWith: "Gift Received",
+    },
+  };
+
+  const [data, totalCount] = await Promise.all([
+    prisma.walletTransaction.findMany({
+      where,
+      include: {
+        session: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      skip,
+      take: limit,
+    }),
+
+    prisma.walletTransaction.count({
+      where,
+    }),
+  ]);
+
+  return {
+    totalCount,
+
+    data: data.map((item) => ({
+      id: item.id,
+      coins: item.coins,
+      amount: item.amount,
+      description: item.description,
+      createdAt: item.createdAt.toISOString(),
+      sessionId: item.sessionId,
+      userId: item.session?.user?.id,
+      userName: item.session?.user?.name,
+    })),
+  };
+},
 
     getAstrologerNotices: async (_, __, { astrologer }) => {
       return await prisma.notice.findMany({
