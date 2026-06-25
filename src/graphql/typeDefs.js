@@ -878,7 +878,7 @@ input ServiceAstrologerInput {
 
     userWalletId: ID
     astrologerWalletId: ID
-
+rechargePack: RechargePack
     rechargePackId: ID
     sessionId: ID
     paymentId: ID
@@ -955,7 +955,7 @@ input ServiceAstrologerInput {
 
     userWalletId: ID
     astrologerWalletId: ID
-
+rechargePack: RechargePack
     rechargePackId: ID
     sessionId: ID
     paymentId: ID
