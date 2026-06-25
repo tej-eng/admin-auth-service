@@ -1927,10 +1927,29 @@ enum TransactionType {
 
     createdAt: String!
 }
+    type AstrologerGiftHistoryResponse {
+  data: [AstrologerGift!]!
+  totalCount: Int!
+}
+  type AstrologerGift {
+  id: ID!
+  coins: Int
+  amount: Float
+  description: String
+  createdAt: String
+  userName: String
+  userId: ID
+  sessionId: ID
+}
 
   #-----End code for send gift history-----------------#
 
   type Query {
+    getAstrologerGiftHistory(
+    astrologerId: ID!
+    page: Int
+    limit: Int
+  ): AstrologerGiftHistoryResponse!
     freeServices: [FreeService!]!
     getAppVersions: [AppVersion!]!
     getLatestAppVersion(platform: PlatformType!): AppVersion
