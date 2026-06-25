@@ -1141,7 +1141,7 @@ input ServiceAstrologerInput {
     userName: String
     astrologerName: String
     rating: Int
-
+ userId: ID
     filterType: SessionFilterType
 
     startDate: String
