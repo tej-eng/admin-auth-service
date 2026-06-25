@@ -3403,7 +3403,7 @@ export const resolvers = {
           id: true,
           name: true,
           image: true,
-          price: true,
+          amount: true,
         },
       },
     },
