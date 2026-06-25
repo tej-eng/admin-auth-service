@@ -773,6 +773,81 @@ export const resolvers = {
         totalPages: Math.ceil(totalCount / limit),
       };
     },
+    getAstrologerFollowers: async (
+  _,
+  {
+    astrologerId,
+    page = 1,
+    limit = 20,
+    search,
+  },
+  { prisma }
+) => {
+  try {
+    const skip = (page - 1) * limit;
+
+    const where = {
+      astrologerId,
+    };
+
+    if (search) {
+      where.user = {
+        OR: [
+          {
+            name: {
+              contains: search,
+              mode: "insensitive",
+            },
+          },
+          {
+            mobile: {
+              contains: search,
+            },
+          },
+        ],
+      };
+    }
+
+    const [followers, totalCount] = await Promise.all([
+      prisma.astrologerFollow.findMany({
+        where,
+
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              mobile: true,
+              gender: true,
+              profileImage: true, // agar field hai
+            },
+          },
+        },
+
+        orderBy: {
+          createdAt: "desc",
+        },
+
+        skip,
+        take: limit,
+      }),
+
+      prisma.astrologerFollow.count({
+        where,
+      }),
+    ]);
+
+    return {
+      data: followers,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  } catch (err) {
+    console.error(err);
+    throw new Error("Failed to fetch followers");
+  }
+},
 
     getAstrologerCallHistory: async (
       _,
