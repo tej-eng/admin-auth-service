@@ -4410,21 +4410,23 @@ export const resolvers = {
         throw error;
       }
     },
+deleteRechargePack: async (_, { id }, context) => {
+  const { prisma } = context;
+  await checkPermission(context, "walletpackages.delete");
 
-    deleteRechargePack: async (_, { id }, context) => {
-      const { prisma } = context;
-      await checkPermission(context, "walletpackages.delete");
+  try {
+    await prisma.rechargePack.update({
+      where: { id },
+      data: {
+        isActive: false,
+      },
+    });
 
-      try {
-        await prisma.rechargePack.delete({
-          where: { id },
-        });
-
-        return true;
-      } catch (error) {
-        throw error;
-      }
-    },
+    return true;
+  } catch (error) {
+    throw error;
+  }
+},
 
     updateRechargePack: async (_, { id, input }, context) => {
       const { prisma } = context;
