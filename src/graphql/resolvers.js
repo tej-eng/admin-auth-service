@@ -3395,7 +3395,7 @@ export const resolvers = {
           name: true,
           profilePic: true,
         },
-          gift: true, 
+        
       },
 
       gift: {
