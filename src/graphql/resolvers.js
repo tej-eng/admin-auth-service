@@ -653,6 +653,7 @@ export const resolvers = {
           coinsEarned: true,
           coinsDeducted: true,
           commission: true,
+          status: true,
         },
       });
 
@@ -678,6 +679,42 @@ export const resolvers = {
         (sum, s) => sum + (s.commission || 0),
         0,
       );
+      const statusSummary = {
+        requested: 0,
+        accepted: 0,
+        ongoing: 0,
+        completed: 0,
+        cancelled: 0,
+        failed: 0,
+      };
+
+      sessions.forEach((session) => {
+        switch (session.status) {
+          case "REQUESTED":
+            statusSummary.requested++;
+            break;
+
+          case "ACCEPTED":
+            statusSummary.accepted++;
+            break;
+
+          case "ONGOING":
+            statusSummary.ongoing++;
+            break;
+
+          case "COMPLETED":
+            statusSummary.completed++;
+            break;
+
+          case "FAILED":
+            statusSummary.failed++;
+            break;
+
+          case "CANCELLED":
+            statusSummary.cancelled++;
+            break;
+        }
+      });
 
       return {
         totalChats,
@@ -705,12 +742,13 @@ export const resolvers = {
         totalReviews: astrologer.reviews.length,
 
         averageRating: astrologer.rating || 0,
+        statusSummary,
       };
     },
 
     getAstrologerChatHistory: async (
       _,
-      { astrologerId, page = 1, limit = 10 },
+      { astrologerId, page = 1, limit = 10, status,filter },
       { prisma },
     ) => {
       const skip = (page - 1) * limit;
@@ -719,6 +757,29 @@ export const resolvers = {
         astrologerId,
         type: "CHAT",
       };
+
+      if (status) {
+        where.status = status;
+      }
+      const now = dayjs();
+
+      if (filter === "TODAY") {
+        where.createdAt = {
+          gte: now.startOf("day").toDate(),
+        };
+      }
+
+      if (filter === "WEEK") {
+        where.createdAt = {
+          gte: now.startOf("week").toDate(),
+        };
+      }
+
+      if (filter === "MONTH") {
+        where.createdAt = {
+          gte: now.startOf("month").toDate(),
+        };
+      }
 
       const [sessions, totalCount] = await Promise.all([
         prisma.session.findMany({
@@ -773,6 +834,96 @@ export const resolvers = {
         totalPages: Math.ceil(totalCount / limit),
       };
     },
+
+    getAstrologerCallHistory: async (
+      _,
+      { astrologerId, page = 1, limit = 10, status, filter },
+      { prisma },
+    ) => {
+      const skip = (page - 1) * limit;
+
+      const where = {
+        astrologerId,
+        type: "CALL",
+      };
+
+      if (status) {
+        where.status = status;
+      }
+           const now = dayjs();
+
+      if (filter === "TODAY") {
+        where.createdAt = {
+          gte: now.startOf("day").toDate(),
+        };
+      }
+
+      if (filter === "WEEK") {
+        where.createdAt = {
+          gte: now.startOf("week").toDate(),
+        };
+      }
+
+      if (filter === "MONTH") {
+        where.createdAt = {
+          gte: now.startOf("month").toDate(),
+        };
+      }
+
+      const [sessions, totalCount] = await Promise.all([
+        prisma.session.findMany({
+          where,
+
+          include: {
+            user: true,
+          },
+
+          orderBy: {
+            createdAt: "desc",
+          },
+
+          skip,
+          take: limit,
+        }),
+
+        prisma.session.count({
+          where,
+        }),
+      ]);
+
+      return {
+        data: sessions.map((session) => ({
+          sessionId: session.id,
+
+          userId: session.userId,
+
+          userName: session.user?.name || "",
+
+          ratePerMin: session.ratePerMin,
+
+          durationSec: session.durationSec,
+
+          coinsEarned: session.coinsEarned,
+
+          coinsDeducted: session.coinsDeducted,
+
+          status: session.status,
+
+          startedAt: session.startedAt?.toISOString(),
+
+          endedAt: session.endedAt?.toISOString(),
+
+          createdAt: session.createdAt?.toISOString(),
+        })),
+
+        totalCount,
+
+        currentPage: page,
+
+        totalPages: Math.ceil(totalCount / limit),
+      };
+    },
+
     getAstrologerFollowers: async (
       _,
       { astrologerId, page = 1, limit = 20, search },
@@ -807,10 +958,10 @@ export const resolvers = {
           prisma.astrologerFollow.findMany({
             where,
 
-        include: {
-  user: true,
-  astrologer: true,
-},
+            include: {
+              user: true,
+              astrologer: true,
+            },
 
             orderBy: {
               createdAt: "desc",
@@ -837,71 +988,6 @@ export const resolvers = {
       }
     },
 
-    getAstrologerCallHistory: async (
-      _,
-      { astrologerId, page = 1, limit = 10 },
-      { prisma },
-    ) => {
-      const skip = (page - 1) * limit;
-
-      const where = {
-        astrologerId,
-        type: "CALL",
-      };
-
-      const [sessions, totalCount] = await Promise.all([
-        prisma.session.findMany({
-          where,
-
-          include: {
-            user: true,
-          },
-
-          orderBy: {
-            createdAt: "desc",
-          },
-
-          skip,
-          take: limit,
-        }),
-
-        prisma.session.count({
-          where,
-        }),
-      ]);
-
-      return {
-        data: sessions.map((session) => ({
-          sessionId: session.id,
-
-          userId: session.userId,
-
-          userName: session.user?.name || "",
-
-          ratePerMin: session.ratePerMin,
-
-          durationSec: session.durationSec,
-
-          coinsEarned: session.coinsEarned,
-
-          coinsDeducted: session.coinsDeducted,
-
-          status: session.status,
-
-          startedAt: session.startedAt?.toISOString(),
-
-          endedAt: session.endedAt?.toISOString(),
-
-          createdAt: session.createdAt?.toISOString(),
-        })),
-
-        totalCount,
-
-        currentPage: page,
-
-        totalPages: Math.ceil(totalCount / limit),
-      };
-    },
     // -------------------- RESOLVER --------------------
 
     getUsersChatHistory: async (_, { searchInput }, { prisma }) => {
@@ -3315,14 +3401,14 @@ export const resolvers = {
     },
 
     // apppppppppppppppppppppppppppppppp
-getLatestAppVersion: async (_, { platform, appType }, context) => {
-  return await context.prisma.appVersion.findFirst({
-    where: {
-      platform,
-      appType,
+    getLatestAppVersion: async (_, { platform, appType }, context) => {
+      return await context.prisma.appVersion.findFirst({
+        where: {
+          platform,
+          appType,
+        },
+      });
     },
-  });
-},
     getAppVersions: async (_, __, { prisma }) => {
       return prisma.appVersion.findMany({
         orderBy: {
@@ -6016,38 +6102,38 @@ getLatestAppVersion: async (_, { platform, appType }, context) => {
       const { prisma } = context;
 
       try {
-const existing = await prisma.appVersion.findFirst({
-  where: {
-    platform: data.platform,
-    appType: data.appType,
-  },
-});
+        const existing = await prisma.appVersion.findFirst({
+          where: {
+            platform: data.platform,
+            appType: data.appType,
+          },
+        });
 
         let version;
 
         if (existing) {
-      version = await prisma.appVersion.update({
-  where: {
-    id: existing.id,
-  },
-  data: {
-    appType: data.appType,
-    platform: data.platform,
+          version = await prisma.appVersion.update({
+            where: {
+              id: existing.id,
+            },
+            data: {
+              appType: data.appType,
+              platform: data.platform,
 
-    latestVersion: data.latestVersion,
-    minimumVersion: data.minimumVersion,
+              latestVersion: data.latestVersion,
+              minimumVersion: data.minimumVersion,
 
-    forceUpdate: data.forceUpdate,
+              forceUpdate: data.forceUpdate,
 
-    maintenanceMode: data.maintenanceMode,
-    maintenanceMessage: data.maintenanceMessage,
+              maintenanceMode: data.maintenanceMode,
+              maintenanceMessage: data.maintenanceMessage,
 
-    playStoreUrl: data.playStoreUrl,
-    appStoreUrl: data.appStoreUrl,
+              playStoreUrl: data.playStoreUrl,
+              appStoreUrl: data.appStoreUrl,
 
-    releaseNotes: data.releaseNotes,
-  },
-});
+              releaseNotes: data.releaseNotes,
+            },
+          });
         } else {
           version = await prisma.appVersion.create({
             data,
