@@ -1819,10 +1819,18 @@ enum TransactionType {
     name: String!
     slug: String!
   }
+    type SessionStatusSummary {
+  requested: Int!
+  accepted: Int!
+  ongoing: Int!
+  completed: Int!
+  cancelled: Int!
+  failed: Int!
+}
 
   type AstrologerDashboardStats {
     totalChats: Int!
-
+statusSummary: SessionStatusSummary!
     totalCalls: Int!
 
     totalSessions: Int!
@@ -1959,6 +1967,11 @@ type AstrologerFollower {
   createdAt: DateTime!
 
   user: User!
+}
+  enum DashboardFilter {
+  TODAY
+  WEEK
+  MONTH
 }
 
   #-----End code for send gift history-----------------#
@@ -2136,17 +2149,25 @@ type AstrologerFollower {
     blogCategory(id: ID!): BlogCategory
 
     getAstrologerDashboardStats(astrologerId: ID!): AstrologerDashboardStats!
-    getAstrologerChatHistory(
-      astrologerId: ID!
-      page: Int
-      limit: Int
-    ): AstrologerSessionHistoryList!
+getAstrologerChatHistory(
+  astrologerId:ID!
 
-    getAstrologerCallHistory(
-      astrologerId: ID!
-      page: Int
-      limit: Int
-    ): AstrologerSessionHistoryList!
+    page:Int
+
+    limit:Int
+
+    status:SessionStatus
+
+    filter:DashboardFilter
+): AstrologerSessionHistoryList!
+
+getAstrologerCallHistory(
+  astrologerId: ID!
+  page: Int
+  limit: Int
+  status: SessionStatus
+  filter: DashboardFilter
+): AstrologerSessionHistoryList!
 
     adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
     getDashboardCounts: DashboardCounts!
