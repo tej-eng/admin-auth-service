@@ -1973,14 +1973,14 @@ type AstrologerFollower {
   WEEK
   MONTH
 }
-  type SessionAnalytics {
-    totalSessions: Int!
-    totalChats: Int!
-    totalCalls: Int!
+type SessionAnalytics {
+  totalSessions: Int!
+  totalChats: Int!
+  totalCalls: Int!
 
-    statusSummary: SessionStatusSummary!
+  statusSummary: SessionStatusSummary!
 
-    recentSessions: [SessionHistory!]!
+  recentSessions: [AstrologerSessionHistory!]!
 }
 
   #-----End code for send gift history-----------------#
