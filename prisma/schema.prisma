@@ -1192,10 +1192,16 @@ enum PlatformType {
   ANDROID
   IOS
 }
+enum AppType {
+  USER
+  ASTROLOGER
+}
+
+
 
 model AppVersion {
   id String @id @default(uuid())
-
+  appType            AppType
   platform PlatformType
 
   latestVersion  String
