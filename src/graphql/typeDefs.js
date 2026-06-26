@@ -1973,6 +1973,15 @@ type AstrologerFollower {
   WEEK
   MONTH
 }
+  type SessionAnalytics {
+    totalSessions: Int!
+    totalChats: Int!
+    totalCalls: Int!
+
+    statusSummary: SessionStatusSummary!
+
+    recentSessions: [SessionHistory!]!
+}
 
   #-----End code for send gift history-----------------#
 
@@ -2168,6 +2177,10 @@ getAstrologerCallHistory(
   status: SessionStatus
   filter: DashboardFilter
 ): AstrologerSessionHistoryList!
+getSessionAnalytics(
+    status: SessionStatus
+    filter: DashboardFilter
+): SessionAnalytics!
 
     adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
     getDashboardCounts: DashboardCounts!
