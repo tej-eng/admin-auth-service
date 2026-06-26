@@ -923,6 +923,44 @@ export const resolvers = {
         totalPages: Math.ceil(totalCount / limit),
       };
     },
+    getSessionAnalytics: async (_, { status, filter }, { prisma }) => {
+  const where = {};
+
+  if (status) {
+    where.status = status;
+  }
+
+  if (filter === "TODAY") {
+    where.createdAt = {
+      gte: dayjs().startOf("day").toDate(),
+    };
+  }
+
+  if (filter === "WEEK") {
+    where.createdAt = {
+      gte: dayjs().startOf("week").toDate(),
+    };
+  }
+
+  if (filter === "MONTH") {
+    where.createdAt = {
+      gte: dayjs().startOf("month").toDate(),
+    };
+  }
+
+  const sessions = await prisma.session.findMany({
+    where,
+    include: {
+      user: true,
+      astrologer: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  // yahin statusSummary, totalChats, totalCalls, recentSessions etc. calculate karke return karna
+},
 
     getAstrologerFollowers: async (
       _,
