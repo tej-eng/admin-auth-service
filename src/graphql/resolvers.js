@@ -3315,13 +3315,14 @@ export const resolvers = {
     },
 
     // apppppppppppppppppppppppppppppppp
-    getLatestAppVersion: async (_, { platform }, context) => {
-      return await context.prisma.appVersion.findFirst({
-        where: {
-          platform,
-        },
-      });
+getLatestAppVersion: async (_, { platform, appType }, context) => {
+  return await context.prisma.appVersion.findFirst({
+    where: {
+      platform,
+      appType,
     },
+  });
+},
     getAppVersions: async (_, __, { prisma }) => {
       return prisma.appVersion.findMany({
         orderBy: {
@@ -6015,38 +6016,38 @@ export const resolvers = {
       const { prisma } = context;
 
       try {
-        const existing = await prisma.appVersion.findFirst({
-          where: {
-            platform: data.platform,
-          },
-        });
+const existing = await prisma.appVersion.findFirst({
+  where: {
+    platform: data.platform,
+    appType: data.appType,
+  },
+});
 
         let version;
 
         if (existing) {
-          version = await prisma.appVersion.update({
-            where: {
-              id: existing.id,
-            },
+      version = await prisma.appVersion.update({
+  where: {
+    id: existing.id,
+  },
+  data: {
+    appType: data.appType,
+    platform: data.platform,
 
-            data: {
-              latestVersion: data.latestVersion,
+    latestVersion: data.latestVersion,
+    minimumVersion: data.minimumVersion,
 
-              minimumVersion: data.minimumVersion,
+    forceUpdate: data.forceUpdate,
 
-              forceUpdate: data.forceUpdate,
+    maintenanceMode: data.maintenanceMode,
+    maintenanceMessage: data.maintenanceMessage,
 
-              maintenanceMode: data.maintenanceMode,
+    playStoreUrl: data.playStoreUrl,
+    appStoreUrl: data.appStoreUrl,
 
-              maintenanceMessage: data.maintenanceMessage,
-
-              playStoreUrl: data.playStoreUrl,
-
-              appStoreUrl: data.appStoreUrl,
-
-              releaseNotes: data.releaseNotes,
-            },
-          });
+    releaseNotes: data.releaseNotes,
+  },
+});
         } else {
           version = await prisma.appVersion.create({
             data,

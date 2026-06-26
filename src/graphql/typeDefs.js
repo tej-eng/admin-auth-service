@@ -1536,8 +1536,13 @@ enum TransactionType {
     ANDROID
     IOS
   }
+    enum AppType {
+  USER
+  ASTROLOGER
+}
 
   type AppVersion {
+    appType: AppType!
     id: ID!
 
     platform: PlatformType!
@@ -1560,6 +1565,7 @@ enum TransactionType {
   }
 
   input AddAppVersionInput {
+    appType: AppType!
     platform: PlatformType!
 
     latestVersion: String!
