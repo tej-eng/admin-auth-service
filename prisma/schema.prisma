@@ -1347,7 +1347,7 @@ model ServiceBooking {
   gender  String?
   concern String?
 
-  amount Float
+  amount Float?
 
   paymentStatus PaymentStatus @default(PENDING)
   bookingStatus BookingStatus @default(PENDING)
