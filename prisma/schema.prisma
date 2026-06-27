@@ -765,11 +765,12 @@ model Session {
   coinsEarned   Int       @default(0)
   commission    Int       @default(0)
   source        String?
+  by        String?
   review        Review?
   roomId        String?
   startedAt     DateTime?
   endedAt       DateTime?
-
+  
   messages Message[]
 
   transactions WalletTransaction[]
