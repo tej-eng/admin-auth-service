@@ -1524,37 +1524,7 @@ enum LiveStatus {
   ENDED
 }
 
-model CallRecording {
-  id           String   @id @default(uuid())
-  roomId       String   @db.VarChar(255)
-  sessionId    String?  @db.VarChar(255)
-  userId       String   @db.VarChar(255)
-  astrologerId String   @db.VarChar(255)
-  astrologerName String? @db.VarChar(255)
-  
-  fileName     String   @db.VarChar(500)
-  fileUrl      String   @db.VarChar(1000)
-  fileSize     Int      @default(0)
-  duration     Int      @default(0) // seconds
-  callType     String   @default("audio")
-  
-  status       String   @default("active")
-  isAdminOnly  Boolean  @default(true)
-  
-  uploadedAt   DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  
-  metadata     Json?    @default("{}")
-  
-  session      Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  
-  @@index([roomId])
-  @@index([userId])
-  @@index([astrologerId])
-  @@index([createdAt])
-  @@index([status])
-}
+
 
 model CallRecording {
   id          String   @id @default(uuid())
