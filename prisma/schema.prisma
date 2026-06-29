@@ -172,6 +172,7 @@ model User {
   noticesCreated       Notice[]              @relation("NoticeCreatedBy")
   serviceBookings      ServiceBooking[]
   source               String?
+  callRecordings CallRecording[]
 
   @@unique([countryCode, mobile])
 }
@@ -305,6 +306,7 @@ model Astrologer {
   noticeAstrologers NoticeAstrologer[]
   serviceMappings   ServiceAstrologer[]
   liveStreams       LiveStream[]
+  callRecordings CallRecording[]
 
   @@index([rating])
   @@index([experience])
@@ -1563,9 +1565,9 @@ model CallRecording {
   metadata    Json?    @default("{}")
   
   // Relations
-  session     Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  astrologer  Astrologer? @relation(fields: [astrologerId], references: [id], onDelete: SetNull)
+  session     Session? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  astrologer  Astrologer? @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
   
   // Indexes
   @@index([roomId])
