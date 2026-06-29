@@ -1555,3 +1555,54 @@ model CallRecording {
   @@index([createdAt])
   @@index([status])
 }
+
+model CallRecording {
+  id          String   @id @default(uuid())
+  
+  // Call information
+  roomId      String   @db.VarChar(255)
+  sessionId   String?  @db.VarChar(255) // Keep this as a regular field
+  
+  // User and Astrologer information
+  userId      String   @db.VarChar(255)
+  astrologerId String  @db.VarChar(255)
+  astrologerName String? @db.VarChar(255)
+  
+  // Recording details
+  fileName    String   @db.VarChar(500)
+  fileUrl     String   @db.VarChar(1000)
+  filePath    String?  @db.Text
+  fileSize    Int      @default(0)
+  
+  // Call metadata
+  duration    Int      @default(0)
+  callType    String   @default("audio")
+  timestamp   String   @db.VarChar(100)
+  
+  // Status and flags
+  status      String   @default("active")
+  isAdminOnly Boolean  @default(true)
+  
+  // Audit information
+  uploadedBy  String?  @db.VarChar(255)
+  uploadedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Additional metadata
+  metadata    Json?    @default("{}")
+  
+  // Relations
+  session     Session? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  astrologer  Astrologer? @relation(fields: [astrologerId], references: [id], onDelete: SetNull)
+  
+  // Indexes
+  @@index([roomId])
+  @@index([userId])
+  @@index([astrologerId])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@index([status])
+  @@index([isAdminOnly])
+}
