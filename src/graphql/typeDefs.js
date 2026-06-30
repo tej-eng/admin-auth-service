@@ -1898,7 +1898,7 @@ statusSummary: SessionStatusSummary!
     userId: ID!
 
     userName: String
-
+  by: String 
     ratePerMin: Int
     durationSec: Int
 
