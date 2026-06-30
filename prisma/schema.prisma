@@ -825,7 +825,6 @@ model Payment {
 }
 
 model PaymentOrder {
-
   id String @id @default(uuid())
 
   userId String
@@ -842,22 +841,16 @@ model PaymentOrder {
   originalAmount Float
   discount Float @default(0)
   amount Float
-
   coins Int
 
   status PaymentOrderStatus @default(CREATED)
 
   payment Payment?
 
-  // ADD THIS
   couponRedemption CouponRedemption?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([couponId])
-  @@index([status])
 }
 
 model Coupon {
@@ -1595,7 +1588,6 @@ model CallRecording {
 }
 
 model CouponRedemption {
-
   id String @id @default(uuid())
 
   couponId String
@@ -1604,10 +1596,10 @@ model CouponRedemption {
   userId String
   user User @relation(fields: [userId], references: [id])
 
-  paymentOrderId String
+  paymentOrderId String @unique
   paymentOrder PaymentOrder @relation(fields: [paymentOrderId], references: [id])
 
-  redeemedAt DateTime @default(now())
+  discount Float
 
-  @@unique([couponId, userId])
+  createdAt DateTime @default(now())
 }
