@@ -509,7 +509,8 @@ const typeDefs = gql`
 enum TransactionType {
   CREDIT
   DEBIT
-}type WalletResponse {
+}
+  type WalletResponse {
   success: Boolean!
   message: String!
   walletBalance: Float!
