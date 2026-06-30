@@ -3979,6 +3979,16 @@ export const resolvers = {
           })),
         );
     },
+      getSessionRemedies: async (_, { sessionId }, { prisma }) => {
+    return await prisma.sessionRemedy.findMany({
+      where: {
+        sessionId,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+  },
   },
 
   // **********************************************START MUTATION**********************************

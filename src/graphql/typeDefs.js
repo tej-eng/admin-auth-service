@@ -1982,10 +1982,17 @@ type SessionAnalytics {
 
   recentSessions: [AstrologerSessionHistory!]!
 }
+  type SessionRemedy {
+  id: ID!
+  sessionId: String!
+  remedyText: String!
+  createdAt: String!
+}
 
   #-----End code for send gift history-----------------#
 
   type Query {
+  getSessionRemedies(sessionId: String!): [SessionRemedy!]!
     getAstrologerGiftHistory(
     astrologerId: ID!
     page: Int
