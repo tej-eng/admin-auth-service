@@ -173,6 +173,7 @@ model User {
   serviceBookings      ServiceBooking[]
   source               String?
   callRecordings CallRecording[]
+  couponRedemptions CouponRedemption[]
 
   @@unique([countryCode, mobile])
 }
@@ -824,10 +825,11 @@ model Payment {
 }
 
 model PaymentOrder {
+
   id String @id @default(uuid())
 
   userId String
-  user   User @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   rechargePackId String
   rechargePack RechargePack @relation(fields: [rechargePackId], references: [id])
@@ -846,6 +848,9 @@ model PaymentOrder {
   status PaymentOrderStatus @default(CREATED)
 
   payment Payment?
+
+  // ADD THIS
+  couponRedemption CouponRedemption?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -880,6 +885,10 @@ model Coupon {
   updatedAt DateTime @updatedAt
 
   rechargePacks RechargePack[] @relation("CouponToRechargePack")
+
+  // ADD THESE
+  paymentOrders     PaymentOrder[]
+  couponRedemptions CouponRedemption[]
 }
 
 model Message {
@@ -1586,16 +1595,17 @@ model CallRecording {
 }
 
 model CouponRedemption {
-  id        String   @id @default(uuid())
 
-  couponId  String
-  coupon    Coupon   @relation(fields: [couponId], references: [id])
+  id String @id @default(uuid())
 
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  couponId String
+  coupon Coupon @relation(fields: [couponId], references: [id])
+
+  userId String
+  user User @relation(fields: [userId], references: [id])
 
   paymentOrderId String
-  paymentOrder   PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+  paymentOrder PaymentOrder @relation(fields: [paymentOrderId], references: [id])
 
   redeemedAt DateTime @default(now())
 
