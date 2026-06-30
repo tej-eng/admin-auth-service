@@ -6601,16 +6601,20 @@ export const resolvers = {
       if (isNaN(amt) || amt <= 0) {
         throw new Error("Invalid amount");
       }
+let wallet = await prisma.astrologerWallet.findUnique({
+  where: {
+    astrologerId,
+  },
+});
 
-      const wallet = await prisma.astrologerWallet.findUnique({
-        where: {
-          astrologerId,
-        },
-      });
-
-      if (!wallet) {
-        throw new Error("Wallet not found");
-      }
+if (!wallet) {
+  wallet = await prisma.astrologerWallet.create({
+    data: {
+      astrologerId,
+      balanceCoins: 0,
+    },
+  });
+}
 
       const updatedBalance =
         type === "CREDIT"
@@ -6654,15 +6658,21 @@ export const resolvers = {
         throw new Error("Invalid amount");
       }
 
-      const wallet = await prisma.userWallet.findUnique({
-        where: {
-          userId,
-        },
-      });
+     let wallet = await prisma.userWallet.findUnique({
+  where: {
+    userId,
+  },
+});
 
-      // if (!wallet) {
-      //   throw new Error("User wallet not found");
-      // }
+if (!wallet) {
+  wallet = await prisma.userWallet.create({
+    data: {
+      userId,
+      balanceCoins: 0,
+      lockedCoins: 0,
+    },
+  });
+}
 
       const updatedBalance =
         type === "CREDIT"
