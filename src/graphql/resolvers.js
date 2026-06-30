@@ -830,7 +830,7 @@ if (filterDate) {
           userId: session.userId,
 
           userName: session.user?.name || "",
-
+ by: session.by,
           ratePerMin: session.ratePerMin,
 
           durationSec: session.durationSec,
@@ -911,7 +911,7 @@ if (filterDate) {
           ratePerMin: session.ratePerMin,
 
           durationSec: session.durationSec,
-
+ by: session.by,
           coinsEarned: session.coinsEarned,
 
           coinsDeducted: session.coinsDeducted,
@@ -1218,7 +1218,7 @@ if (filterDate) {
           userId: session.user?.id || null,
           userName: session.user?.name || "",
           mobile: session.user?.mobile || "",
-
+  by: session.by,
           astrologerId: session.astrologer?.id || null,
           astrologerName:
             session.astrologer?.displayName || session.astrologer?.name || "",
@@ -1263,6 +1263,17 @@ if (filterDate) {
         throw new Error("Failed to fetch users chat history");
       }
     },
+    getCallRecording: async (_, { sessionId }, { prisma }) => {
+  return prisma.callRecording.findFirst({
+    where: {
+      sessionId,
+      status: "active",
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+},
 
     getUserCallHistory: async (_, { searchInput }, { prisma }) => {
       try {
@@ -1453,7 +1464,7 @@ if (filterDate) {
 
         const formattedData = sessions.map((session) => ({
           sessionId: session.id,
-
+  by: session.by,
           userId: session.user?.id || null,
           userName: session.user?.name || "",
           mobile: session.user?.mobile || "",
