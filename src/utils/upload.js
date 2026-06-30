@@ -19,7 +19,6 @@ const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     let uploadPath = getUploadPath();
 
-    console.log("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",uploadPath);
     
 
     if (req.originalUrl.includes("upload-banner")) {

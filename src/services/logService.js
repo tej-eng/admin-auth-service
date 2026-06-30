@@ -14,7 +14,6 @@ async function logAuthEvent(eventType, details) {
 
     await db.collection("adminAuthLogs").insertOne(logEntry);
   } catch (error) {
-    console.error("Failed to log auth event:", error);
   }
 }
 
