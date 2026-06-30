@@ -1057,7 +1057,7 @@ enum TransactionType {
     source: String
     type: String
     status: String
-
+  by: String
     ratePerMin: Float
     durationSec: Int
 
@@ -1100,14 +1100,43 @@ enum TransactionType {
     page: Int
     limit: Int
   }
+type CallRecording {
+  id: ID!
 
+  roomId: String!
+  sessionId: String
+
+  userId: ID!
+  astrologerId: ID!
+  astrologerName: String
+
+  fileName: String!
+  fileUrl: String!
+  filePath: String
+  fileSize: Int
+
+  duration: Int
+  callType: String
+  timestamp: String
+
+  status: String
+  isAdminOnly: Boolean
+
+  uploadedBy: String
+  uploadedAt: DateTime
+
+  metadata: JSON
+
+  createdAt: DateTime
+  updatedAt: DateTime
+}
   type UserCallHistory {
     sessionId: ID!
     source: String
     userId: ID!
     userName: String
     mobile: String
-
+  by: String
     astrologerId: ID!
     astrologerName: String
 
@@ -1992,6 +2021,7 @@ type SessionAnalytics {
   #-----End code for send gift history-----------------#
 
   type Query {
+  getCallRecording(sessionId: ID!): CallRecording
   getSessionRemedies(sessionId: String!): [SessionRemedy!]!
     getAstrologerGiftHistory(
     astrologerId: ID!
