@@ -827,15 +827,21 @@ model PaymentOrder {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id])
 
   rechargePackId String
-  rechargePack   RechargePack @relation(fields: [rechargePackId], references: [id])
+  rechargePack RechargePack @relation(fields: [rechargePackId], references: [id])
+
+  couponId String?
+  coupon Coupon? @relation(fields: [couponId], references: [id])
 
   razorpayOrderId String @unique
 
+  originalAmount Float
+  discount Float @default(0)
   amount Float
-  coins  Int
+
+  coins Int
 
   status PaymentOrderStatus @default(CREATED)
 
@@ -845,7 +851,7 @@ model PaymentOrder {
   updatedAt DateTime @updatedAt
 
   @@index([userId])
-  @@index([razorpayOrderId])
+  @@index([couponId])
   @@index([status])
 }
 
@@ -1577,4 +1583,21 @@ model CallRecording {
   @@index([createdAt])
   @@index([status])
   @@index([isAdminOnly])
+}
+
+model CouponRedemption {
+  id        String   @id @default(uuid())
+
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id])
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  paymentOrderId String
+  paymentOrder   PaymentOrder @relation(fields: [paymentOrderId], references: [id])
+
+  redeemedAt DateTime @default(now())
+
+  @@unique([couponId, userId])
 }
