@@ -17,6 +17,39 @@ const prisma = new PrismaClient();
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+const getFilterDate = (filter) => {
+  const now = new Date();
+
+  switch (filter) {
+    case "TODAY": {
+      return new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,
+        0,
+        0,
+        0,
+      );
+    }
+
+    case "WEEK": {
+      const day = now.getDay(); // 0 = Sunday
+      const diff = day === 0 ? 6 : day - 1; // Monday as start of week
+      const startOfWeek = new Date(now);
+      startOfWeek.setDate(now.getDate() - diff);
+      startOfWeek.setHours(0, 0, 0, 0);
+      return startOfWeek;
+    }
+
+    case "MONTH": {
+      return new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    default:
+      return null;
+  }
+};
 
 const handleUpload = async (file) => {
   try {
@@ -761,25 +794,13 @@ export const resolvers = {
       if (status) {
         where.status = status;
       }
-      const now = dayjs();
+  const filterDate = getFilterDate(filter);
 
-      if (filter === "TODAY") {
-        where.createdAt = {
-          gte: now.startOf("day").toDate(),
-        };
-      }
-
-      if (filter === "WEEK") {
-        where.createdAt = {
-          gte: now.startOf("week").toDate(),
-        };
-      }
-
-      if (filter === "MONTH") {
-        where.createdAt = {
-          gte: now.startOf("month").toDate(),
-        };
-      }
+if (filterDate) {
+  where.createdAt = {
+    gte: filterDate,
+  };
+}
 
       const [sessions, totalCount] = await Promise.all([
         prisma.session.findMany({
@@ -850,25 +871,13 @@ export const resolvers = {
       if (status) {
         where.status = status;
       }
-           const now = dayjs();
+      const filterDate = getFilterDate(filter);
 
-      if (filter === "TODAY") {
-        where.createdAt = {
-          gte: now.startOf("day").toDate(),
-        };
-      }
-
-      if (filter === "WEEK") {
-        where.createdAt = {
-          gte: now.startOf("week").toDate(),
-        };
-      }
-
-      if (filter === "MONTH") {
-        where.createdAt = {
-          gte: now.startOf("month").toDate(),
-        };
-      }
+if (filterDate) {
+  where.createdAt = {
+    gte: filterDate,
+  };
+}
 
       const [sessions, totalCount] = await Promise.all([
         prisma.session.findMany({
@@ -930,23 +939,13 @@ export const resolvers = {
     where.status = status;
   }
 
-  if (filter === "TODAY") {
-    where.createdAt = {
-      gte: dayjs().startOf("day").toDate(),
-    };
-  }
+const filterDate = getFilterDate(filter);
 
-  if (filter === "WEEK") {
-    where.createdAt = {
-      gte: dayjs().startOf("week").toDate(),
-    };
-  }
-
-  if (filter === "MONTH") {
-    where.createdAt = {
-      gte: dayjs().startOf("month").toDate(),
-    };
-  }
+if (filterDate) {
+  where.createdAt = {
+    gte: filterDate,
+  };
+}
 
   const sessions = await prisma.session.findMany({
     where,
