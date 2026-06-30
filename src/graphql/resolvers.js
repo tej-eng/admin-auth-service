@@ -6660,9 +6660,9 @@ export const resolvers = {
         },
       });
 
-      if (!wallet) {
-        throw new Error("User wallet not found");
-      }
+      // if (!wallet) {
+      //   throw new Error("User wallet not found");
+      // }
 
       const updatedBalance =
         type === "CREDIT"
