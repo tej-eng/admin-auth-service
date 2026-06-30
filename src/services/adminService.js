@@ -16,7 +16,6 @@ async function logEvent(type, identifier, details = {}) {
       timestamp: new Date(),
     });
   } catch (error) {
-    console.error("Failed to log event:", error);
   }
 }
 

@@ -45,7 +45,6 @@ router.post(
 
       return res.json(response);
     } catch (err) {
-      console.error(err);
 
       return res.status(500).json({
         error: "Upload failed",
@@ -69,7 +68,6 @@ router.post(
         url: `/adminAuth/uploads/banners/${req.file.filename}`,
       });
     } catch (err) {
-      console.error(err);
 
       return res.status(500).json({
         error: "Upload failed",
@@ -94,7 +92,6 @@ router.post(
         url: `/adminAuth/uploads/gifts/${req.file.filename}`,
       });
     } catch (err) {
-      console.error(err);
 
       return res.status(500).json({
         error: "Upload failed",
@@ -117,7 +114,6 @@ router.post(
         url: `/adminAuth/uploads/services/${req.file.filename}`,
       });
     } catch (err) {
-      console.error(err);
 
       return res.status(500).json({
         error: "Upload failed",
@@ -141,7 +137,6 @@ router.post(
         url: `/adminAuth/uploads/blog/${req.file.filename}`,
       });
     } catch (err) {
-      console.error(err);
 
       return res.status(500).json({
         error: "Upload failed",
@@ -164,7 +159,6 @@ router.post(
         url: `/adminAuth/uploads/testimonials/${req.file.filename}`,
       });
     } catch (err) {
-      console.error(err);
 
       return res.status(500).json({
         error: "Upload failed",

@@ -13,7 +13,6 @@ export async function connectMongo() {
     client = new MongoClient(uri);
 
     await client.connect();
-    console.log("MongoDB connected successfully");
 
     db = client.db(dbName);
 
@@ -31,7 +30,6 @@ export async function connectMongo() {
 
     return db;
   } catch (error) {
-    console.error("Failed to connect to MongoDB:", error.message);
     throw error;
   }
 }

@@ -15,7 +15,6 @@ async function fixPasswords() {
         data: { password: hashed },
       });
 
-      console.log(`Fixed password for: ${s.email}`);
     }
   }
 }

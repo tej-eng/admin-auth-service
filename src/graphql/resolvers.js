@@ -70,18 +70,15 @@ const handleUpload = async (file) => {
 
     const DOCUMENTS_DIR = path.join(__dirname, "..", "uploads", "documents");
 
-    console.log("Documents Dir:", DOCUMENTS_DIR);
 
     if (!fs.existsSync(DOCUMENTS_DIR)) {
       fs.mkdirSync(DOCUMENTS_DIR, { recursive: true });
-      console.log("Created documents directory");
     }
 
     const ext = path.extname(filename) || ".jpg";
     const newFileName = `${Date.now()}-${Math.random().toString(36).substring(7)}${ext}`;
 
     const uploadPath = path.join(DOCUMENTS_DIR, newFileName);
-    console.log("Saving file to:", uploadPath);
 
     const stream = createReadStream();
     const out = fs.createWriteStream(uploadPath);
@@ -109,8 +106,6 @@ const handleUpload = async (file) => {
 
     const publicUrl = `/adminAuth/uploads/documents/${newFileName}`;
 
-    console.log("Upload Success:", publicUrl);
-    console.log("=== UPLOAD END ===");
 
     return {
       url: publicUrl,
@@ -118,8 +113,6 @@ const handleUpload = async (file) => {
       mimetype,
     };
   } catch (error) {
-    console.error(" Upload Error:", error.message);
-    console.error(error.stack);
     throw new Error(error.message || "Upload failed");
   }
 };
@@ -136,21 +129,18 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
       timestamp: new Date(),
     });
   } catch (error) {
-    console.error("Mongo log failed:", error.message);
   }
 }
 
 async function checkPermission(context, requiredPermission) {
   const staff = context.user;
 
-  console.log("STAFF OBJECT:", staff);
 
   if (!staff || !staff.id) {
     throw new Error("Unauthorized");
   }
 
   // SUPER ADMIN CHECK
-  console.log("ROLE:", staff.role);
 
   if (staff.role?.slug === "super-admin") {
     return true;
@@ -158,8 +148,6 @@ async function checkPermission(context, requiredPermission) {
 
   const roleId = staff.roleId || staff.role?.id;
 
-  console.log("ROLE ID:", roleId);
-  console.log("REQUIRED:", requiredPermission);
 
   if (!roleId) {
     throw new Error("Unauthorized: Role missing");
@@ -180,7 +168,6 @@ async function checkPermission(context, requiredPermission) {
     ...staffPerms.map((s) => s.permission.name),
   ];
 
-  console.log("ALL PERMS:", allPermissions);
 
   if (!allPermissions.includes(requiredPermission)) {
     throw new Error("Unauthorized: Missing permission");
@@ -343,7 +330,6 @@ export const resolvers = {
           totalPages: Math.ceil(totalCount / safeLimit),
         };
       } catch (error) {
-        console.error("getUsersListBySearch error:", error);
         throw new Error("Failed to fetch users");
       }
     },
@@ -652,7 +638,6 @@ export const resolvers = {
           totalPages: Math.ceil(totalCount / safeLimit),
         };
       } catch (error) {
-        console.error("getAstrologerEarnings error:", error);
 
         throw new Error("Failed to fetch astrologer earnings");
       }
@@ -781,7 +766,7 @@ export const resolvers = {
 
     getAstrologerChatHistory: async (
       _,
-      { astrologerId, page = 1, limit = 10, status,filter },
+      { astrologerId, page = 1, limit = 10, status, filter },
       { prisma },
     ) => {
       const skip = (page - 1) * limit;
@@ -794,13 +779,13 @@ export const resolvers = {
       if (status) {
         where.status = status;
       }
-  const filterDate = getFilterDate(filter);
+      const filterDate = getFilterDate(filter);
 
-if (filterDate) {
-  where.createdAt = {
-    gte: filterDate,
-  };
-}
+      if (filterDate) {
+        where.createdAt = {
+          gte: filterDate,
+        };
+      }
 
       const [sessions, totalCount] = await Promise.all([
         prisma.session.findMany({
@@ -830,7 +815,7 @@ if (filterDate) {
           userId: session.userId,
 
           userName: session.user?.name || "",
- by: session.by,
+          by: session.by,
           ratePerMin: session.ratePerMin,
 
           durationSec: session.durationSec,
@@ -873,11 +858,11 @@ if (filterDate) {
       }
       const filterDate = getFilterDate(filter);
 
-if (filterDate) {
-  where.createdAt = {
-    gte: filterDate,
-  };
-}
+      if (filterDate) {
+        where.createdAt = {
+          gte: filterDate,
+        };
+      }
 
       const [sessions, totalCount] = await Promise.all([
         prisma.session.findMany({
@@ -911,7 +896,7 @@ if (filterDate) {
           ratePerMin: session.ratePerMin,
 
           durationSec: session.durationSec,
- by: session.by,
+          by: session.by,
           coinsEarned: session.coinsEarned,
 
           coinsDeducted: session.coinsDeducted,
@@ -933,33 +918,33 @@ if (filterDate) {
       };
     },
     getSessionAnalytics: async (_, { status, filter }, { prisma }) => {
-  const where = {};
+      const where = {};
 
-  if (status) {
-    where.status = status;
-  }
+      if (status) {
+        where.status = status;
+      }
 
-const filterDate = getFilterDate(filter);
+      const filterDate = getFilterDate(filter);
 
-if (filterDate) {
-  where.createdAt = {
-    gte: filterDate,
-  };
-}
+      if (filterDate) {
+        where.createdAt = {
+          gte: filterDate,
+        };
+      }
 
-  const sessions = await prisma.session.findMany({
-    where,
-    include: {
-      user: true,
-      astrologer: true,
+      const sessions = await prisma.session.findMany({
+        where,
+        include: {
+          user: true,
+          astrologer: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      // yahin statusSummary, totalChats, totalCalls, recentSessions etc. calculate karke return karna
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  // yahin statusSummary, totalChats, totalCalls, recentSessions etc. calculate karke return karna
-},
 
     getAstrologerFollowers: async (
       _,
@@ -1020,7 +1005,6 @@ if (filterDate) {
           totalPages: Math.ceil(totalCount / limit),
         };
       } catch (err) {
-        console.error(err);
         throw new Error(err.message);
       }
     },
@@ -1218,7 +1202,7 @@ if (filterDate) {
           userId: session.user?.id || null,
           userName: session.user?.name || "",
           mobile: session.user?.mobile || "",
-  by: session.by,
+          by: session.by,
           astrologerId: session.astrologer?.id || null,
           astrologerName:
             session.astrologer?.displayName || session.astrologer?.name || "",
@@ -1258,22 +1242,21 @@ if (filterDate) {
           totalCommission: aggregate?._sum?.commission || 0,
         };
       } catch (error) {
-        console.error("getUsersChatHistory error:", error);
 
         throw new Error("Failed to fetch users chat history");
       }
     },
     getCallRecording: async (_, { sessionId }, { prisma }) => {
-  return prisma.callRecording.findFirst({
-    where: {
-      sessionId,
-      status: "active",
+      return prisma.callRecording.findFirst({
+        where: {
+          sessionId,
+          status: "active",
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
     },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-},
 
     getUserCallHistory: async (_, { searchInput }, { prisma }) => {
       try {
@@ -1464,7 +1447,7 @@ if (filterDate) {
 
         const formattedData = sessions.map((session) => ({
           sessionId: session.id,
-  by: session.by,
+          by: session.by,
           userId: session.user?.id || null,
           userName: session.user?.name || "",
           mobile: session.user?.mobile || "",
@@ -1508,7 +1491,6 @@ if (filterDate) {
           totalCommission: aggregate?._sum?.commission || 0,
         };
       } catch (error) {
-        console.error("getUserCallHistory error:", error);
 
         throw new Error("Failed to fetch user call history");
       }
@@ -1668,19 +1650,10 @@ if (filterDate) {
 
     getAdmins: async (_, { page = 1, limit = 10 }, context) => {
       try {
-        console.log("getAdmins called", {
-          requestedBy: context?.user?.id,
-          role: context?.user?.role,
-          page,
-          limit,
-          timestamp: new Date().toISOString(),
-        });
+   
 
         if (!context.user || context.user.role !== "SUPER_ADMIN") {
-          console.warn("Unauthorized access attempt to getAdmins", {
-            userId: context?.user?.id,
-            role: context?.user?.role,
-          });
+         
           throw new Error("Only SUPER_ADMIN can view admins");
         }
 
@@ -1707,12 +1680,7 @@ if (filterDate) {
           }),
         ]);
 
-        console.log("getAdmins success", {
-          totalCount,
-          returnedRecords: admins.length,
-          currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
-        });
+    
 
         return {
           data: admins,
@@ -1721,12 +1689,7 @@ if (filterDate) {
           totalPages: Math.ceil(totalCount / limit),
         };
       } catch (error) {
-        console.error("getAdmins error", {
-          message: error.message,
-          stack: error.stack,
-          requestedBy: context?.user?.id,
-          timestamp: new Date().toISOString(),
-        });
+
 
         throw new Error("Failed to fetch admins");
       }
@@ -1875,7 +1838,6 @@ if (filterDate) {
           totalCount,
         };
       } catch (err) {
-        console.error("getUserWalletTransactions error:", err);
         throw new Error("Failed to fetch transactions");
       }
     },
@@ -2019,7 +1981,6 @@ if (filterDate) {
           totalCount,
         };
       } catch (err) {
-        console.error("getAstrologerWalletTransactions error:", err);
         throw new Error("Failed to fetch astrologer wallet transactions");
       }
     },
@@ -2173,7 +2134,6 @@ if (filterDate) {
           totalCount,
         };
       } catch (err) {
-        console.error("getAllWalletTransactions error:", err);
         throw new Error("Failed to fetch wallet transactions");
       }
     },
@@ -2410,7 +2370,6 @@ if (filterDate) {
           averageRating: aggregate?._avg?.rating || 0,
         };
       } catch (error) {
-        console.error("getUserReviews error:", error);
 
         throw new Error("Failed to fetch user reviews");
       }
@@ -2461,7 +2420,6 @@ if (filterDate) {
           totalPages: Math.ceil(totalCount / safeLimit),
         };
       } catch (error) {
-        console.error("getFraudFlags error:", error);
 
         throw new Error("Failed to fetch fraud flags");
       }
@@ -2610,7 +2568,6 @@ if (filterDate) {
           totalPages: Math.ceil(totalCount / safeLimit),
         };
       } catch (error) {
-        console.error("getFraudLogs error:", error);
 
         throw new Error("Failed to fetch fraud logs");
       }
@@ -2833,7 +2790,6 @@ if (filterDate) {
           failedCount: failedStats._count || 0,
         };
       } catch (err) {
-        console.error("getPaymentReports error:", err);
         throw new Error("Failed to fetch payment reports");
       }
     },
@@ -2879,7 +2835,6 @@ if (filterDate) {
           totalPages: Math.ceil(totalCount / limit),
         };
       } catch (error) {
-        console.error("getRoles error:", error);
 
         throw new Error(error.message);
       }
@@ -3490,7 +3445,6 @@ if (filterDate) {
           updatedAt: offer.updatedAt.toISOString(),
         }));
       } catch (error) {
-        console.error("getOffers error:", error);
 
         throw new Error(error.message || "Failed to fetch offers");
       }
@@ -3623,7 +3577,6 @@ if (filterDate) {
           totalPages: Math.ceil(totalCount / limit),
         };
       } catch (error) {
-        console.error("getSendGiftHistory error:", error);
         throw new Error(error.message);
       }
     },
@@ -3769,11 +3722,9 @@ if (filterDate) {
       });
     },
     blogCategories: async () => {
-      console.log("blogCategories called");
 
       const data = await prisma.blogCategory.findMany();
 
-      console.log(data);
 
       return data;
     },
@@ -3821,7 +3772,6 @@ if (filterDate) {
           })),
         };
       } catch (error) {
-        console.error("adminGetSessionMessages:", error);
 
         throw new Error(error.message || "Failed to fetch messages");
       }
@@ -3878,7 +3828,6 @@ if (filterDate) {
           totalRevenue: revenueResult._sum.coinsDeducted || 0,
         };
       } catch (error) {
-        console.log(error);
         throw new Error("Failed to fetch dashboard counts");
       }
     },
@@ -3989,16 +3938,16 @@ if (filterDate) {
           })),
         );
     },
-      getSessionRemedies: async (_, { sessionId }, { prisma }) => {
-    return await prisma.sessionRemedy.findMany({
-      where: {
-        sessionId,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
-  },
+    getSessionRemedies: async (_, { sessionId }, { prisma }) => {
+      return await prisma.sessionRemedy.findMany({
+        where: {
+          sessionId,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+    },
   },
 
   // **********************************************START MUTATION**********************************
@@ -4013,7 +3962,6 @@ if (filterDate) {
 
         return await handleUpload(file);
       } catch (error) {
-        console.error("uploadImage error:", error);
         throw new Error(error.message || "Upload failed");
       }
     },
@@ -4026,15 +3974,13 @@ if (filterDate) {
       });
 
       if (!staff) throw new Error("Invalid credentials");
-      // console.log("hhhhhhhhhhhhhhhhhhhhhhhhhhh", permissions);
       const isMatch = await bcrypt.compare(password, staff.password);
 
       if (!isMatch) throw new Error("Invalid credentials");
 
       const accessToken = generateAccessToken(staff);
       const refreshToken = generateRefreshToken(staff);
-      console.log("INPUT:", password);
-      console.log("DB:", staff.password);
+ 
       // res.cookie("token", accessToken, {
       //   httpOnly: true,
       //   sameSite: "lax",
@@ -4220,12 +4166,7 @@ if (filterDate) {
       }
 
       try {
-        console.log("addAstrologer called", {
-          requestedBy: context?.user?.id,
-          role: context?.user?.role,
-          data,
-          timestamp: new Date().toISOString(),
-        });
+  
         await checkPermission(context, "astrologer.create");
 
         const astrologer = await prisma.astrologer.create({
@@ -4356,7 +4297,6 @@ if (filterDate) {
           data: astrologer,
         };
       } catch (error) {
-        console.error("AddAstrologer Error:", error.message);
         throw new Error(error.message || "Failed to add astrologer");
       }
     },
@@ -4366,12 +4306,7 @@ if (filterDate) {
       const { prisma } = context;
 
       try {
-        console.log("updateAstrologer called", {
-          requestedBy: context?.user?.id,
-          role: context?.user?.role,
-          astrologerId,
-          timestamp: new Date().toISOString(),
-        });
+
 
         await checkPermission(context, "astrologer.update");
 
@@ -4526,7 +4461,6 @@ if (filterDate) {
     // ================= DELETE ASTROLOGER =================
     deleteAstrologer: async (_, { astrologerId }, context) => {
       try {
-        console.log("UUUUUUUUUUUUUUUUUUUUUUUUUUUUUU", context.user);
         if (
           !context.user ||
           !["SUPER_ADMIN", "MANAGER"].includes(context.user.role?.name)
@@ -4918,7 +4852,6 @@ if (filterDate) {
 
         return module;
       } catch (error) {
-        console.error("CREATE MODULE ERROR 👉", error);
 
         if (error.code === "P2002") {
           throw new Error("Module with same slug already exists");
@@ -5238,7 +5171,6 @@ if (filterDate) {
       { name, email, password, departmentId, roleId, permissionIds },
       context,
     ) => {
-      console.log("CTX USERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRR:", context.user);
       const { prisma } = context;
       try {
         await checkPermission(context, "staff.create");
@@ -5761,7 +5693,6 @@ if (filterDate) {
       if (!context.user) throw new Error("Unauthorized");
 
       const { astrologerId, input, remarks } = args;
-      console.log("KYC INPUTTTTTTTTTTTTTTTTTTTTTTTTT:", input);
 
       const kyc = await prisma.kycDetail.upsert({
         where: {
@@ -5784,7 +5715,6 @@ if (filterDate) {
           documentStatus: input.status,
         },
       });
-      console.log("KYC SAVED AND VERIFIED:", kyc);
       return kyc;
     },
 
@@ -5829,7 +5759,6 @@ if (filterDate) {
 
         return fraudFlag;
       } catch (error) {
-        console.error("createFraudFlag error:", error);
 
         throw new Error(error.message || "Failed to create fraud flag");
       }
@@ -5844,7 +5773,6 @@ if (filterDate) {
 
         return true;
       } catch (error) {
-        console.error("deleteFraudFlag error:", error);
 
         throw new Error("Failed to delete fraud flag");
       }
@@ -5864,7 +5792,6 @@ if (filterDate) {
 
         return fraudLog;
       } catch (error) {
-        console.error("updateFraudLogStatus error:", error);
 
         throw new Error("Failed to update fraud log status");
       }
@@ -5931,7 +5858,6 @@ if (filterDate) {
           },
         });
       } catch (error) {
-        console.log(error);
 
         throw new Error("Failed to save about page");
       }
@@ -5989,7 +5915,6 @@ if (filterDate) {
           },
         });
       } catch (error) {
-        console.log(error);
 
         throw new Error("Failed to save privacy page");
       }
@@ -6047,7 +5972,6 @@ if (filterDate) {
           },
         });
       } catch (error) {
-        console.log(error);
 
         throw new Error("Failed to save refund policy page");
       }
@@ -6105,7 +6029,6 @@ if (filterDate) {
           },
         });
       } catch (error) {
-        console.log(error);
 
         throw new Error("Failed to save disclaimer page");
       }
@@ -6244,7 +6167,6 @@ if (filterDate) {
           },
         };
       } catch (error) {
-        console.error("createOffer error:", error);
 
         throw new Error(error.message || "Failed to create offer");
       }
@@ -6272,7 +6194,6 @@ if (filterDate) {
           message: "Offer deleted successfully",
         };
       } catch (error) {
-        console.error("deleteOffer error:", error);
 
         throw new Error(error.message || "Failed to delete offer");
       }
@@ -6327,7 +6248,6 @@ if (filterDate) {
           },
         };
       } catch (error) {
-        console.error("updateOffer error:", error);
 
         throw new Error(error.message || "Failed to update offer");
       }
@@ -6355,7 +6275,6 @@ if (filterDate) {
           message: "Offer deleted successfully",
         };
       } catch (error) {
-        console.error("deleteOffer error:", error);
 
         throw new Error(error.message || "Failed to delete offer");
       }

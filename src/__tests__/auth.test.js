@@ -26,7 +26,6 @@ let adminRoleId;
 
 beforeAll(async () => {
   // Clean DB
-  console.log("DATABASE_URL:", process.env.DATABASE_URL);
   await prisma.$executeRawUnsafe(`
     TRUNCATE TABLE
       "Address",
@@ -1704,7 +1703,6 @@ test("getApprovedAstrologers - no user fails", async () => {
 });
 
  test("getPendingAstrologers - admin access", async () => {
-  console.log("Testing getPendingAstrologers with admin token:", adminToken);
     const res = await request(app)
       .post("/graphql")
       .set("Authorization", `Bearer ${adminToken}`)
@@ -1748,7 +1746,6 @@ test("createRechargePack - ADMIN success", async () => {
       }
     });
 
-  console.log("Recharge pack response:", res.body);
 
   expect(res.body.errors).toBeUndefined();
   expect(res.body.data.createRechargePack).toBeDefined();
@@ -1811,7 +1808,6 @@ test("getRechargePacks - ADMIN success", async () => {
       query: getRechargePacksQuery
     });
 
-  console.log("getRechargePacks response:", res.body);
 
   expect(res.body.errors).toBeUndefined();
 
@@ -1893,7 +1889,6 @@ test("updateRechargePack - ADMIN success", async () => {
       }
     });
 
-  console.log("updateRechargePack response:", res.body);
 
   expect(res.body.errors).toBeUndefined();
   expect(res.body.data.updateRechargePack).toBeDefined();
@@ -1949,7 +1944,6 @@ test("deleteRechargePack - ADMIN success", async () => {
       variables: { id: packId }
     });
 
-  console.log("deleteRechargePack response:", res.body);
 
   expect(res.body.errors).toBeUndefined();
 expect(res.body.data.deleteRechargePack).toBe("Recharge pack deleted successfully");
@@ -2014,7 +2008,6 @@ test("createCoupon - ADMIN success", async () => {
       }
     });
 
-  console.log("createCoupon response:", res.body);
 
   expect(res.body.errors).toBeUndefined();
   expect(res.body.data.createCoupon).toBeDefined();
