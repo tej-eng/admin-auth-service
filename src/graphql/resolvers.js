@@ -4718,6 +4718,7 @@ export const resolvers = {
           status: input.status?.toUpperCase() === "ACTIVE",
 
           percentage: input.percentage,
+    minOrderAmount: input.minOrderAmount,
 
           maxDiscount: input.maxDiscount,
           redeemLimit: input.redeemLimit,
@@ -4779,6 +4780,9 @@ export const resolvers = {
           ...(input.description !== undefined && {
             description: input.description,
           }),
+          ...(input.minOrderAmount !== undefined && {
+  minOrderAmount: input.minOrderAmount,
+}),
 
           ...(input.applicable !== undefined && {
             applicable: input.applicable,
