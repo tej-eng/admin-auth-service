@@ -377,6 +377,7 @@ const typeDefs = gql`
     status: String!
 
     couponCount: Int
+  minOrderAmount: Float
 
     percentage: Float
     maxDiscount: Float
@@ -402,6 +403,7 @@ const typeDefs = gql`
     percentage: Float
     maxDiscount: Float
     redeemLimit: Int
+  minOrderAmount: Float
 
     startDate: String
     endDate: String
@@ -420,6 +422,7 @@ const typeDefs = gql`
     visibility: String
 
     couponCount: Int
+  minOrderAmount: Float
 
     percentage: Float
     maxDiscount: Float
