@@ -1929,24 +1929,25 @@ statusSummary: SessionStatusSummary!
     message: String!
   }
 
-  type Message {
-    id: ID
-    msgId: String
-    roomId: String
-    senderId: String
-    receiverId: String
-    message: String
-    image: String
-    sender: String
-    replyTo: String
-    createdAt: String
-  }
+ type Message {
+  id: ID
+  msgId: String
+  roomId: String
+  senderId: String
+  receiverId: String
+  time: String
+  message: String
+  image: String
+  sender: String
+  replyTo: String
+  createdAt: String
+}
 
-  type SessionMessagesResponse {
-    success: Boolean!
-    totalCount: Int!
-    data: [Message!]!
-  }
+type SessionMessagesResponse {
+  success: Boolean!
+  totalCount: Int!
+  data: [Message!]!
+}
 
   type DashboardCounts {
     totalAstrologers: Int!
@@ -2238,6 +2239,7 @@ getSessionAnalytics(
     limit: Int
     search: String
   ): AstrologerFollowerResponse!
+  exportAstrologers(query:String): [Astrologer]
   }
 
   type Mutation {

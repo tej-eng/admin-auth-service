@@ -227,7 +227,7 @@ export const resolvers = {
         } = searchInput;
 
         const safePage = Math.max(page, 1);
-        const safeLimit = Math.min(limit, 50);
+        const safeLimit = Math.min(Math.max(limit, 1), 100);
         const skip = (safePage - 1) * safeLimit;
 
         const where = {};
@@ -344,11 +344,11 @@ export const resolvers = {
           query,
           sortField,
           sortOrder,
-          limit = 10,
+         limit = 50,
           page = 1,
         } = searchInput;
 
-        const safeLimit = Math.min(limit, 50);
+       const safeLimit = Math.min(limit, 50);
         const safePage = Math.max(page, 1);
         const skip = (safePage - 1) * safeLimit;
 
@@ -370,15 +370,45 @@ export const resolvers = {
           orderBy.createdAt = "desc";
         }
 
-        const where = query
-          ? {
-              OR: [
-                { name: { contains: query, mode: "insensitive" } },
-                { skills: { has: query } },
-                { languages: { has: query } },
-              ],
-            }
-          : {};
+      const where = query
+  ? {
+      OR: [
+        {
+          name: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          displayName: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          email: {
+            contains: query,
+            mode: "insensitive",
+          },
+        },
+        {
+          contactNo: {
+            contains: query,
+          },
+        },
+        {
+          skills: {
+            has: query,
+          },
+        },
+        {
+          languages: {
+            has: query,
+          },
+        },
+      ],
+    }
+  : {};
 
         const [astrologers, totalCount] = await Promise.all([
           prisma.astrologer.findMany({
@@ -1834,8 +1864,10 @@ export const resolvers = {
         ]);
 
         return {
-          data,
-          totalCount,
+       data,
+    totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit),
         };
       } catch (err) {
         throw new Error("Failed to fetch transactions");
@@ -3763,6 +3795,8 @@ export const resolvers = {
             msgId: msg.msgId,
             roomId: msg.roomId,
             senderId: msg.senderId,
+                    time: msg.time || null,
+
             receiverId: msg.receiverId || null,
             message: msg.message || null,
             image: msg.image || null,
