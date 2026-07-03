@@ -895,7 +895,7 @@ model Message {
 
   senderId   String
   receiverId String?
-
+time String?
   message String
   image   String?
   sender  String
