@@ -6758,42 +6758,41 @@ export const resolvers = {
       };
     },
     endSessionByAdmin: async (_, { sessionId }) => {
- 
-  const session = await prisma.session.findUnique({
-    where: {
-      id: sessionId,
+      const session = await prisma.session.findUnique({
+        where: { id: sessionId },
+      });
+
+      if (!session) {
+        throw new Error("Session not found");
+      }
+
+      const durationSec = session.startedAt
+        ? Math.floor((Date.now() - session.startedAt.getTime()) / 1000)
+        : session.durationSec;
+
+      await prisma.$transaction([
+        prisma.session.update({
+          where: { id: sessionId },
+          data: {
+            status: "REJECTED",
+            by: "Rejected by Admin",
+            endedAt: new Date(),
+            durationSec,
+          },
+        }),
+
+        prisma.astrologer.update({
+          where: {
+            id: session.astrologerId,
+          },
+          data: {
+            isBusy: false,
+          },
+        }),
+      ]);
+
+      return true;
     },
-  });
-
-  if (!session) {
-    throw new Error("Session not found");
-  }
-
-  // Transaction
-  const [updatedSession] = await prisma.$transaction([
-    prisma.session.update({
-      where: {
-        id: sessionId,
-      },
-      data: {
-        status: "REJECTED",
-        by: "Rejected by Admin",
-        endedAt: new Date(),
-      },
-    }),
-
-    prisma.astrologer.update({
-      where: {
-        id: session.astrologerId,
-      },
-      data: {
-        isBusy: false,
-      },
-    }),
-  ]);
-
-  return updatedSession;
-},
   },
 
   Blog: {

@@ -2537,7 +2537,7 @@ enum SessionType {
       remarks: String
       type: TransactionType!
     ): WalletResponse!
-    endSessionByAdmin(sessionId: ID!): Session!
+    endSessionByAdmin(sessionId: ID!): String!
   }
 `;
 
