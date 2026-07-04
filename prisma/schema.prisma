@@ -1385,10 +1385,10 @@ model ServicePaymentOrder {
   id String @id @default(uuid())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   bookingId String
-  booking   ServiceBooking @relation(fields: [bookingId], references: [id])
+  booking ServiceBooking @relation(fields: [bookingId], references: [id])
 
   razorpayOrderId String? @unique
 
@@ -1398,15 +1398,17 @@ model ServicePaymentOrder {
 
   payableAmount Float
 
+  couponId String?
+  coupon Coupon? @relation(fields: [couponId], references: [id])
+
+  discount Float @default(0)
+
+  cashback Float @default(0)
+
   status PaymentOrderStatus @default(CREATED)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([bookingId])
-  @@index([razorpayOrderId])
-  @@index([status])
 }
 
 //-----------
