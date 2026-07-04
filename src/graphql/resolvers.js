@@ -6774,7 +6774,7 @@ export const resolvers = {
         prisma.session.update({
           where: { id: sessionId },
           data: {
-            status: "REJECTED",
+            status: "CANCELLED",
             by: "Rejected by Admin",
             endedAt: new Date(),
             durationSec,
