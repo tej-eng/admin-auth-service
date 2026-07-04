@@ -885,6 +885,7 @@ model Coupon {
   // ADD THESE
   paymentOrders     PaymentOrder[]
   couponRedemptions CouponRedemption[]
+  servicePaymentOrders ServicePaymentOrder[] @relation("CouponServicePaymentOrders")
 }
 
 model Message {
@@ -1393,22 +1394,25 @@ model ServicePaymentOrder {
   razorpayOrderId String? @unique
 
   totalAmount Float
-
   walletAmount Float @default(0)
-
   payableAmount Float
 
   couponId String?
-  coupon Coupon? @relation(fields: [couponId], references: [id])
+  coupon Coupon? @relation("CouponServicePaymentOrders", fields: [couponId], references: [id])
 
   discount Float @default(0)
-
   cashback Float @default(0)
 
   status PaymentOrderStatus @default(CREATED)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([bookingId])
+  @@index([razorpayOrderId])
+  @@index([status])
+  @@index([couponId])
 }
 
 //-----------
