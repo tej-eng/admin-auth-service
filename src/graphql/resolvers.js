@@ -998,12 +998,30 @@ const totalCalls = sessions.filter(
 ).length;
 return {
   totalSessions: sessions.length,
-  totalChats: sessions.filter(s => s.type === "CHAT").length,
-  totalCalls: sessions.filter(s => s.type === "CALL").length,
-
+  totalChats,
+  totalCalls,
   statusSummary,
 
-  recentSessions: sessions,
+  recentSessions: sessions.map((session) => ({
+    sessionId: session.id,
+    userId: session.userId,
+
+    userName: session.user?.name || null,
+
+    by: session.by,
+
+    ratePerMin: session.ratePerMin,
+    durationSec: session.durationSec,
+
+    coinsEarned: session.coinsEarned,
+    coinsDeducted: session.coinsDeducted,
+
+    status: session.status,
+
+    startedAt: session.startedAt?.toISOString() || null,
+    endedAt: session.endedAt?.toISOString() || null,
+    createdAt: session.createdAt?.toISOString() || null,
+  })),
 };
     },
 
