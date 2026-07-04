@@ -974,12 +974,12 @@ export const resolvers = {
       });
 
      const statusSummary = {
-  pending: 0,
+  requested: 0,
+  accepted: 0,
   ongoing: 0,
   completed: 0,
   cancelled: 0,
-  rejected: 0,
-  expired: 0,
+  failed: 0,
 };
 
 sessions.forEach((session) => {
