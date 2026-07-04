@@ -70,7 +70,6 @@ const handleUpload = async (file) => {
 
     const DOCUMENTS_DIR = path.join(__dirname, "..", "uploads", "documents");
 
-
     if (!fs.existsSync(DOCUMENTS_DIR)) {
       fs.mkdirSync(DOCUMENTS_DIR, { recursive: true });
     }
@@ -106,7 +105,6 @@ const handleUpload = async (file) => {
 
     const publicUrl = `/adminAuth/uploads/documents/${newFileName}`;
 
-
     return {
       url: publicUrl,
       filename: newFileName,
@@ -128,13 +126,11 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
       details,
       timestamp: new Date(),
     });
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 async function checkPermission(context, requiredPermission) {
   const staff = context.user;
-
 
   if (!staff || !staff.id) {
     throw new Error("Unauthorized");
@@ -147,7 +143,6 @@ async function checkPermission(context, requiredPermission) {
   }
 
   const roleId = staff.roleId || staff.role?.id;
-
 
   if (!roleId) {
     throw new Error("Unauthorized: Role missing");
@@ -167,7 +162,6 @@ async function checkPermission(context, requiredPermission) {
     ...rolePerms.map((r) => r.permission.name),
     ...staffPerms.map((s) => s.permission.name),
   ];
-
 
   if (!allPermissions.includes(requiredPermission)) {
     throw new Error("Unauthorized: Missing permission");
@@ -344,11 +338,11 @@ export const resolvers = {
           query,
           sortField,
           sortOrder,
-         limit = 50,
+          limit = 50,
           page = 1,
         } = searchInput;
 
-       const safeLimit = Math.min(limit, 50);
+        const safeLimit = Math.min(limit, 50);
         const safePage = Math.max(page, 1);
         const skip = (safePage - 1) * safeLimit;
 
@@ -370,45 +364,45 @@ export const resolvers = {
           orderBy.createdAt = "desc";
         }
 
-      const where = query
-  ? {
-      OR: [
-        {
-          name: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-        {
-          displayName: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-        {
-          email: {
-            contains: query,
-            mode: "insensitive",
-          },
-        },
-        {
-          contactNo: {
-            contains: query,
-          },
-        },
-        {
-          skills: {
-            has: query,
-          },
-        },
-        {
-          languages: {
-            has: query,
-          },
-        },
-      ],
-    }
-  : {};
+        const where = query
+          ? {
+              OR: [
+                {
+                  name: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  displayName: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  email: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  contactNo: {
+                    contains: query,
+                  },
+                },
+                {
+                  skills: {
+                    has: query,
+                  },
+                },
+                {
+                  languages: {
+                    has: query,
+                  },
+                },
+              ],
+            }
+          : {};
 
         const [astrologers, totalCount] = await Promise.all([
           prisma.astrologer.findMany({
@@ -668,7 +662,6 @@ export const resolvers = {
           totalPages: Math.ceil(totalCount / safeLimit),
         };
       } catch (error) {
-
         throw new Error("Failed to fetch astrologer earnings");
       }
     },
@@ -973,56 +966,56 @@ export const resolvers = {
         },
       });
 
-     const statusSummary = {
-  requested: 0,
-  accepted: 0,
-  ongoing: 0,
-  completed: 0,
-  cancelled: 0,
-  failed: 0,
-};
+      const statusSummary = {
+        requested: 0,
+        accepted: 0,
+        ongoing: 0,
+        completed: 0,
+        cancelled: 0,
+        failed: 0,
+      };
 
-sessions.forEach((session) => {
-  const status = session.status?.toLowerCase();
+      sessions.forEach((session) => {
+        const status = session.status?.toLowerCase();
 
-  if (statusSummary.hasOwnProperty(status)) {
-    statusSummary[status]++;
-  }
-});
-const totalChats = sessions.filter(
-  (s) => s.type?.toUpperCase() === "CHAT"
-).length;
+        if (statusSummary.hasOwnProperty(status)) {
+          statusSummary[status]++;
+        }
+      });
+      const totalChats = sessions.filter(
+        (s) => s.type?.toUpperCase() === "CHAT",
+      ).length;
 
-const totalCalls = sessions.filter(
-  (s) => s.type?.toUpperCase() === "CALL"
-).length;
-return {
-  totalSessions: sessions.length,
-  totalChats,
-  totalCalls,
-  statusSummary,
+      const totalCalls = sessions.filter(
+        (s) => s.type?.toUpperCase() === "CALL",
+      ).length;
+      return {
+        totalSessions: sessions.length,
+        totalChats,
+        totalCalls,
+        statusSummary,
 
-  recentSessions: sessions.map((session) => ({
-    sessionId: session.id,
-    userId: session.userId,
+        recentSessions: sessions.map((session) => ({
+          sessionId: session.id,
+          userId: session.userId,
 
-    userName: session.user?.name || null,
+          userName: session.user?.name || null,
+          type: session.type,
+          by: session.by,
 
-    by: session.by,
+          ratePerMin: session.ratePerMin,
+          durationSec: session.durationSec,
 
-    ratePerMin: session.ratePerMin,
-    durationSec: session.durationSec,
+          coinsEarned: session.coinsEarned,
+          coinsDeducted: session.coinsDeducted,
 
-    coinsEarned: session.coinsEarned,
-    coinsDeducted: session.coinsDeducted,
+          status: session.status,
 
-    status: session.status,
-
-    startedAt: session.startedAt?.toISOString() || null,
-    endedAt: session.endedAt?.toISOString() || null,
-    createdAt: session.createdAt?.toISOString() || null,
-  })),
-};
+          startedAt: session.startedAt?.toISOString() || null,
+          endedAt: session.endedAt?.toISOString() || null,
+          createdAt: session.createdAt?.toISOString() || null,
+        })),
+      };
     },
 
     getAstrologerFollowers: async (
@@ -1321,7 +1314,6 @@ return {
           totalCommission: aggregate?._sum?.commission || 0,
         };
       } catch (error) {
-
         throw new Error("Failed to fetch users chat history");
       }
     },
@@ -1570,7 +1562,6 @@ return {
           totalCommission: aggregate?._sum?.commission || 0,
         };
       } catch (error) {
-
         throw new Error("Failed to fetch user call history");
       }
     },
@@ -1729,10 +1720,7 @@ return {
 
     getAdmins: async (_, { page = 1, limit = 10 }, context) => {
       try {
-   
-
         if (!context.user || context.user.role !== "SUPER_ADMIN") {
-         
           throw new Error("Only SUPER_ADMIN can view admins");
         }
 
@@ -1759,8 +1747,6 @@ return {
           }),
         ]);
 
-    
-
         return {
           data: admins,
           totalCount,
@@ -1768,8 +1754,6 @@ return {
           totalPages: Math.ceil(totalCount / limit),
         };
       } catch (error) {
-
-
         throw new Error("Failed to fetch admins");
       }
     },
@@ -1913,10 +1897,10 @@ return {
         ]);
 
         return {
-       data,
-    totalCount,
-    currentPage: page,
-    totalPages: Math.ceil(totalCount / limit),
+          data,
+          totalCount,
+          currentPage: page,
+          totalPages: Math.ceil(totalCount / limit),
         };
       } catch (err) {
         throw new Error("Failed to fetch transactions");
@@ -2451,7 +2435,6 @@ return {
           averageRating: aggregate?._avg?.rating || 0,
         };
       } catch (error) {
-
         throw new Error("Failed to fetch user reviews");
       }
     },
@@ -2501,7 +2484,6 @@ return {
           totalPages: Math.ceil(totalCount / safeLimit),
         };
       } catch (error) {
-
         throw new Error("Failed to fetch fraud flags");
       }
     },
@@ -2649,7 +2631,6 @@ return {
           totalPages: Math.ceil(totalCount / safeLimit),
         };
       } catch (error) {
-
         throw new Error("Failed to fetch fraud logs");
       }
     },
@@ -2916,7 +2897,6 @@ return {
           totalPages: Math.ceil(totalCount / limit),
         };
       } catch (error) {
-
         throw new Error(error.message);
       }
     },
@@ -3526,7 +3506,6 @@ return {
           updatedAt: offer.updatedAt.toISOString(),
         }));
       } catch (error) {
-
         throw new Error(error.message || "Failed to fetch offers");
       }
     },
@@ -3803,9 +3782,7 @@ return {
       });
     },
     blogCategories: async () => {
-
       const data = await prisma.blogCategory.findMany();
-
 
       return data;
     },
@@ -3844,7 +3821,7 @@ return {
             msgId: msg.msgId,
             roomId: msg.roomId,
             senderId: msg.senderId,
-                    time: msg.time || null,
+            time: msg.time || null,
 
             receiverId: msg.receiverId || null,
             message: msg.message || null,
@@ -3855,7 +3832,6 @@ return {
           })),
         };
       } catch (error) {
-
         throw new Error(error.message || "Failed to fetch messages");
       }
     },
@@ -4063,7 +4039,7 @@ return {
 
       const accessToken = generateAccessToken(staff);
       const refreshToken = generateRefreshToken(staff);
- 
+
       // res.cookie("token", accessToken, {
       //   httpOnly: true,
       //   sameSite: "lax",
@@ -4249,7 +4225,6 @@ return {
       }
 
       try {
-  
         await checkPermission(context, "astrologer.create");
 
         const astrologer = await prisma.astrologer.create({
@@ -4389,8 +4364,6 @@ return {
       const { prisma } = context;
 
       try {
-
-
         await checkPermission(context, "astrologer.update");
 
         const existing = await prisma.astrologer.findUnique({
@@ -4801,7 +4774,7 @@ return {
           status: input.status?.toUpperCase() === "ACTIVE",
 
           percentage: input.percentage,
-    minOrderAmount: input.minOrderAmount,
+          minOrderAmount: input.minOrderAmount,
 
           maxDiscount: input.maxDiscount,
           redeemLimit: input.redeemLimit,
@@ -4864,8 +4837,8 @@ return {
             description: input.description,
           }),
           ...(input.minOrderAmount !== undefined && {
-  minOrderAmount: input.minOrderAmount,
-}),
+            minOrderAmount: input.minOrderAmount,
+          }),
 
           ...(input.applicable !== undefined && {
             applicable: input.applicable,
@@ -4939,7 +4912,6 @@ return {
 
         return module;
       } catch (error) {
-
         if (error.code === "P2002") {
           throw new Error("Module with same slug already exists");
         }
@@ -5846,7 +5818,6 @@ return {
 
         return fraudFlag;
       } catch (error) {
-
         throw new Error(error.message || "Failed to create fraud flag");
       }
     },
@@ -5860,7 +5831,6 @@ return {
 
         return true;
       } catch (error) {
-
         throw new Error("Failed to delete fraud flag");
       }
     },
@@ -5879,7 +5849,6 @@ return {
 
         return fraudLog;
       } catch (error) {
-
         throw new Error("Failed to update fraud log status");
       }
     },
@@ -5945,7 +5914,6 @@ return {
           },
         });
       } catch (error) {
-
         throw new Error("Failed to save about page");
       }
     },
@@ -6002,7 +5970,6 @@ return {
           },
         });
       } catch (error) {
-
         throw new Error("Failed to save privacy page");
       }
     },
@@ -6059,7 +6026,6 @@ return {
           },
         });
       } catch (error) {
-
         throw new Error("Failed to save refund policy page");
       }
     },
@@ -6116,7 +6082,6 @@ return {
           },
         });
       } catch (error) {
-
         throw new Error("Failed to save disclaimer page");
       }
     },
@@ -6254,7 +6219,6 @@ return {
           },
         };
       } catch (error) {
-
         throw new Error(error.message || "Failed to create offer");
       }
     },
@@ -6281,7 +6245,6 @@ return {
           message: "Offer deleted successfully",
         };
       } catch (error) {
-
         throw new Error(error.message || "Failed to delete offer");
       }
     },
@@ -6335,7 +6298,6 @@ return {
           },
         };
       } catch (error) {
-
         throw new Error(error.message || "Failed to update offer");
       }
     },
@@ -6362,7 +6324,6 @@ return {
           message: "Offer deleted successfully",
         };
       } catch (error) {
-
         throw new Error(error.message || "Failed to delete offer");
       }
     },
@@ -6688,20 +6649,20 @@ return {
       if (isNaN(amt) || amt <= 0) {
         throw new Error("Invalid amount");
       }
-let wallet = await prisma.astrologerWallet.findUnique({
-  where: {
-    astrologerId,
-  },
-});
+      let wallet = await prisma.astrologerWallet.findUnique({
+        where: {
+          astrologerId,
+        },
+      });
 
-if (!wallet) {
-  wallet = await prisma.astrologerWallet.create({
-    data: {
-      astrologerId,
-      balanceCoins: 0,
-    },
-  });
-}
+      if (!wallet) {
+        wallet = await prisma.astrologerWallet.create({
+          data: {
+            astrologerId,
+            balanceCoins: 0,
+          },
+        });
+      }
 
       const updatedBalance =
         type === "CREDIT"
@@ -6745,21 +6706,21 @@ if (!wallet) {
         throw new Error("Invalid amount");
       }
 
-     let wallet = await prisma.userWallet.findUnique({
-  where: {
-    userId,
-  },
-});
+      let wallet = await prisma.userWallet.findUnique({
+        where: {
+          userId,
+        },
+      });
 
-if (!wallet) {
-  wallet = await prisma.userWallet.create({
-    data: {
-      userId,
-      balanceCoins: 0,
-      lockedCoins: 0,
-    },
-  });
-}
+      if (!wallet) {
+        wallet = await prisma.userWallet.create({
+          data: {
+            userId,
+            balanceCoins: 0,
+            lockedCoins: 0,
+          },
+        });
+      }
 
       const updatedBalance =
         type === "CREDIT"
@@ -6796,6 +6757,43 @@ if (!wallet) {
         walletBalance: updatedBalance,
       };
     },
+    endSessionByAdmin: async (_, { sessionId }) => {
+ 
+  const session = await prisma.session.findUnique({
+    where: {
+      id: sessionId,
+    },
+  });
+
+  if (!session) {
+    throw new Error("Session not found");
+  }
+
+  // Transaction
+  const [updatedSession] = await prisma.$transaction([
+    prisma.session.update({
+      where: {
+        id: sessionId,
+      },
+      data: {
+        status: "REJECTED",
+        by: "Rejected by Admin",
+        endedAt: new Date(),
+      },
+    }),
+
+    prisma.astrologer.update({
+      where: {
+        id: session.astrologerId,
+      },
+      data: {
+        isBusy: false,
+      },
+    }),
+  ]);
+
+  return updatedSession;
+},
   },
 
   Blog: {

@@ -47,8 +47,6 @@ const typeDefs = gql`
     RESCHEDULED
   }
 
-
-
   enum DocumentType {
     AADHAAR
     PAN
@@ -377,7 +375,7 @@ const typeDefs = gql`
     status: String!
 
     couponCount: Int
-  minOrderAmount: Float
+    minOrderAmount: Float
 
     percentage: Float
     maxDiscount: Float
@@ -403,7 +401,7 @@ const typeDefs = gql`
     percentage: Float
     maxDiscount: Float
     redeemLimit: Int
-  minOrderAmount: Float
+    minOrderAmount: Float
 
     startDate: String
     endDate: String
@@ -422,7 +420,7 @@ const typeDefs = gql`
     visibility: String
 
     couponCount: Int
-  minOrderAmount: Float
+    minOrderAmount: Float
 
     percentage: Float
     maxDiscount: Float
@@ -509,15 +507,15 @@ const typeDefs = gql`
     currentPage: Int!
     totalPages: Int!
   }
-enum TransactionType {
-  CREDIT
-  DEBIT
-}
+  enum TransactionType {
+    CREDIT
+    DEBIT
+  }
   type WalletResponse {
-  success: Boolean!
-  message: String!
-  walletBalance: Float!
-}
+    success: Boolean!
+    message: String!
+    walletBalance: Float!
+  }
   #------------------------------Department ____________#
   type Department {
     id: ID!
@@ -1061,7 +1059,7 @@ enum TransactionType {
     source: String
     type: String
     status: String
-  by: String
+    by: String
     ratePerMin: Float
     durationSec: Int
 
@@ -1104,43 +1102,43 @@ enum TransactionType {
     page: Int
     limit: Int
   }
-type CallRecording {
-  id: ID!
+  type CallRecording {
+    id: ID!
 
-  roomId: String!
-  sessionId: String
+    roomId: String!
+    sessionId: String
 
-  userId: ID!
-  astrologerId: ID!
-  astrologerName: String
+    userId: ID!
+    astrologerId: ID!
+    astrologerName: String
 
-  fileName: String!
-  fileUrl: String!
-  filePath: String
-  fileSize: Int
+    fileName: String!
+    fileUrl: String!
+    filePath: String
+    fileSize: Int
 
-  duration: Int
-  callType: String
-  timestamp: String
+    duration: Int
+    callType: String
+    timestamp: String
 
-  status: String
-  isAdminOnly: Boolean
+    status: String
+    isAdminOnly: Boolean
 
-  uploadedBy: String
-  uploadedAt: DateTime
+    uploadedBy: String
+    uploadedAt: DateTime
 
-  metadata: JSON
+    metadata: JSON
 
-  createdAt: DateTime
-  updatedAt: DateTime
-}
+    createdAt: DateTime
+    updatedAt: DateTime
+  }
   type UserCallHistory {
     sessionId: ID!
     source: String
     userId: ID!
     userName: String
     mobile: String
-  by: String
+    by: String
     astrologerId: ID!
     astrologerName: String
 
@@ -1569,10 +1567,10 @@ type CallRecording {
     ANDROID
     IOS
   }
-    enum AppType {
-  USER
-  ASTROLOGER
-}
+  enum AppType {
+    USER
+    ASTROLOGER
+  }
 
   type AppVersion {
     appType: AppType!
@@ -1729,7 +1727,7 @@ type CallRecording {
 
     user: User
     astrologer: Astrologer
- gift: Gift  
+    gift: Gift
     createdAt: DateTime!
   }
   type GiftHistoryResponse {
@@ -1852,18 +1850,18 @@ type CallRecording {
     name: String!
     slug: String!
   }
-    type SessionStatusSummary {
-  requested: Int!
-  accepted: Int!
-  ongoing: Int!
-  completed: Int!
-  cancelled: Int!
-  failed: Int!
-}
+  type SessionStatusSummary {
+    requested: Int!
+    accepted: Int!
+    ongoing: Int!
+    completed: Int!
+    cancelled: Int!
+    failed: Int!
+  }
 
   type AstrologerDashboardStats {
     totalChats: Int!
-statusSummary: SessionStatusSummary!
+    statusSummary: SessionStatusSummary!
     totalCalls: Int!
 
     totalSessions: Int!
@@ -1902,10 +1900,10 @@ statusSummary: SessionStatusSummary!
     userId: ID!
 
     userName: String
-  by: String 
+    by: String
     ratePerMin: Int
     durationSec: Int
-
+    type: SessionType
     coinsEarned: Int
     coinsDeducted: Int
 
@@ -1929,25 +1927,25 @@ statusSummary: SessionStatusSummary!
     message: String!
   }
 
- type Message {
-  id: ID
-  msgId: String
-  roomId: String
-  senderId: String
-  receiverId: String
-  time: String
-  message: String
-  image: String
-  sender: String
-  replyTo: String
-  createdAt: String
-}
+  type Message {
+    id: ID
+    msgId: String
+    roomId: String
+    senderId: String
+    receiverId: String
+    time: String
+    message: String
+    image: String
+    sender: String
+    replyTo: String
+    createdAt: String
+  }
 
-type SessionMessagesResponse {
-  success: Boolean!
-  totalCount: Int!
-  data: [Message!]!
-}
+  type SessionMessagesResponse {
+    success: Boolean!
+    totalCount: Int!
+    data: [Message!]!
+  }
 
   type DashboardCounts {
     totalAstrologers: Int!
@@ -1961,7 +1959,7 @@ type SessionMessagesResponse {
 
     totalApplications: Int!
   }
-    type AstrologerReview {
+  type AstrologerReview {
     reviewId: ID!
     sessionId: ID
 
@@ -1974,65 +1972,65 @@ type SessionMessagesResponse {
     sessionType: String
 
     createdAt: String!
-}
-    type AstrologerGiftHistoryResponse {
-  data: [AstrologerGift!]!
-  totalCount: Int!
-}
+  }
+  type AstrologerGiftHistoryResponse {
+    data: [AstrologerGift!]!
+    totalCount: Int!
+  }
   type AstrologerGift {
-  id: ID!
-  coins: Int
-  amount: Float
-  description: String
-  createdAt: String
-  userName: String
-  userId: ID
-  sessionId: ID
-}
+    id: ID!
+    coins: Int
+    amount: Float
+    description: String
+    createdAt: String
+    userName: String
+    userId: ID
+    sessionId: ID
+  }
   type AstrologerFollowerResponse {
-  data: [AstrologerFollower!]!
-  totalCount: Int!
-  currentPage: Int!
-  totalPages: Int!
-}
+    data: [AstrologerFollower!]!
+    totalCount: Int!
+    currentPage: Int!
+    totalPages: Int!
+  }
 
-type AstrologerFollower {
-  id: ID!
-  createdAt: DateTime!
+  type AstrologerFollower {
+    id: ID!
+    createdAt: DateTime!
 
-  user: User!
-}
+    user: User!
+  }
   enum DashboardFilter {
-  TODAY
-  WEEK
-  MONTH
-}
-type SessionAnalytics {
-  totalSessions: Int!
-  totalChats: Int!
-  totalCalls: Int!
+    TODAY
+    WEEK
+    MONTH
+  }
+  type SessionAnalytics {
+    totalSessions: Int!
+    totalChats: Int!
+    totalCalls: Int!
 
-  statusSummary: SessionStatusSummary!
+    statusSummary: SessionStatusSummary!
 
-  recentSessions: [AstrologerSessionHistory!]!
-}
+    recentSessions: [AstrologerSessionHistory!]!
+  }
   type SessionRemedy {
-  id: ID!
-  sessionId: String!
-  remedyText: String!
-  createdAt: String!
-}
+    id: ID!
+    sessionId: String!
+    remedyText: String!
+    createdAt: String!
+  }
 
   #-----End code for send gift history-----------------#
 
   type Query {
-  getCallRecording(sessionId: ID!): CallRecording
-  getSessionRemedies(sessionId: String!): [SessionRemedy!]!
+    getCallRecording(sessionId: ID!): CallRecording
+    getSessionRemedies(sessionId: String!): [SessionRemedy!]!
     getAstrologerGiftHistory(
-    astrologerId: ID!
-    page: Int
-    limit: Int
-  ): AstrologerGiftHistoryResponse!
+      astrologerId: ID!
+      page: Int
+      limit: Int
+    ): AstrologerGiftHistoryResponse!
     freeServices: [FreeService!]!
     getAppVersions: [AppVersion!]!
     getLatestAppVersion(platform: PlatformType!): AppVersion
@@ -2200,29 +2198,29 @@ type SessionAnalytics {
     blogCategory(id: ID!): BlogCategory
 
     getAstrologerDashboardStats(astrologerId: ID!): AstrologerDashboardStats!
-getAstrologerChatHistory(
-  astrologerId:ID!
+    getAstrologerChatHistory(
+      astrologerId: ID!
 
-    page:Int
+      page: Int
 
-    limit:Int
+      limit: Int
 
-    status:SessionStatus
+      status: SessionStatus
 
-    filter:DashboardFilter
-): AstrologerSessionHistoryList!
+      filter: DashboardFilter
+    ): AstrologerSessionHistoryList!
 
-getAstrologerCallHistory(
-  astrologerId: ID!
-  page: Int
-  limit: Int
-  status: SessionStatus
-  filter: DashboardFilter
-): AstrologerSessionHistoryList!
-getSessionAnalytics(
-    status: SessionStatus
-    filter: DashboardFilter
-): SessionAnalytics!
+    getAstrologerCallHistory(
+      astrologerId: ID!
+      page: Int
+      limit: Int
+      status: SessionStatus
+      filter: DashboardFilter
+    ): AstrologerSessionHistoryList!
+    getSessionAnalytics(
+      status: SessionStatus
+      filter: DashboardFilter
+    ): SessionAnalytics!
 
     adminGetSessionMessages(sessionId: String!): SessionMessagesResponse!
     getDashboardCounts: DashboardCounts!
@@ -2230,16 +2228,14 @@ getSessionAnalytics(
     deleteNotice(id: ID!): Boolean!
     getNotices: [Notice!]!
     getServiceAstrologers(serviceId: ID!): [ServiceAstrologer!]!
-    getAstrologerReviews(
-    astrologerId: ID!
-): [AstrologerReview!]!
- getAstrologerFollowers(
-    astrologerId: ID!
-    page: Int
-    limit: Int
-    search: String
-  ): AstrologerFollowerResponse!
-  exportAstrologers(query:String): [Astrologer]
+    getAstrologerReviews(astrologerId: ID!): [AstrologerReview!]!
+    getAstrologerFollowers(
+      astrologerId: ID!
+      page: Int
+      limit: Int
+      search: String
+    ): AstrologerFollowerResponse!
+    exportAstrologers(query: String): [Astrologer]
   }
 
   type Mutation {
@@ -2526,18 +2522,19 @@ getSessionAnalytics(
       astrologers: [ServiceAstrologerInput!]!
     ): Boolean!
     updateUserStatus(userId: ID!, isActive: Boolean!): User!
-   manageAstrologerWallet(
-  astrologerId: ID!
-  amount: Float!
-  remarks: String
-  type: TransactionType!
-): WalletResponse!
-manageUserWallet(
-  userId: ID!
-  amount: Float!
-  remarks: String
-  type: TransactionType!
-): WalletResponse!
+    manageAstrologerWallet(
+      astrologerId: ID!
+      amount: Float!
+      remarks: String
+      type: TransactionType!
+    ): WalletResponse!
+    manageUserWallet(
+      userId: ID!
+      amount: Float!
+      remarks: String
+      type: TransactionType!
+    ): WalletResponse!
+    endSessionByAdmin(sessionId: ID!): Session!
   }
 `;
 
