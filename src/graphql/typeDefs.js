@@ -1274,7 +1274,10 @@ const typeDefs = gql`
     page: Int
     limit: Int
   }
-
+enum SessionType {
+  CHAT
+  CALL
+}
   type FraudFlagList {
     data: [FraudFlag!]!
 
