@@ -973,7 +973,38 @@ export const resolvers = {
         },
       });
 
-      // yahin statusSummary, totalChats, totalCalls, recentSessions etc. calculate karke return karna
+     const statusSummary = {
+  pending: 0,
+  ongoing: 0,
+  completed: 0,
+  cancelled: 0,
+  rejected: 0,
+  expired: 0,
+};
+
+sessions.forEach((session) => {
+  const status = session.status?.toLowerCase();
+
+  if (statusSummary.hasOwnProperty(status)) {
+    statusSummary[status]++;
+  }
+});
+const totalChats = sessions.filter(
+  (s) => s.type?.toUpperCase() === "CHAT"
+).length;
+
+const totalCalls = sessions.filter(
+  (s) => s.type?.toUpperCase() === "CALL"
+).length;
+return {
+  totalSessions: sessions.length,
+  totalChats: sessions.filter(s => s.type === "CHAT").length,
+  totalCalls: sessions.filter(s => s.type === "CALL").length,
+
+  statusSummary,
+
+  recentSessions: sessions,
+};
     },
 
     getAstrologerFollowers: async (
