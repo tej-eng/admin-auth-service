@@ -6791,7 +6791,7 @@ export const resolvers = {
         }),
       ]);
 
-      return true;
+     return "Session ended successfully";
     },
   },
 
