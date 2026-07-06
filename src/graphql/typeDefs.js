@@ -2116,6 +2116,7 @@ enum SessionType {
       type: String
       contactNo: String
       amount: Float
+       astrologerId: ID
       filterType: String
       startDate: String
       endDate: String

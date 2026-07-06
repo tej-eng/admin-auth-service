@@ -1916,6 +1916,7 @@ hasRemedy: session.remedies.length > 0,
         type,
         amount,
         contactNo,
+         astrologerId, 
         filterType,
         startDate,
         endDate,
@@ -1943,6 +1944,15 @@ hasRemedy: session.remedies.length > 0,
             },
           };
         }
+        if (astrologerId) {
+  whereClause.astrologerWallet = {
+    ...(whereClause.astrologerWallet || {}),
+    astrologer: {
+      ...(whereClause.astrologerWallet?.astrologer || {}),
+      id: astrologerId,
+    },
+  };
+}
         const now = new Date();
         if (filterType === "WEEK") {
           const weekStart = new Date();
