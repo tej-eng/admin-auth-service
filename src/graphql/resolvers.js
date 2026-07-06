@@ -843,9 +843,11 @@ export const resolvers = {
 
           durationSec: session.durationSec,
 
-          coinsEarned: session.coinsEarned,
+         astrologerCommission: session.coinsEarned,
 
-          coinsDeducted: session.coinsDeducted,
+dhwaniCommission: session.commission,
+
+coinsDeducted: session.coinsDeducted,
 
           status: session.status,
 
@@ -920,9 +922,11 @@ export const resolvers = {
 
           durationSec: session.durationSec,
           by: session.by,
-          coinsEarned: session.coinsEarned,
+       astrologerCommission: session.coinsEarned,
 
-          coinsDeducted: session.coinsDeducted,
+dhwaniCommission: session.commission,
+
+coinsDeducted: session.coinsDeducted,
 
           status: session.status,
 
@@ -1006,8 +1010,11 @@ export const resolvers = {
           ratePerMin: session.ratePerMin,
           durationSec: session.durationSec,
 
-          coinsEarned: session.coinsEarned,
-          coinsDeducted: session.coinsDeducted,
+     astrologerCommission: session.coinsEarned,
+
+dhwaniCommission: session.commission,
+
+coinsDeducted: session.coinsDeducted,
 
           status: session.status,
 
@@ -1788,25 +1795,17 @@ export const resolvers = {
             not: null,
           },
         };
-
-        // Only recharge transactions
         if (onlyRecharge) {
           whereClause.rechargePackId = {
             not: null,
           };
         }
-
-        // Transaction type
         if (type) {
           whereClause.type = type.toUpperCase();
         }
-
-        // Amount
         if (amount) {
           whereClause.amount = Number(amount);
         }
-
-        // User filter
         if (userId || mobile) {
           whereClause.userWallet = {};
 
@@ -1822,11 +1821,6 @@ export const resolvers = {
             };
           }
         }
-
-        // =========================
-        // DATE FILTERS
-        // =========================
-
         const now = new Date();
 
         if (filterType === "WEEK") {
@@ -1922,33 +1916,17 @@ export const resolvers = {
     ) => {
       try {
         const skip = (page - 1) * limit;
-
-        // =========================
-        // BASE FILTER (ONLY ASTROLOGER)
-        // =========================
         const whereClause = {
           astrologerWalletId: {
             not: null,
           },
         };
-
-        // =========================
-        // TYPE FILTER (ENUM SAFE)
-        // =========================
         if (type) {
           whereClause.type = type.toUpperCase();
         }
-
-        // =========================
-        // AMOUNT FILTER
-        // =========================
         if (amount) {
           whereClause.amount = Number(amount);
         }
-
-        // =========================
-        // PHONE NUMBER FILTER
-        // =========================
         if (contactNo) {
           whereClause.astrologerWallet = {
             astrologer: {
@@ -1958,13 +1936,7 @@ export const resolvers = {
             },
           };
         }
-
-        // =========================
-        // DATE FILTERS
-        // =========================
         const now = new Date();
-
-        // WEEK
         if (filterType === "WEEK") {
           const weekStart = new Date();
           weekStart.setDate(now.getDate() - 7);
@@ -1974,8 +1946,6 @@ export const resolvers = {
             lte: now,
           };
         }
-
-        // MONTH
         if (filterType === "MONTH") {
           const monthStart = new Date();
           monthStart.setMonth(now.getMonth() - 1);
@@ -1985,8 +1955,6 @@ export const resolvers = {
             lte: now,
           };
         }
-
-        // YEAR
         if (filterType === "YEAR") {
           const yearStart = new Date();
           yearStart.setFullYear(now.getFullYear() - 1);
@@ -1996,18 +1964,12 @@ export const resolvers = {
             lte: now,
           };
         }
-
-        // CUSTOM DATE
         if (filterType === "CUSTOM" && startDate && endDate) {
           whereClause.createdAt = {
             gte: new Date(startDate),
             lte: new Date(endDate),
           };
         }
-
-        // =========================
-        // QUERY DATA
-        // =========================
         const [data, totalCount] = await Promise.all([
           prisma.walletTransaction.findMany({
             where: whereClause,
@@ -2024,6 +1986,13 @@ export const resolvers = {
                       email: true,
                     },
                   },
+                },
+              },
+
+              session: {
+                select: {
+                  id: true,
+                  type: true,
                 },
               },
             },
@@ -2068,10 +2037,6 @@ export const resolvers = {
         const skip = (page - 1) * limit;
 
         const whereClause = {};
-
-        // ======================
-        // SOURCE FILTER (USER / ASTROLOGER / ALL)
-        // ======================
         if (source === "USER") {
           whereClause.userWalletId = { not: null };
         }
@@ -2079,24 +2044,12 @@ export const resolvers = {
         if (source === "ASTROLOGER") {
           whereClause.astrologerWalletId = { not: null };
         }
-
-        // ======================
-        // TYPE FILTER
-        // ======================
         if (type) {
           whereClause.type = type.toUpperCase();
         }
-
-        // ======================
-        // AMOUNT FILTER
-        // ======================
         if (amount) {
           whereClause.amount = Number(amount);
         }
-
-        // ======================
-        // PHONE FILTER (USER + ASTROLOGER)
-        // ======================
         if (contactNo) {
           whereClause.OR = [
             {
@@ -2119,10 +2072,6 @@ export const resolvers = {
             },
           ];
         }
-
-        // ======================
-        // DATE FILTERS
-        // ======================
         const now = new Date();
 
         if (filterType === "WEEK") {
@@ -2152,10 +2101,6 @@ export const resolvers = {
             lte: new Date(endDate),
           };
         }
-
-        // ======================
-        // FETCH DATA
-        // ======================
         const [data, totalCount] = await Promise.all([
           prisma.walletTransaction.findMany({
             where: whereClause,
@@ -2185,10 +2130,6 @@ export const resolvers = {
             where: whereClause,
           }),
         ]);
-
-        // ======================
-        // ADD SOURCE FIELD
-        // ======================
         const formattedData = data.map((tx) => ({
           ...tx,
           source: tx.userWalletId ? "USER" : "ASTROLOGER",
@@ -3846,6 +3787,7 @@ export const resolvers = {
           totalChats,
           totalApplications,
           revenueResult,
+          rechargeResult,
         ] = await Promise.all([
           prisma.astrologer.count(),
 
@@ -3872,6 +3814,17 @@ export const resolvers = {
               coinsDeducted: true,
             },
           }),
+          prisma.payment.aggregate({
+            where: {
+              status: "SUCCESS",
+              rechargePackId: {
+                not: null,
+              },
+            },
+            _sum: {
+              amount: true,
+            },
+          }),
         ]);
 
         return {
@@ -3883,8 +3836,8 @@ export const resolvers = {
           totalChats,
 
           totalApplications,
-
-          totalRevenue: revenueResult._sum.coinsDeducted || 0,
+          totalRechargeAmount: rechargeResult?._sum?.amount ?? 0,
+          totalRevenue: revenueResult?._sum?.coinsDeducted ?? 0,
         };
       } catch (error) {
         throw new Error("Failed to fetch dashboard counts");
@@ -6686,6 +6639,7 @@ export const resolvers = {
             coins: Math.round(amt),
             amount: amt,
             description: remarks,
+            updatedBalance: updatedBalance,
           },
         });
       });
@@ -6744,6 +6698,7 @@ export const resolvers = {
             coins: Math.round(amt),
             amount: amt,
             description: remarks,
+           updatedBalance: updatedBalance,
           },
         });
       });
@@ -6791,7 +6746,7 @@ export const resolvers = {
         }),
       ]);
 
-     return "Session ended successfully";
+      return "Session ended successfully";
     },
   },
 

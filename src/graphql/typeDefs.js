@@ -245,12 +245,7 @@ const typeDefs = gql`
     phoneNo: String!
     role: Role!
   }
-  type Staff {
-    id: ID!
-    name: String!
-    email: String!
-    role: Role
-  }
+
 
   type AdminAuthPayload {
     admin: Admin!
@@ -879,26 +874,6 @@ const typeDefs = gql`
     passbook: String
   }
 
-  type WalletTransaction {
-    id: ID!
-
-    userWalletId: ID
-    astrologerWalletId: ID
-    rechargePack: RechargePack
-    rechargePackId: ID
-    sessionId: ID
-    paymentId: ID
-
-    type: String!
-    coins: Int!
-    amount: Float
-    description: String
-
-    userWallet: UserWallet
-
-    createdAt: DateTime!
-  }
-
   type UserWallet {
     id: ID!
     userId: ID!
@@ -939,7 +914,7 @@ const typeDefs = gql`
     coins: Int!
     amount: Float
     description: String
-
+ updatedBalance: Float
     astrologerWallet: AstrologerWallet
 
     createdAt: DateTime!
@@ -956,28 +931,32 @@ const typeDefs = gql`
     USER
     ASTROLOGER
   }
-  type WalletTransaction {
-    id: ID!
+type WalletTransaction {
+  id: ID!
 
-    userWalletId: ID
-    astrologerWalletId: ID
-    rechargePack: RechargePack
-    rechargePackId: ID
-    sessionId: ID
-    paymentId: ID
+  userWalletId: ID
+  astrologerWalletId: ID
 
-    type: String!
-    coins: Int!
-    amount: Float
-    description: String
+  rechargePack: RechargePack
+  rechargePackId: ID
 
-    userWallet: UserWallet
-    astrologerWallet: AstrologerWallet
+  sessionId: ID
+  paymentId: ID
 
-    source: WalletSource
+  updatedBalance: Float
 
-    createdAt: DateTime!
-  }
+  type: String!
+  coins: Int!
+  amount: Float
+  description: String
+
+  userWallet: UserWallet
+  astrologerWallet: AstrologerWallet
+
+  source: WalletSource
+
+  createdAt: DateTime!
+}
   #---END FOR ALL WALLET TRANSACTIONS-----------------#
   #-----------------------------START of astrologer earnings-----------------#
   input AstrologerEarningSearchInput {
@@ -1907,8 +1886,10 @@ enum SessionType {
     ratePerMin: Int
     durationSec: Int
     type: SessionType
-    coinsEarned: Int
-    coinsDeducted: Int
+   astrologerCommission: Int
+  dhwaniCommission: Int
+
+  coinsDeducted: Int
 
     status: SessionStatus
 

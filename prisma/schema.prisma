@@ -720,7 +720,7 @@ model WalletTransaction {
   coins       Int
   amount      Float?
   description String?
-
+ updatedBalance Float?
   createdAt DateTime @default(now())
 
   //  PREVENT duplicate credit from same payment
