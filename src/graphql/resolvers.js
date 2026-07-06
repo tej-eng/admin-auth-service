@@ -1230,24 +1230,31 @@ coinsDeducted: session.coinsDeducted,
           prisma.session.findMany({
             where,
 
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  mobile: true,
-                  countryCode: true,
-                },
-              },
+      include: {
+  user: {
+    select: {
+      id: true,
+      name: true,
+      mobile: true,
+      countryCode: true,
+    },
+  },
 
-              astrologer: {
-                select: {
-                  id: true,
-                  name: true,
-                  displayName: true,
-                },
-              },
-            },
+  astrologer: {
+    select: {
+      id: true,
+      name: true,
+      displayName: true,
+    },
+  },
+
+  remedies: {
+    select: {
+      id: true,
+    },
+    take: 1,
+  },
+},
 
             orderBy: {
               createdAt: "desc",
@@ -1301,7 +1308,7 @@ coinsDeducted: session.coinsDeducted,
 
           startedAt: session.startedAt,
           endedAt: session.endedAt,
-
+hasRemedy: session.remedies.length > 0,
           createdAt: session.createdAt,
         }));
 

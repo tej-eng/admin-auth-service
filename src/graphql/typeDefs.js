@@ -982,7 +982,7 @@ type WalletTransaction {
     balanceCoins: Float
     totalEarned: Float
     totalWithdrawn: Float
-
+updatedBalance: Float
     totalSessionEarnings: Float
     monthlyEarnings: Float
     todayEarnings: Float
@@ -1041,7 +1041,7 @@ type WalletTransaction {
     by: String
     ratePerMin: Float
     durationSec: Int
-
+ hasRemedy: Boolean!
     coinsDeducted: Float
     coinsEarned: Float
     commission: Float
