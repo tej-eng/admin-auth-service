@@ -203,7 +203,10 @@ const typeDefs = gql`
     isBusy: Boolean!
     isOnline: Boolean!
     isPromotional: Boolean!
-
+isEligibleChat: Boolean!
+isEligibleCall: Boolean!
+isEligibleVideo: Boolean!
+isEligibleAudio: Boolean!
     createdAt: DateTime
     updatedAt: DateTime
   }
@@ -1677,7 +1680,10 @@ enum SessionType {
     languages: [String!]!
     skills: [String!]!
     problems: [String!]!
-
+isEligibleChat: Boolean!
+isEligibleCall: Boolean!
+isEligibleVideo: Boolean!
+isEligibleAudio: Boolean!
     pricing: [AstrologerPricing!]!
 
     tags: String
