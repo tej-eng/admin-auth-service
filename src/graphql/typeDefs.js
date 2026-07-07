@@ -2036,15 +2036,14 @@ type WaitingQueueUser{
 }
 
 type AstrologerQueue {
-    astrologerId: ID!
-    waitingCount: Int!
-    WaitingQueueUser: [WaitingQueueUser!]!
+  waitingCount: Int!
+  waitingUsers: [WaitingQueueUser!]!
 }
 
   #-----End code for send gift history-----------------#
 
   type Query {
-  getAstrologerWaitingUsers(astrologerId: ID!): AstrologerQueue
+    getAstrologerWaitingUsers(astrologerId: ID!): AstrologerQueue!
     getCallRecording(sessionId: ID!): CallRecording
     getSessionRemedies(sessionId: String!): [SessionRemedy!]!
     getAstrologerGiftHistory(
