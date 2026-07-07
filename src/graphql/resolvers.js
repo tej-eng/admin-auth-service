@@ -287,9 +287,9 @@ export const resolvers = {
     return queues.filter(Boolean);
 
   } catch (error) {
-    console.error("getAllWaitingQueues Error:", error);
-    throw new Error("Failed to fetch waiting queues");
-  }
+  console.log(error);
+  throw error;
+}
 },
    getAstrologerWaitingUsers: async (_, { astrologerId }) => {
   try {
