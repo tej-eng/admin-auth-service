@@ -247,7 +247,7 @@ export const resolvers = {
             name: true,
             mobile: true,
             countryCode: true,
-            profilePic: true,
+         
           },
         });
 
@@ -272,7 +272,7 @@ export const resolvers = {
               name: user?.name || "",
               mobile: user?.mobile || "",
               countryCode: user?.countryCode || "",
-              profilePic: user?.profilePic || "",
+            
               roomId: item.roomId,
               maximumTime: item.maximum_time,
               source: item.source,

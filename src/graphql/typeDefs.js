@@ -2018,7 +2018,7 @@ type WaitingQueueUser {
   name: String
   mobile: String
   countryCode: String
-  profilePic: String
+  
   roomId: String!
   maximumTime: Int
   source: String
