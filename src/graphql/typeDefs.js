@@ -2013,37 +2013,39 @@ hasRemedy: Boolean!
     createdAt: String!
   }
 
-type WaitingQueueUser{
-
-    userId:ID!
-
-    name:String
-
-    mobile:String
-
-    countryCode:String
-
-    profilePic:String
-
-    roomId:String!
-
-    maximumTime:Int
-
-    source:String
-
-    type:String
-
+type WaitingQueueUser {
+  userId: ID!
+  name: String
+  mobile: String
+  countryCode: String
+  profilePic: String
+  roomId: String!
+  maximumTime: Int
+  source: String
+  type: String
 }
 
 type AstrologerQueue {
+  astrologerId: ID!
+  astrologerName: String!
+  astrologerProfilePic: String
+  isOnline: Boolean
+  isBusy: Boolean
+
   waitingCount: Int!
+
   waitingUsers: [WaitingQueueUser!]!
 }
-
   #-----End code for send gift history-----------------#
 
   type Query {
-    getAstrologerWaitingUsers(astrologerId: ID!): AstrologerQueue!
+   
+  getAstrologerWaitingUsers(
+    astrologerId: ID!
+  ): AstrologerQueue!
+
+  
+  getAllWaitingQueues: [AstrologerQueue!]!
     getCallRecording(sessionId: ID!): CallRecording
     getSessionRemedies(sessionId: String!): [SessionRemedy!]!
     getAstrologerGiftHistory(
