@@ -2360,9 +2360,9 @@ export const resolvers = {
           reviewId: review.id,
 
           sessionId: review.session?.id || null,
-          orderId: review.session?.orderId || null, 
+          orderId: review.session?.orderId || null,
           userId: review.user?.id || null,
-           userName: review.user?.name || null,
+          userName: review.user?.name || null,
           astrologerId: review.astrologer?.id || null,
           astrologerName: review.astrologer?.name || "",
           displayName: review.astrologer?.displayName || "",
@@ -2372,9 +2372,8 @@ export const resolvers = {
           rating: review.rating,
           comment: review.comment || "",
           createdAt: review.createdAt,
-            isFlagged: review.isFlagged, 
+          isFlagged: review.isFlagged,
         }));
-
 
         return {
           data: formattedData,
@@ -4700,6 +4699,8 @@ export const resolvers = {
             talktime: input.talktime,
             validityDays: input.validityDays,
             isActive: input.isActive ?? true,
+            hideAfterFirstRecharge:
+        input.hideAfterFirstRecharge ?? false,
           },
         });
 
@@ -6550,19 +6551,19 @@ export const resolvers = {
       return true;
     },
 
-   updateReviewComment: async (
-  _,
-  { reviewId, comment, rating },
-  { prisma }
-) => {
+    updateReviewComment: async (
+      _,
+      { reviewId, comment, rating },
+      { prisma },
+    ) => {
       const review = await prisma.review.update({
         where: {
           id: reviewId,
         },
-   data: {
-  ...(comment !== undefined && { comment }),
-  ...(rating !== undefined && { rating }),
-},
+        data: {
+          ...(comment !== undefined && { comment }),
+          ...(rating !== undefined && { rating }),
+        },
         include: {
           user: true,
           astrologer: true,

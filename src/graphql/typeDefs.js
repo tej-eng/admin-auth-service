@@ -335,6 +335,7 @@ isEligibleAudio: Boolean!
     coins: Int!
     validityDays: Int!
     isActive: Boolean
+     hideAfterFirstRecharge: Boolean
   }
 
   type RechargePack {
@@ -348,6 +349,7 @@ isEligibleAudio: Boolean!
     isActive: Boolean!
     createdAt: DateTime
     updatedAt: DateTime
+    hideAfterFirstRecharge: Boolean!
   }
 
   input UpdateRechargePackInput {
