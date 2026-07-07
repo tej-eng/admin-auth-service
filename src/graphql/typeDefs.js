@@ -1168,7 +1168,7 @@ updatedBalance: Float
   input UpdateAstrologerInput {
     astroname: String
     displayName: String
-
+  applicationId: String
     profilePic: String
 
     gender: Gender
