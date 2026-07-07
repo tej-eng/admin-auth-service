@@ -2505,7 +2505,11 @@ hasRemedy: Boolean!
     toggleReviewFlag(reviewId: ID!, isFlagged: Boolean!): ToggleReviewResponse!
     updateCoupon(id: ID!, input: UpdateCouponInput!): Coupon!
 
-    updateReviewComment(reviewId: ID!, comment: String!): UserReview!
+  updateReviewComment(
+  reviewId: ID!
+  comment: String
+  rating: Int
+): UserReview!
 
     updateGiftStatus(id: ID!, status: String!): Gift!
     saveServiceAstrologers(
