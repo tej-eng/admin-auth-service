@@ -243,28 +243,24 @@ const userMap = new Map(
    return queue.map((item) => {
 
     const user = userMap.get(item.user_id);
+return {
+  waitingCount: queue.length,
+  waitingUsers: queue.map((item) => {
+    const user = userMap.get(item.user_id);
 
     return {
-
-        userId: item.user_id,
-
-        name: user?.name || "",
-
-        mobile: user?.mobile || "",
-
-        countryCode: user?.countryCode || "",
-
-        profilePic: user?.profilePic || "",
-
-        roomId: item.roomId,
-
-        maximumTime: item.maximum_time,
-
-        source: item.source,
-
-        type: item.type,
-
+      userId: item.user_id,
+      name: user?.name || "",
+      mobile: user?.mobile || "",
+      countryCode: user?.countryCode || "",
+      profilePic: user?.profilePic || "",
+      roomId: item.roomId,
+      maximumTime: item.maximum_time,
+      source: item.source,
+      type: item.type,
     };
+  }),
+};
 
 });
   } catch (error) {
