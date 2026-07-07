@@ -4203,7 +4203,10 @@ export const resolvers = {
 
       try {
         await checkPermission(context, "astrologer.create");
-
+const chatPricing = data.pricing.find((p) => p.type === "CHAT");
+const callPricing = data.pricing.find((p) => p.type === "CALL");
+const videoPricing = data.pricing.find((p) => p.type === "VIDEO");
+const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
         const astrologer = await prisma.astrologer.create({
           data: {
             name: data.astroname,
@@ -4220,7 +4223,10 @@ export const resolvers = {
             skills: data.expertise,
             problems: data.problems,
             dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-
+  isEligibleChat: !!chatPricing?.isActive,
+  isEligibleCall: !!callPricing?.isActive,
+  isEligibleVideo: !!videoPricing?.isActive,
+  isEligibleAudio: !!audioPricing?.isActive,
             tags: data.tags,
             vtags: data.vtags,
 
@@ -4355,7 +4361,10 @@ export const resolvers = {
         if (!existing) {
           throw new Error("Astrologer not found");
         }
-
+const chatPricing = data.pricing.find((p) => p.type === "CHAT");
+const callPricing = data.pricing.find((p) => p.type === "CALL");
+const videoPricing = data.pricing.find((p) => p.type === "VIDEO");
+const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
         const updatedAstrologer = await prisma.astrologer.update({
           where: {
             id: astrologerId,
@@ -4371,7 +4380,10 @@ export const resolvers = {
             dateOfBirth: data.dateOfBirth
               ? new Date(data.dateOfBirth)
               : undefined,
-
+  isEligibleChat: !!chatPricing?.isActive,
+  isEligibleCall: !!callPricing?.isActive,
+  isEligibleVideo: !!videoPricing?.isActive,
+  isEligibleAudio: !!audioPricing?.isActive,
             email: data.email,
             contactNo: data.phoneNumber,
 
@@ -4456,13 +4468,17 @@ export const resolvers = {
               ? {
                   deleteMany: {},
 
-                  create: data.pricing.map((item) => ({
-                    type: item.type,
-                    price: Number(item.price),
-                    offerPrice: Number(item.offerPrice),
-                    commissionPercent: Number(item.commissionPercent),
-                    isActive: item.isActive,
-                  })),
+                 create: data.pricing
+  .filter((p) => p.isActive)
+  .map((item) => ({
+    type: item.type,
+    price: Number(item.price),
+    offerPrice: item.offerPrice
+      ? Number(item.offerPrice)
+      : null,
+    commissionPercent: Number(item.commissionPercent) || 0,
+    isActive: true,
+  })),
                 }
               : undefined,
           },
