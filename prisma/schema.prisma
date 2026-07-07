@@ -314,7 +314,7 @@ model Astrologer {
   serviceMappings   ServiceAstrologer[]
   liveStreams       LiveStream[]
   callRecordings CallRecording[]
-
+isDeleted Boolean @default(false)
   @@index([rating])
   @@index([experience])
 }
