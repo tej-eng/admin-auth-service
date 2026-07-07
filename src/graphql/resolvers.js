@@ -816,12 +816,12 @@ export const resolvers = {
 
           include: {
             user: true,
-                remedies: {
-                select: {
-                  id: true,
-                },
-                take: 1,
+            remedies: {
+              select: {
+                id: true,
               },
+              take: 1,
+            },
           },
 
           orderBy: {
@@ -2356,37 +2356,25 @@ export const resolvers = {
           }),
         ]);
 
-        // ---------------- FORMAT RESPONSE ----------------
-
         const formattedData = reviews.map((review) => ({
           reviewId: review.id,
 
           sessionId: review.session?.id || null,
-
-          orderId: review.session?.orderId || null, // agar Session model me hai
-
+          orderId: review.session?.orderId || null, 
           userId: review.user?.id || null,
-
+           userName: review.user?.name || null,
           astrologerId: review.astrologer?.id || null,
-
           astrologerName: review.astrologer?.name || "",
-
           displayName: review.astrologer?.displayName || "",
-
           mobile: review.user?.mobile || "",
-
           sessionType: review.session?.type || "",
-
           sessionStatus: review.session?.status || "",
-
           rating: review.rating,
-
           comment: review.comment || "",
-
           createdAt: review.createdAt,
+            isFlagged: review.isFlagged, 
         }));
 
-        // ---------------- RESPONSE ----------------
 
         return {
           data: formattedData,
@@ -4203,10 +4191,10 @@ export const resolvers = {
 
       try {
         await checkPermission(context, "astrologer.create");
-const chatPricing = data.pricing.find((p) => p.type === "CHAT");
-const callPricing = data.pricing.find((p) => p.type === "CALL");
-const videoPricing = data.pricing.find((p) => p.type === "VIDEO");
-const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
+        const chatPricing = data.pricing.find((p) => p.type === "CHAT");
+        const callPricing = data.pricing.find((p) => p.type === "CALL");
+        const videoPricing = data.pricing.find((p) => p.type === "VIDEO");
+        const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
         const astrologer = await prisma.astrologer.create({
           data: {
             name: data.astroname,
@@ -4223,10 +4211,10 @@ const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
             skills: data.expertise,
             problems: data.problems,
             dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-  isEligibleChat: !!chatPricing?.isActive,
-  isEligibleCall: !!callPricing?.isActive,
-  isEligibleVideo: !!videoPricing?.isActive,
-  isEligibleAudio: !!audioPricing?.isActive,
+            isEligibleChat: !!chatPricing?.isActive,
+            isEligibleCall: !!callPricing?.isActive,
+            isEligibleVideo: !!videoPricing?.isActive,
+            isEligibleAudio: !!audioPricing?.isActive,
             tags: data.tags,
             vtags: data.vtags,
 
@@ -4361,10 +4349,10 @@ const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
         if (!existing) {
           throw new Error("Astrologer not found");
         }
-const chatPricing = data.pricing.find((p) => p.type === "CHAT");
-const callPricing = data.pricing.find((p) => p.type === "CALL");
-const videoPricing = data.pricing.find((p) => p.type === "VIDEO");
-const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
+        const chatPricing = data.pricing.find((p) => p.type === "CHAT");
+        const callPricing = data.pricing.find((p) => p.type === "CALL");
+        const videoPricing = data.pricing.find((p) => p.type === "VIDEO");
+        const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
         const updatedAstrologer = await prisma.astrologer.update({
           where: {
             id: astrologerId,
@@ -4380,10 +4368,10 @@ const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
             dateOfBirth: data.dateOfBirth
               ? new Date(data.dateOfBirth)
               : undefined,
-  isEligibleChat: !!chatPricing?.isActive,
-  isEligibleCall: !!callPricing?.isActive,
-  isEligibleVideo: !!videoPricing?.isActive,
-  isEligibleAudio: !!audioPricing?.isActive,
+            isEligibleChat: !!chatPricing?.isActive,
+            isEligibleCall: !!callPricing?.isActive,
+            isEligibleVideo: !!videoPricing?.isActive,
+            isEligibleAudio: !!audioPricing?.isActive,
             email: data.email,
             contactNo: data.phoneNumber,
 
@@ -4468,17 +4456,17 @@ const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
               ? {
                   deleteMany: {},
 
-                 create: data.pricing
-  .filter((p) => p.isActive)
-  .map((item) => ({
-    type: item.type,
-    price: Number(item.price),
-    offerPrice: item.offerPrice
-      ? Number(item.offerPrice)
-      : null,
-    commissionPercent: Number(item.commissionPercent) || 0,
-    isActive: true,
-  })),
+                  create: data.pricing
+                    .filter((p) => p.isActive)
+                    .map((item) => ({
+                      type: item.type,
+                      price: Number(item.price),
+                      offerPrice: item.offerPrice
+                        ? Number(item.offerPrice)
+                        : null,
+                      commissionPercent: Number(item.commissionPercent) || 0,
+                      isActive: true,
+                    })),
                 }
               : undefined,
           },
@@ -4522,10 +4510,18 @@ const audioPricing = data.pricing.find((p) => p.type === "AUDIO");
 
         if (!existing) throw new Error("Astrologer not found");
 
-        await prisma.astrologer.delete({
+        await prisma.astrologer.update({
           where: { id: astrologerId },
+          data: {
+            isDeleted: true,
+            status: false,
+            isOnline: false,
+            isBusy: false,
+            isChatActive: false,
+            isCallActive: false,
+            isLiveActive: false,
+          },
         });
-
         return true;
       } catch (error) {
         throw new Error(error.message || "Failed to delete astrologer");
