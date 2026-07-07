@@ -2044,7 +2044,7 @@ type AstrologerQueue {
   #-----End code for send gift history-----------------#
 
   type Query {
-  getAstrologerQueue(astrologerId: ID!): AstrologerQueue
+  getAstrologerWaitingUsers(astrologerId: ID!): AstrologerQueue
     getCallRecording(sessionId: ID!): CallRecording
     getSessionRemedies(sessionId: String!): [SessionRemedy!]!
     getAstrologerGiftHistory(
