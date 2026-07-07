@@ -17,6 +17,8 @@ const prisma = new PrismaClient();
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+import redis from "../config/redis.js";
+
 const getFilterDate = (filter) => {
   const now = new Date();
 
@@ -208,6 +210,68 @@ export const resolvers = {
   JSON: GraphQLJSON,
   Upload: GraphQLUpload,
   Query: {
+    getAstrologerWaitingUsers: async (_, { astrologerId }) => {
+  try {
+    // Redis se queue nikalo
+    const list = await redis.lrange(
+      `queue:${astrologerId}`,
+      0,
+      -1
+    );
+
+    // Parse JSON
+    const queue = list.map((item) => JSON.parse(item));
+const userIds = queue.map((item) => item.user_id);
+const users = await prisma.user.findMany({
+  where: {
+    id: {
+      in: userIds,
+    },
+  },
+  select: {
+    id: true,
+    name: true,
+    mobile: true,
+    countryCode: true,
+    profilePic: true,
+  },
+});
+const userMap = new Map(
+  users.map((user) => [user.id, user])
+);
+    // Response
+   return queue.map((item) => {
+
+    const user = userMap.get(item.user_id);
+
+    return {
+
+        userId: item.user_id,
+
+        name: user?.name || "",
+
+        mobile: user?.mobile || "",
+
+        countryCode: user?.countryCode || "",
+
+        profilePic: user?.profilePic || "",
+
+        roomId: item.roomId,
+
+        maximumTime: item.maximum_time,
+
+        source: item.source,
+
+        type: item.type,
+
+    };
+
+});
+  } catch (error) {
+    console.error("getAstrologerWaitingUsers Error:", error);
+    throw new Error("Failed to fetch waiting users");
+  }
+},
     getUsersListBySearch: async (_, { searchInput }) => {
       try {
         const {
