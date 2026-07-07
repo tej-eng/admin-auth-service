@@ -210,59 +210,50 @@ export const resolvers = {
   JSON: GraphQLJSON,
   Upload: GraphQLUpload,
   Query: {
-    getAstrologerWaitingUsers: async (_, { astrologerId }) => {
+   getAstrologerWaitingUsers: async (_, { astrologerId }) => {
   try {
-    // Redis se queue nikalo
-    const list = await redis.lrange(
-      `queue:${astrologerId}`,
-      0,
-      -1
-    );
+    const list = await redis.lrange(`queue:${astrologerId}`, 0, -1);
 
-    // Parse JSON
     const queue = list.map((item) => JSON.parse(item));
-const userIds = queue.map((item) => item.user_id);
-const users = await prisma.user.findMany({
-  where: {
-    id: {
-      in: userIds,
-    },
-  },
-  select: {
-    id: true,
-    name: true,
-    mobile: true,
-    countryCode: true,
-    profilePic: true,
-  },
-});
-const userMap = new Map(
-  users.map((user) => [user.id, user])
-);
-    // Response
-   return queue.map((item) => {
 
-    const user = userMap.get(item.user_id);
-return {
-  waitingCount: queue.length,
-  waitingUsers: queue.map((item) => {
-    const user = userMap.get(item.user_id);
+    const userIds = queue.map((item) => item.user_id);
+
+    const users = await prisma.user.findMany({
+      where: {
+        id: {
+          in: userIds,
+        },
+      },
+      select: {
+        id: true,
+        name: true,
+        mobile: true,
+        countryCode: true,
+        profilePic: true,
+      },
+    });
+
+    const userMap = new Map(users.map((user) => [user.id, user]));
 
     return {
-      userId: item.user_id,
-      name: user?.name || "",
-      mobile: user?.mobile || "",
-      countryCode: user?.countryCode || "",
-      profilePic: user?.profilePic || "",
-      roomId: item.roomId,
-      maximumTime: item.maximum_time,
-      source: item.source,
-      type: item.type,
-    };
-  }),
-};
+      waitingCount: queue.length,
 
-});
+      waitingUsers: queue.map((item) => {
+        const user = userMap.get(item.user_id);
+
+        return {
+          userId: item.user_id,
+          name: user?.name || "",
+          mobile: user?.mobile || "",
+          countryCode: user?.countryCode || "",
+          profilePic: user?.profilePic || "",
+          roomId: item.roomId,
+          maximumTime: item.maximum_time,
+          source: item.source,
+          type: item.type,
+        };
+      }),
+    };
   } catch (error) {
     console.error("getAstrologerWaitingUsers Error:", error);
     throw new Error("Failed to fetch waiting users");
@@ -4759,8 +4750,7 @@ return {
             talktime: input.talktime,
             validityDays: input.validityDays,
             isActive: input.isActive ?? true,
-            hideAfterFirstRecharge:
-        input.hideAfterFirstRecharge ?? false,
+            hideAfterFirstRecharge: input.hideAfterFirstRecharge ?? false,
           },
         });
 
