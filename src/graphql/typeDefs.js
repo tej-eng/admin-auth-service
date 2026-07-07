@@ -2013,9 +2013,38 @@ hasRemedy: Boolean!
     createdAt: String!
   }
 
+type WaitingQueueUser{
+
+    userId:ID!
+
+    name:String
+
+    mobile:String
+
+    countryCode:String
+
+    profilePic:String
+
+    roomId:String!
+
+    maximumTime:Int
+
+    source:String
+
+    type:String
+
+}
+
+type AstrologerQueue {
+    astrologerId: ID!
+    waitingCount: Int!
+    waitingUsers: [WaitingUser!]!
+}
+
   #-----End code for send gift history-----------------#
 
   type Query {
+  getAstrologerQueue(astrologerId: ID!): AstrologerQueue
     getCallRecording(sessionId: ID!): CallRecording
     getSessionRemedies(sessionId: String!): [SessionRemedy!]!
     getAstrologerGiftHistory(
