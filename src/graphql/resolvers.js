@@ -210,6 +210,87 @@ export const resolvers = {
   JSON: GraphQLJSON,
   Upload: GraphQLUpload,
   Query: {
+    getAllWaitingQueues: async () => {
+  try {
+    // Get all astrologers
+    const astrologers = await prisma.astrologer.findMany({
+      select: {
+        id: true,
+        name: true,
+        profilePic: true,
+        isOnline: true,
+        isBusy: true,
+      },
+    });
+
+    const queues = await Promise.all(
+      astrologers.map(async (astro) => {
+        const list = await redis.lrange(`queue:${astro.id}`, 0, -1);
+
+        const queue = list.map((item) => JSON.parse(item));
+
+        // Skip if no waiting users
+        if (queue.length === 0) {
+          return null;
+        }
+
+        const userIds = queue.map((item) => item.user_id);
+
+        const users = await prisma.user.findMany({
+          where: {
+            id: {
+              in: userIds,
+            },
+          },
+          select: {
+            id: true,
+            name: true,
+            mobile: true,
+            countryCode: true,
+            profilePic: true,
+          },
+        });
+
+        const userMap = new Map(
+          users.map((user) => [user.id, user])
+        );
+
+        return {
+          astrologerId: astro.id,
+          astrologerName: astro.name,
+          astrologerProfilePic: astro.profilePic,
+          isOnline: astro.isOnline,
+          isBusy: astro.isBusy,
+
+          waitingCount: queue.length,
+
+          waitingUsers: queue.map((item) => {
+            const user = userMap.get(item.user_id);
+
+            return {
+              userId: item.user_id,
+              name: user?.name || "",
+              mobile: user?.mobile || "",
+              countryCode: user?.countryCode || "",
+              profilePic: user?.profilePic || "",
+              roomId: item.roomId,
+              maximumTime: item.maximum_time,
+              source: item.source,
+              type: item.type,
+            };
+          }),
+        };
+      })
+    );
+
+    // Remove null queues
+    return queues.filter(Boolean);
+
+  } catch (error) {
+    console.error("getAllWaitingQueues Error:", error);
+    throw new Error("Failed to fetch waiting queues");
+  }
+},
    getAstrologerWaitingUsers: async (_, { astrologerId }) => {
   try {
     const list = await redis.lrange(`queue:${astrologerId}`, 0, -1);
