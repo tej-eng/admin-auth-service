@@ -2038,7 +2038,7 @@ type WaitingQueueUser{
 type AstrologerQueue {
     astrologerId: ID!
     waitingCount: Int!
-    waitingUsers: [WaitingUser!]!
+    WaitingQueueUser: [WaitingQueueUser!]!
 }
 
   #-----End code for send gift history-----------------#
