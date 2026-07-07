@@ -6550,14 +6550,19 @@ export const resolvers = {
       return true;
     },
 
-    updateReviewComment: async (_, { reviewId, comment }, { prisma }) => {
+   updateReviewComment: async (
+  _,
+  { reviewId, comment, rating },
+  { prisma }
+) => {
       const review = await prisma.review.update({
         where: {
           id: reviewId,
         },
-        data: {
-          comment,
-        },
+   data: {
+  ...(comment !== undefined && { comment }),
+  ...(rating !== undefined && { rating }),
+},
         include: {
           user: true,
           astrologer: true,
