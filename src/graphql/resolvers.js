@@ -816,6 +816,12 @@ export const resolvers = {
 
           include: {
             user: true,
+                remedies: {
+                select: {
+                  id: true,
+                },
+                take: 1,
+              },
           },
 
           orderBy: {
@@ -843,17 +849,18 @@ export const resolvers = {
 
           durationSec: session.durationSec,
 
-         astrologerCommission: session.coinsEarned,
+          astrologerCommission: session.coinsEarned,
 
-dhwaniCommission: session.commission,
+          dhwaniCommission: session.commission,
 
-coinsDeducted: session.coinsDeducted,
+          coinsDeducted: session.coinsDeducted,
 
           status: session.status,
 
           startedAt: session.startedAt?.toISOString(),
 
           endedAt: session.endedAt?.toISOString(),
+          hasRemedy: session.remedies.length > 0,
 
           createdAt: session.createdAt?.toISOString(),
         })),
@@ -922,11 +929,11 @@ coinsDeducted: session.coinsDeducted,
 
           durationSec: session.durationSec,
           by: session.by,
-       astrologerCommission: session.coinsEarned,
+          astrologerCommission: session.coinsEarned,
 
-dhwaniCommission: session.commission,
+          dhwaniCommission: session.commission,
 
-coinsDeducted: session.coinsDeducted,
+          coinsDeducted: session.coinsDeducted,
 
           status: session.status,
 
@@ -1010,11 +1017,11 @@ coinsDeducted: session.coinsDeducted,
           ratePerMin: session.ratePerMin,
           durationSec: session.durationSec,
 
-     astrologerCommission: session.coinsEarned,
+          astrologerCommission: session.coinsEarned,
 
-dhwaniCommission: session.commission,
+          dhwaniCommission: session.commission,
 
-coinsDeducted: session.coinsDeducted,
+          coinsDeducted: session.coinsDeducted,
 
           status: session.status,
 
@@ -1230,31 +1237,31 @@ coinsDeducted: session.coinsDeducted,
           prisma.session.findMany({
             where,
 
-      include: {
-  user: {
-    select: {
-      id: true,
-      name: true,
-      mobile: true,
-      countryCode: true,
-    },
-  },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  mobile: true,
+                  countryCode: true,
+                },
+              },
 
-  astrologer: {
-    select: {
-      id: true,
-      name: true,
-      displayName: true,
-    },
-  },
+              astrologer: {
+                select: {
+                  id: true,
+                  name: true,
+                  displayName: true,
+                },
+              },
 
-  remedies: {
-    select: {
-      id: true,
-    },
-    take: 1,
-  },
-},
+              remedies: {
+                select: {
+                  id: true,
+                },
+                take: 1,
+              },
+            },
 
             orderBy: {
               createdAt: "desc",
@@ -1308,7 +1315,7 @@ coinsDeducted: session.coinsDeducted,
 
           startedAt: session.startedAt,
           endedAt: session.endedAt,
-hasRemedy: session.remedies.length > 0,
+          hasRemedy: session.remedies.length > 0,
           createdAt: session.createdAt,
         }));
 
@@ -1916,7 +1923,7 @@ hasRemedy: session.remedies.length > 0,
         type,
         amount,
         contactNo,
-         astrologerId, 
+        astrologerId,
         filterType,
         startDate,
         endDate,
@@ -1945,14 +1952,14 @@ hasRemedy: session.remedies.length > 0,
           };
         }
         if (astrologerId) {
-  whereClause.astrologerWallet = {
-    ...(whereClause.astrologerWallet || {}),
-    astrologer: {
-      ...(whereClause.astrologerWallet?.astrologer || {}),
-      id: astrologerId,
-    },
-  };
-}
+          whereClause.astrologerWallet = {
+            ...(whereClause.astrologerWallet || {}),
+            astrologer: {
+              ...(whereClause.astrologerWallet?.astrologer || {}),
+              id: astrologerId,
+            },
+          };
+        }
         const now = new Date();
         if (filterType === "WEEK") {
           const weekStart = new Date();
@@ -6715,7 +6722,7 @@ hasRemedy: session.remedies.length > 0,
             coins: Math.round(amt),
             amount: amt,
             description: remarks,
-           updatedBalance: updatedBalance,
+            updatedBalance: updatedBalance,
           },
         });
       });

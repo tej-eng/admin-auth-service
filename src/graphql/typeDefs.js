@@ -1888,7 +1888,7 @@ enum SessionType {
     type: SessionType
    astrologerCommission: Int
   dhwaniCommission: Int
-
+hasRemedy: Boolean!
   coinsDeducted: Int
 
     status: SessionStatus
