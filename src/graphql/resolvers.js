@@ -212,7 +212,7 @@ export const resolvers = {
   Query: {
     getAllWaitingQueues: async () => {
   try {
-    // Get all astrologers
+    
     const astrologers = await prisma.astrologer.findMany({
       select: {
         id: true,
@@ -283,7 +283,6 @@ export const resolvers = {
       })
     );
 
-    // Remove null queues
     return queues.filter(Boolean);
 
   } catch (error) {
@@ -2023,6 +2022,12 @@ export const resolvers = {
               },
               rechargePack: true,
               payment: true,
+                   session: {
+        select: {
+          id: true,
+          requestType: true,
+        },
+      },
             },
             orderBy: {
               createdAt: "desc",
@@ -2039,6 +2044,7 @@ export const resolvers = {
         return {
           data,
           totalCount,
+            sessionId: session.id,
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),
         };
