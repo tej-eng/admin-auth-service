@@ -211,28 +211,85 @@ export const resolvers = {
   Upload: GraphQLUpload,
   Query: {
     getAllWaitingQueues: async () => {
-  try {
-    
-    const astrologers = await prisma.astrologer.findMany({
-      select: {
-        id: true,
-        name: true,
-        profilePic: true,
-        isOnline: true,
-        isBusy: true,
-      },
-    });
+      try {
+        const astrologers = await prisma.astrologer.findMany({
+          select: {
+            id: true,
+            name: true,
+            profilePic: true,
+            isOnline: true,
+            isBusy: true,
+          },
+        });
 
-    const queues = await Promise.all(
-      astrologers.map(async (astro) => {
-        const list = await redis.lrange(`queue:${astro.id}`, 0, -1);
+        const queues = await Promise.all(
+          astrologers.map(async (astro) => {
+            const list = await redis.lrange(`queue:${astro.id}`, 0, -1);
+
+            const queue = list.map((item) => JSON.parse(item));
+
+            // Skip if no waiting users
+            if (queue.length === 0) {
+              return null;
+            }
+
+            const userIds = queue.map((item) => item.user_id);
+
+            const users = await prisma.user.findMany({
+              where: {
+                id: {
+                  in: userIds,
+                },
+              },
+              select: {
+                id: true,
+                name: true,
+                mobile: true,
+                countryCode: true,
+              },
+            });
+
+            const userMap = new Map(users.map((user) => [user.id, user]));
+
+            return {
+              astrologerId: astro.id,
+              astrologerName: astro.name,
+              astrologerProfilePic: astro.profilePic,
+              isOnline: astro.isOnline,
+              isBusy: astro.isBusy,
+
+              waitingCount: queue.length,
+
+              waitingUsers: queue.map((item) => {
+                const user = userMap.get(item.user_id);
+
+                return {
+                  userId: item.user_id,
+                  name: user?.name || "",
+                  mobile: user?.mobile || "",
+                  countryCode: user?.countryCode || "",
+
+                  roomId: item.roomId,
+                  maximumTime: item.maximum_time,
+                  source: item.source,
+                  type: item.type,
+                };
+              }),
+            };
+          }),
+        );
+
+        return queues.filter(Boolean);
+      } catch (error) {
+        console.log(error);
+        throw error;
+      }
+    },
+    getAstrologerWaitingUsers: async (_, { astrologerId }) => {
+      try {
+        const list = await redis.lrange(`queue:${astrologerId}`, 0, -1);
 
         const queue = list.map((item) => JSON.parse(item));
-
-        // Skip if no waiting users
-        if (queue.length === 0) {
-          return null;
-        }
 
         const userIds = queue.map((item) => item.user_id);
 
@@ -247,21 +304,13 @@ export const resolvers = {
             name: true,
             mobile: true,
             countryCode: true,
-         
+            profilePic: true,
           },
         });
 
-        const userMap = new Map(
-          users.map((user) => [user.id, user])
-        );
+        const userMap = new Map(users.map((user) => [user.id, user]));
 
         return {
-          astrologerId: astro.id,
-          astrologerName: astro.name,
-          astrologerProfilePic: astro.profilePic,
-          isOnline: astro.isOnline,
-          isBusy: astro.isBusy,
-
           waitingCount: queue.length,
 
           waitingUsers: queue.map((item) => {
@@ -272,7 +321,7 @@ export const resolvers = {
               name: user?.name || "",
               mobile: user?.mobile || "",
               countryCode: user?.countryCode || "",
-            
+              profilePic: user?.profilePic || "",
               roomId: item.roomId,
               maximumTime: item.maximum_time,
               source: item.source,
@@ -280,65 +329,11 @@ export const resolvers = {
             };
           }),
         };
-      })
-    );
-
-    return queues.filter(Boolean);
-
-  } catch (error) {
-  console.log(error);
-  throw error;
-}
-},
-   getAstrologerWaitingUsers: async (_, { astrologerId }) => {
-  try {
-    const list = await redis.lrange(`queue:${astrologerId}`, 0, -1);
-
-    const queue = list.map((item) => JSON.parse(item));
-
-    const userIds = queue.map((item) => item.user_id);
-
-    const users = await prisma.user.findMany({
-      where: {
-        id: {
-          in: userIds,
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        mobile: true,
-        countryCode: true,
-        profilePic: true,
-      },
-    });
-
-    const userMap = new Map(users.map((user) => [user.id, user]));
-
-    return {
-      waitingCount: queue.length,
-
-      waitingUsers: queue.map((item) => {
-        const user = userMap.get(item.user_id);
-
-        return {
-          userId: item.user_id,
-          name: user?.name || "",
-          mobile: user?.mobile || "",
-          countryCode: user?.countryCode || "",
-          profilePic: user?.profilePic || "",
-          roomId: item.roomId,
-          maximumTime: item.maximum_time,
-          source: item.source,
-          type: item.type,
-        };
-      }),
-    };
-  } catch (error) {
-    console.error("getAstrologerWaitingUsers Error:", error);
-    throw new Error("Failed to fetch waiting users");
-  }
-},
+      } catch (error) {
+        console.error("getAstrologerWaitingUsers Error:", error);
+        throw new Error("Failed to fetch waiting users");
+      }
+    },
     getUsersListBySearch: async (_, { searchInput }) => {
       try {
         const {
@@ -2022,12 +2017,12 @@ export const resolvers = {
               },
               rechargePack: true,
               payment: true,
-                   session: {
-        select: {
-          id: true,
-          requestType: true,
-        },
-      },
+              session: {
+                select: {
+                  id: true,
+                
+                },
+              },
             },
             orderBy: {
               createdAt: "desc",
@@ -2044,7 +2039,7 @@ export const resolvers = {
         return {
           data,
           totalCount,
-            sessionId: session.id,
+          sessionId: session.id,
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),
         };
