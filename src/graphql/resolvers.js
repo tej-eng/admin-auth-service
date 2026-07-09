@@ -2039,12 +2039,12 @@ export const resolvers = {
         return {
           data,
           totalCount,
-          sessionId: session.id,
+     
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),
         };
       } catch (err) {
-        throw new Error("Failed to fetch transactions");
+       throw new Error(err.message || "Failed to fetch transactions");
       }
     },
 
