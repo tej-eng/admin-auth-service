@@ -2044,6 +2044,7 @@ export const resolvers = {
         return {
           data,
           totalCount,
+            sessionId: session.id,
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),
         };
