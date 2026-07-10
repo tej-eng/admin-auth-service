@@ -2146,12 +2146,6 @@ export const resolvers = {
                 },
               },
 
-              session: {
-                select: {
-                  id: true,
-                  type: true,
-                },
-              },
             },
 
             orderBy: {
