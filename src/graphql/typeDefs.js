@@ -929,6 +929,7 @@ isEligibleAudio: Boolean!
     data: [AstrologerWalletTransaction!]!
     totalCount: Int!
   }
+    
   #------------------End of astrologer wallet-----------------#
   #------START FOR ALL WALLET TRANSACTIONS-----------------#
 
@@ -2036,10 +2037,72 @@ type AstrologerQueue {
 
   waitingUsers: [WaitingQueueUser!]!
 }
+  type Skill {
+  id: ID!
+
+  name: String!
+
+  slug: String!
+
+  sortOrder: Int!
+
+  isActive: Boolean!
+
+  createdAt: String
+  updatedAt: String
+}
+
+input CreateSkillInput {
+  name: String!
+  slug: String
+  sortOrder: Int
+  isActive: Boolean
+}
+
+input UpdateSkillInput {
+  name: String
+  slug: String
+  sortOrder: Int
+  isActive: Boolean
+}
+  type Problem {
+  id: ID!
+
+  name: String!
+
+  slug: String!
+
+  sortOrder: Int!
+
+  isActive: Boolean!
+
+  createdAt: String
+  updatedAt: String
+}
+
+input CreateProblemInput {
+  name: String!
+  slug: String
+  sortOrder: Int
+  isActive: Boolean
+}
+
+input UpdateProblemInput {
+  name: String
+  slug: String
+  sortOrder: Int
+  isActive: Boolean
+}
   #-----End code for send gift history-----------------#
 
   type Query {
-   
+    getSkills: [Skill!]!
+
+  getSkill(id: ID!): Skill
+
+  getProblems: [Problem!]!
+
+  getProblem(id: ID!): Problem
   getAstrologerWaitingUsers(
     astrologerId: ID!
   ): AstrologerQueue!
@@ -2562,6 +2625,44 @@ type AstrologerQueue {
       type: TransactionType!
     ): WalletResponse!
     endSessionByAdmin(sessionId: ID!): String!
+      createSkill(
+    input: CreateSkillInput!
+  ): Skill!
+
+  updateSkill(
+    id: ID!
+    input: UpdateSkillInput!
+  ): Skill!
+
+  deleteSkill(
+    id: ID!
+  ): Boolean!
+
+  updateSkillStatus(
+    id: ID!
+    status: Boolean!
+  ): Skill!
+
+
+
+
+  createProblem(
+    input: CreateProblemInput!
+  ): Problem!
+
+  updateProblem(
+    id: ID!
+    input: UpdateProblemInput!
+  ): Problem!
+
+  deleteProblem(
+    id: ID!
+  ): Boolean!
+
+  updateProblemStatus(
+    id: ID!
+    status: Boolean!
+  ): Problem!
   }
 `;
 
