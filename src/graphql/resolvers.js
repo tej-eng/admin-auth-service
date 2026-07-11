@@ -2020,7 +2020,6 @@ export const resolvers = {
               session: {
                 select: {
                   id: true,
-                
                 },
               },
             },
@@ -2039,12 +2038,12 @@ export const resolvers = {
         return {
           data,
           totalCount,
-     
+
           currentPage: page,
           totalPages: Math.ceil(totalCount / limit),
         };
       } catch (err) {
-       throw new Error(err.message || "Failed to fetch transactions");
+        throw new Error(err.message || "Failed to fetch transactions");
       }
     },
 
@@ -2145,7 +2144,6 @@ export const resolvers = {
                   },
                 },
               },
-
             },
 
             orderBy: {
@@ -4095,6 +4093,20 @@ export const resolvers = {
         },
         orderBy: {
           createdAt: "desc",
+        },
+      });
+    },
+    getSkills: async () => {
+      return prisma.skill.findMany({
+        orderBy: {
+          sortOrder: "asc",
+        },
+      });
+    },
+    getProblems: async () => {
+      return prisma.problem.findMany({
+        orderBy: {
+          sortOrder: "asc",
         },
       });
     },
@@ -6915,6 +6927,68 @@ export const resolvers = {
       ]);
 
       return "Session ended successfully";
+    },
+    createSkill: async (_, { input }) => {
+      return prisma.skill.create({
+        data: {
+          ...input,
+          slug: input.slug || input.name.toLowerCase().replace(/\s+/g, "-"),
+        },
+      });
+    },
+    updateSkill: async (_, { id, input }) => {
+      return prisma.skill.update({
+        where: { id },
+
+        data: input,
+      });
+    },
+    deleteSkill: async (_, { id }) => {
+      await prisma.skill.delete({
+        where: { id },
+      });
+
+      return true;
+    },
+    updateSkillStatus: async (_, { id, status }) => {
+      return prisma.skill.update({
+        where: { id },
+
+        data: {
+          isActive: status,
+        },
+      });
+    },
+    createProblem: async (_, { input }) => {
+      return prisma.problem.create({
+        data: {
+          ...input,
+          slug: input.slug || input.name.toLowerCase().replace(/\s+/g, "-"),
+        },
+      });
+    },
+    updateProblem: async (_, { id, input }) => {
+      return prisma.problem.update({
+        where: { id },
+
+        data: input,
+      });
+    },
+    deleteProblem: async (_, { id }) => {
+      await prisma.problem.delete({
+        where: { id },
+      });
+
+      return true;
+    },
+    updateProblemStatus: async (_, { id, status }) => {
+      return prisma.problem.update({
+        where: { id },
+
+        data: {
+          isActive: status,
+        },
+      });
     },
   },
 
