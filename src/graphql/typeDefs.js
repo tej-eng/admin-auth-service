@@ -895,35 +895,55 @@ isEligibleAudio: Boolean!
   }
   #-----------------------------END Wallet MANAGEMENT-----------------#
   #-----------------------START for astrologer walet-----------------#
-  type AstrologerWallet {
-    id: ID!
-    astrologerId: ID!
-    balanceCoins: Int
-    lockedCoins: Int
+type AstrologerWallet {
+  id: ID!
+  astrologerId: ID!
 
-    astrologer: Astrologer
+  balanceCoins: Int
+  lockedCoins: Int
 
-    createdAt: DateTime!
-    updatedAt: DateTime!
-  }
+  totalEarned: Int
+  totalWithdrawn: Int
 
-  type AstrologerWalletTransaction {
-    id: ID!
+  astrologer: Astrologer
 
-    astrologerWalletId: ID
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+type Payment {
+  id: ID!
 
-    sessionId: ID
-    paymentId: ID
+  amount: Float
+  coins: Int
 
-    type: String!
-    coins: Int!
-    amount: Float
-    description: String
- updatedBalance: Float
-    astrologerWallet: AstrologerWallet
+  provider: String
+  status: String
 
-    createdAt: DateTime!
-  }
+  razorpayPaymentId: String
+
+  createdAt: DateTime
+}
+ type AstrologerWalletTransaction {
+  id: ID!
+
+  astrologerWalletId: ID
+
+  sessionId: ID
+  paymentId: ID
+
+  type: String!
+  coins: Int!
+  amount: Float
+  description: String
+  updatedBalance: Float
+
+  astrologerWallet: AstrologerWallet
+
+  session: Session
+  payment: Payment
+
+  createdAt: DateTime!
+}
 
   type AstrologerWalletTransactionList {
     data: [AstrologerWalletTransaction!]!
@@ -1849,7 +1869,25 @@ isEligibleAudio: Boolean!
     cancelled: Int!
     failed: Int!
   }
+type Session {
+  id: ID!
+  type: String
+  status: String
 
+  ratePerMin: Int
+  durationSec: Int
+
+  coinsDeducted: Int
+  coinsEarned: Int
+  commission: Int
+
+  source: String
+  roomId: String
+
+  startedAt: DateTime
+  endedAt: DateTime
+  createdAt: DateTime
+}
   type AstrologerDashboardStats {
     totalChats: Int!
     statusSummary: SessionStatusSummary!
