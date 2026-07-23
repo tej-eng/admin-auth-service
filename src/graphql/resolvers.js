@@ -1135,7 +1135,7 @@ export const resolvers = {
         recentSessions: sessions.map((session) => ({
           sessionId: session.id,
           userId: session.userId,
-
+          roomId: session.roomId,
           userName: session.user?.name || null,
           type: session.type,
           by: session.by,
@@ -1636,7 +1636,7 @@ export const resolvers = {
                   displayName: true,
                 },
               },
-               remedies: {
+              remedies: {
                 select: {
                   id: true,
                 },
@@ -2137,50 +2137,50 @@ export const resolvers = {
           prisma.walletTransaction.findMany({
             where: whereClause,
 
-         include: {
-  astrologerWallet: {
-    include: {
-      astrologer: {
-        select: {
-          id: true,
-          name: true,
-          displayName: true,
-          contactNo: true,
-          email: true,
-        },
-      },
-    },
-  },
+            include: {
+              astrologerWallet: {
+                include: {
+                  astrologer: {
+                    select: {
+                      id: true,
+                      name: true,
+                      displayName: true,
+                      contactNo: true,
+                      email: true,
+                    },
+                  },
+                },
+              },
 
-  session: {
-    select: {
-      id: true,
-      type: true,
-      status: true,
-      coinsEarned: true,
-      coinsDeducted: true,
-      commission: true,
-      durationSec: true,
-      ratePerMin: true,
-      startedAt: true,
-      endedAt: true,
-      createdAt: true,
-      roomId: true,
-    },
-  },
+              session: {
+                select: {
+                  id: true,
+                  type: true,
+                  status: true,
+                  coinsEarned: true,
+                  coinsDeducted: true,
+                  commission: true,
+                  durationSec: true,
+                  ratePerMin: true,
+                  startedAt: true,
+                  endedAt: true,
+                  createdAt: true,
+                  roomId: true,
+                },
+              },
 
-  payment: {
-    select: {
-      id: true,
-      amount: true,
-      coins: true,
-      status: true,
-      provider: true,
-      razorpayPaymentId: true,
-      createdAt: true,
-    },
-  },
-},
+              payment: {
+                select: {
+                  id: true,
+                  amount: true,
+                  coins: true,
+                  status: true,
+                  provider: true,
+                  razorpayPaymentId: true,
+                  createdAt: true,
+                },
+              },
+            },
 
             orderBy: {
               createdAt: "desc",

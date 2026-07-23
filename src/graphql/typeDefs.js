@@ -1927,7 +1927,7 @@ type Session {
   type AstrologerSessionHistory {
     sessionId: ID!
     userId: ID!
-
+roomId: String
     userName: String
     by: String
     ratePerMin: Int
