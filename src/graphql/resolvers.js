@@ -1139,7 +1139,7 @@ export const resolvers = {
           userName: session.user?.name || null,
           type: session.type,
           by: session.by,
-          astroId: session.astrologerId,
+          astrologerId: session.astrologerId,
           ratePerMin: session.ratePerMin,
           durationSec: session.durationSec,
 
