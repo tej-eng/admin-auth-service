@@ -1937,7 +1937,7 @@ roomId: String
   dhwaniCommission: Int
 hasRemedy: Boolean!
   coinsDeducted: Int
-
+astrologerId: String
     status: SessionStatus
 
     startedAt: String
