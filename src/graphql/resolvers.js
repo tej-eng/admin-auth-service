@@ -4178,12 +4178,21 @@ export const resolvers = {
 
       const accessToken = generateAccessToken(staff);
       const refreshToken = generateRefreshToken(staff);
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/",
+        maxAge: 24 * 60 * 60 * 1000, // 1 day
+      });
 
-      // res.cookie("token", accessToken, {
-      //   httpOnly: true,
-      //   sameSite: "lax",
-      //   secure: false,
-      // });
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
 
       return {
         accessToken,
