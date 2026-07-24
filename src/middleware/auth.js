@@ -4,7 +4,7 @@ import cookie from "cookie";
 
 const auth = (req) => {
   const cookies = req.headers.cookie ? cookie.parse(req.headers.cookie) : {};
-  const token = cookies.token; // read token from cookie
+  const token = cookies.accessToken; // read token from cookie
   if (!token) return null;
 
   try {
