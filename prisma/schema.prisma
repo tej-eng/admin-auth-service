@@ -691,6 +691,9 @@ model AstrologerWallet {
   astrologer     Astrologer          @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
   balanceCoins   Float               @default(0)
   totalEarned    Int                 @default(0)
+  totalCommission Float @default(0)
+  totalPaid Float @default(0)
+  pendingAmount Float @default(0)
   totalWithdrawn Int                 @default(0)
   withdrawals    Withdrawal[]
   createdAt      DateTime            @default(now())
@@ -723,7 +726,7 @@ model WalletTransaction {
   coins       Int
   amount      Float?
   description String?
- updatedBalance Float?
+  updatedBalance Float?
   createdAt DateTime @default(now())
 
   //  PREVENT duplicate credit from same payment
@@ -1644,4 +1647,75 @@ model Problem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model AstrologerPayout {
+
+  id String @id @default(uuid())
+
+  astrologerId String
+  astrologer Astrologer @relation(fields:[astrologerId],references:[id])
+
+  fromDate DateTime
+  toDate DateTime
+
+  totalRevenue Float
+
+  earning Float
+
+  commission Float
+
+  commissionGST Float
+
+  igst Float?
+  cgst Float?
+  sgst Float?
+
+  tds Float
+
+  lastPaidAmount Float?
+
+  payableAmount Float
+
+  transactionRef String?
+
+  paymentDate DateTime?
+
+  status WithdrawalStatus
+
+  createdAt DateTime @default(now())
+
+  payoutItems AstrologerPayoutSession[]
+}
+
+
+model AstrologerTax {
+
+   id String @id @default(uuid())
+
+   astrologerId String @unique
+
+   gstNumber String?
+
+   state String
+
+   panNumber String
+
+   tdsPercent Float
+
+   gstPercent Float
+}
+
+
+model AstrologerPayoutSession {
+
+  id String @id @default(uuid())
+
+  payoutId String
+  payout AstrologerPayout @relation(fields:[payoutId],references:[id])
+
+  sessionId String
+  session Session @relation(fields:[sessionId],references:[id])
+
+  @@unique([payoutId, sessionId])
 }
