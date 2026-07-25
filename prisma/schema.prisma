@@ -314,7 +314,8 @@ model Astrologer {
   serviceMappings   ServiceAstrologer[]
   liveStreams       LiveStream[]
   callRecordings CallRecording[]
-isDeleted Boolean @default(false)
+  isDeleted Boolean @default(false)
+  payouts AstrologerPayout[] 
   @@index([rating])
   @@index([experience])
 }
@@ -791,6 +792,7 @@ model Session {
 
   remedies SessionRemedy[]
   callRecordings CallRecording[]
+  payoutSessions AstrologerPayoutSession[]
 
 
   createdAt DateTime @default(now())
