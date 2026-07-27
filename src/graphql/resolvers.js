@@ -93,7 +93,7 @@ const handleUpload = async (file) => {
         if (size > MAX_SIZE) {
           stream.destroy();
           out.destroy();
-          fs.unlink(uploadPath, () => {});
+          fs.unlink(uploadPath, () => { });
           reject(new Error("File too large (max 5MB)"));
         }
       });
@@ -128,7 +128,7 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
       details,
       timestamp: new Date(),
     });
-  } catch (error) {}
+  } catch (error) { }
 }
 
 async function checkPermission(context, requiredPermission) {
@@ -492,42 +492,42 @@ export const resolvers = {
 
         const where = query
           ? {
-              OR: [
-                {
-                  name: {
-                    contains: query,
-                    mode: "insensitive",
-                  },
+            OR: [
+              {
+                name: {
+                  contains: query,
+                  mode: "insensitive",
                 },
-                {
-                  displayName: {
-                    contains: query,
-                    mode: "insensitive",
-                  },
+              },
+              {
+                displayName: {
+                  contains: query,
+                  mode: "insensitive",
                 },
-                {
-                  email: {
-                    contains: query,
-                    mode: "insensitive",
-                  },
+              },
+              {
+                email: {
+                  contains: query,
+                  mode: "insensitive",
                 },
-                {
-                  contactNo: {
-                    contains: query,
-                  },
+              },
+              {
+                contactNo: {
+                  contains: query,
                 },
-                {
-                  skills: {
-                    has: query,
-                  },
+              },
+              {
+                skills: {
+                  has: query,
                 },
-                {
-                  languages: {
-                    has: query,
-                  },
+              },
+              {
+                languages: {
+                  has: query,
                 },
-              ],
-            }
+              },
+            ],
+          }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -2840,9 +2840,9 @@ export const resolvers = {
         }
 
         if (filterType === "WEEK") {
-         const weekStart = new Date(now);
-weekStart.setDate(now.getDate() - now.getDay());
-weekStart.setHours(0,0,0,0);
+          const weekStart = new Date(now);
+          weekStart.setDate(now.getDate() - now.getDay());
+          weekStart.setHours(0, 0, 0, 0);
 
           whereClause.createdAt = {
             gte: weekStart,
@@ -2871,13 +2871,13 @@ weekStart.setHours(0,0,0,0);
         }
 
         if (filterType === "CUSTOM" && startDate && endDate) {
-     const end = new Date(endDate);
-end.setHours(23, 59, 59, 999);
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
 
-whereClause.createdAt = {
-    gte: new Date(startDate),
-    lte: end,
-};
+          whereClause.createdAt = {
+            gte: new Date(startDate),
+            lte: end,
+          };
         }
         if (provider) {
           whereClause.provider = provider;
@@ -2933,6 +2933,7 @@ whereClause.createdAt = {
                 igst: true,
                 totalTax: true,
                 totalAmount: true,
+                pgCharge: true,
               },
             }),
 
@@ -2983,7 +2984,11 @@ whereClause.createdAt = {
           cgst: item.cgst,
           sgst: item.sgst,
           igst: item.igst,
-
+          pgChargeRate: item.pgChargeRate,
+          pgCharge: item.pgCharge,
+          pgIgst: item.pgIgst,
+          pgTotal: item.pgTotal,
+          receivableAmount: item.receivableAmount,
           totalTax: item.totalTax,
           totalAmount: item.totalAmount,
 
@@ -3011,7 +3016,7 @@ whereClause.createdAt = {
         const totalCGST = totalStats._sum?.cgst || 0;
         const totalSGST = totalStats._sum?.sgst || 0;
         const totalIGST = totalStats._sum?.igst || 0;
-
+        const totalPGCharge = totalStats._sum?.pgCharge || 0,
         const totalGST = totalCGST + totalSGST + totalIGST;
 
         const paidAmount = paidStats._sum.amount || 0;
@@ -3021,8 +3026,7 @@ whereClause.createdAt = {
         const paidCount = paidStats._count._all || 0;
 
         const failedCount = failedStats._count._all || 0;
-const totalTaxableAmount =
-    totalStats._sum?.taxableAmount || 0;
+        const totalTaxableAmount = totalStats._sum?.taxableAmount || 0;
         return {
           data: formattedData,
 
@@ -3032,7 +3036,7 @@ const totalTaxableAmount =
 
           totalAmount,
           totalCoins,
-
+          totalPGCharge,
           paidAmount,
           failedAmount,
 
@@ -3046,9 +3050,9 @@ const totalTaxableAmount =
           totalSGST,
         };
       } catch (err) {
-    console.error(err);
-    throw new Error("Failed to fetch payment reports");
-}
+        console.error(err);
+        throw new Error("Failed to fetch payment reports");
+      }
     },
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;
@@ -4517,56 +4521,56 @@ const totalTaxableAmount =
             // FIX: Only create documents if present
             documents: data.documents
               ? {
-                  create: [
-                    ...(data.documents?.aadhaar
-                      ? [
-                          {
-                            documentType: "AADHAAR",
-                            documentUrl: data.documents.aadhaar,
-                          },
-                        ]
-                      : []),
+                create: [
+                  ...(data.documents?.aadhaar
+                    ? [
+                      {
+                        documentType: "AADHAAR",
+                        documentUrl: data.documents.aadhaar,
+                      },
+                    ]
+                    : []),
 
-                    ...(data.documents?.panCard
-                      ? [
-                          {
-                            documentType: "PAN",
-                            documentUrl: data.documents.panCard,
-                          },
-                        ]
-                      : []),
+                  ...(data.documents?.panCard
+                    ? [
+                      {
+                        documentType: "PAN",
+                        documentUrl: data.documents.panCard,
+                      },
+                    ]
+                    : []),
 
-                    ...(data.documents?.passbook
-                      ? [
-                          {
-                            documentType: "PASSBOOK",
-                            documentUrl: data.documents.passbook,
-                          },
-                        ]
-                      : []),
-                  ],
-                }
+                  ...(data.documents?.passbook
+                    ? [
+                      {
+                        documentType: "PASSBOOK",
+                        documentUrl: data.documents.passbook,
+                      },
+                    ]
+                    : []),
+                ],
+              }
               : undefined,
 
             // FIX: Move bankDetails → KYC
             kycDetail: data.bankDetails
               ? {
-                  create: {
-                    accountHolderName: data.bankDetails.accountHolderName,
-                    accountNumber: data.bankDetails.accountNumber,
-                    bankName: data.bankDetails.bankName,
-                    ifsc: data.bankDetails.ifscCode,
-                    panNumber: data.bankDetails.panCardNumber,
-                    branchName: data.bankDetails.branchName,
-                    status: data.bankDetails.status,
+                create: {
+                  accountHolderName: data.bankDetails.accountHolderName,
+                  accountNumber: data.bankDetails.accountNumber,
+                  bankName: data.bankDetails.bankName,
+                  ifsc: data.bankDetails.ifscCode,
+                  panNumber: data.bankDetails.panCardNumber,
+                  branchName: data.bankDetails.branchName,
+                  status: data.bankDetails.status,
 
-                    ...(data.applicationId && {
-                      application: {
-                        connect: { id: data.applicationId },
-                      },
-                    }),
-                  },
-                }
+                  ...(data.applicationId && {
+                    application: {
+                      connect: { id: data.applicationId },
+                    },
+                  }),
+                },
+              }
               : undefined,
 
             // optional audit
@@ -4656,83 +4660,83 @@ const totalTaxableAmount =
             // ADDRESS
             addresses: data.address
               ? {
-                  deleteMany: {},
+                deleteMany: {},
 
-                  create: {
-                    street: data.address.street,
-                    city: data.address.city,
-                    state: data.address.state,
-                    country: data.address.country,
-                    pincode: data.address.pincode,
-                  },
-                }
+                create: {
+                  street: data.address.street,
+                  city: data.address.city,
+                  state: data.address.state,
+                  country: data.address.country,
+                  pincode: data.address.pincode,
+                },
+              }
               : undefined,
 
             // KYC
             kycDetail:
               data.bankDetails || data.documents
                 ? {
-                    upsert: {
-                      create: {
-                        accountHolderName: data.bankDetails?.accountHolderName,
+                  upsert: {
+                    create: {
+                      accountHolderName: data.bankDetails?.accountHolderName,
 
-                        accountNumber: data.bankDetails?.accountNumber,
+                      accountNumber: data.bankDetails?.accountNumber,
 
-                        bankName: data.bankDetails?.bankName,
+                      bankName: data.bankDetails?.bankName,
 
-                        ifsc: data.bankDetails?.ifscCode,
+                      ifsc: data.bankDetails?.ifscCode,
 
-                        branchName: data.bankDetails?.branchName,
+                      branchName: data.bankDetails?.branchName,
 
-                        panNumber: data.bankDetails?.panCardNumber,
+                      panNumber: data.bankDetails?.panCardNumber,
 
-                        aadhaarImage: data.documents?.aadhaar,
+                      aadhaarImage: data.documents?.aadhaar,
 
-                        panImage: data.documents?.panCard,
+                      panImage: data.documents?.panCard,
 
-                        passbookImage: data.documents?.passbook,
-                      },
-
-                      update: {
-                        accountHolderName: data.bankDetails?.accountHolderName,
-
-                        accountNumber: data.bankDetails?.accountNumber,
-
-                        bankName: data.bankDetails?.bankName,
-
-                        ifsc: data.bankDetails?.ifscCode,
-
-                        branchName: data.bankDetails?.branchName,
-
-                        panNumber: data.bankDetails?.panCardNumber,
-
-                        aadhaarImage: data.documents?.aadhaar,
-
-                        panImage: data.documents?.panCard,
-
-                        passbookImage: data.documents?.passbook,
-                      },
+                      passbookImage: data.documents?.passbook,
                     },
-                  }
+
+                    update: {
+                      accountHolderName: data.bankDetails?.accountHolderName,
+
+                      accountNumber: data.bankDetails?.accountNumber,
+
+                      bankName: data.bankDetails?.bankName,
+
+                      ifsc: data.bankDetails?.ifscCode,
+
+                      branchName: data.bankDetails?.branchName,
+
+                      panNumber: data.bankDetails?.panCardNumber,
+
+                      aadhaarImage: data.documents?.aadhaar,
+
+                      panImage: data.documents?.panCard,
+
+                      passbookImage: data.documents?.passbook,
+                    },
+                  },
+                }
                 : undefined,
 
             // PRICING
             pricing: data.pricing?.length
               ? {
-                  deleteMany: {},
+                deleteMany: {},
 
-                  create: data.pricing
-                    .filter((p) => p.isActive)
-                    .map((item) => ({
-                      type: item.type,
-                      price: Number(item.price),
-                      offerPrice: item.offerPrice
-                        ? Number(item.offerPrice)
-                        : null,
-                      commissionPercent: Number(item.commissionPercent) || 0,
-                      isActive: true,
-                    })),
-                }
+                create: data.pricing
+                  .filter((p) => p.isActive)
+                  .map((item) => ({
+                    type: item.type,
+                    price: Number(item.price),
+                    offerPrice: item.offerPrice
+                      ? Number(item.offerPrice)
+                      : null,
+                    commissionPercent: Number(item.commissionPercent) || 0,
+                    isActive: true,
+                  })),
+              }
               : undefined,
           },
           include: {
