@@ -3016,7 +3016,7 @@ export const resolvers = {
         const totalCGST = totalStats._sum?.cgst || 0;
         const totalSGST = totalStats._sum?.sgst || 0;
         const totalIGST = totalStats._sum?.igst || 0;
-        const totalPGCharge = totalStats._sum?.pgCharge || 0,
+        const totalPGCharge = totalStats._sum?.pgCharge || 0;
         const totalGST = totalCGST + totalSGST + totalIGST;
 
         const paidAmount = paidStats._sum.amount || 0;
