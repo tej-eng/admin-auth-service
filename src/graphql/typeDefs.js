@@ -1394,7 +1394,11 @@ type PaymentReport {
 
   totalTax: Float
   totalAmount: Float
-
+ pgChargeRate: Float
+  pgCharge: Float
+  pgIgst: Float
+  pgTotal: Float
+  receivableAmount: Float
   country: String
   state: String
   city: String
