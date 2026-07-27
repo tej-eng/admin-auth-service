@@ -1356,7 +1356,6 @@ enum PaymentStatus {
     query:String
 
     status:PaymentStatus
-    provider:PaymentProvider
     platform:String
     country:String
 
@@ -1402,7 +1401,6 @@ type PaymentReport {
 
   platform: String
 
-  provider: PaymentProvider
 
   razorpayOrderId: String
   razorpayPaymentId: String
