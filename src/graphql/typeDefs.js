@@ -1347,56 +1347,94 @@ enum SessionType {
     PAID
     FAILED
   }
+enum PaymentStatus {
+    SUCCESS
+    FAILED
+    PENDING
+}
+  input PaymentReportSearchInput{
+    query:String
 
-  input PaymentReportSearchInput {
-    query: String
-    status: PaymentOrderStatus
+    status:PaymentStatus
+    provider:PaymentProvider
+    platform:String
+    country:String
 
-    filterType: SessionFilterType
+    filterType:SessionFilterType
 
-    startDate: String
-    endDate: String
+    startDate:String
+    endDate:String
 
-    page: Int
-    limit: Int
-  }
-  type PaymentReport {
-    id: ID!
+    minAmount:Float
+    maxAmount:Float
 
-    userId: ID!
-    userName: String
-    mobile: String
+    page:Int
+    limit:Int
+}
+type PaymentReport {
+  id: ID!
 
-    rechargePackId: ID
-    rechargePackName: String
+  userId: ID!
+  userName: String
+  mobile: String
 
-    razorpayOrderId: String
+  rechargePackId: ID
+  rechargePackName: String
 
-    amount: Float
-    coins: Int
+  invoiceNo: String
 
-    status: PaymentOrderStatus
+  amount: Float
+  coins: Int
 
-    createdAt: DateTime
-    updatedAt: DateTime
-  }
+  taxableAmount: Float
 
-  type PaymentReportList {
-    data: [PaymentReport!]!
+  gstRate: Float
+  cgst: Float
+  sgst: Float
+  igst: Float
 
-    totalCount: Int!
-    currentPage: Int!
-    totalPages: Int!
+  totalTax: Float
+  totalAmount: Float
 
-    totalAmount: Float!
-    totalCoins: Int!
+  country: String
+  state: String
+  city: String
 
-    paidAmount: Float!
-    failedAmount: Float!
+  platform: String
 
-    paidCount: Int!
-    failedCount: Int!
-  }
+  provider: PaymentProvider
+
+  razorpayOrderId: String
+  razorpayPaymentId: String
+
+  status: PaymentStatus
+
+  createdAt: DateTime
+}
+
+ type PaymentReportList {
+
+  data: [PaymentReport!]!
+
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+
+  totalAmount: Float!
+  totalCoins: Int!
+
+  paidAmount: Float!
+  failedAmount: Float!
+
+  paidCount: Int!
+  failedCount: Int!
+
+  totalTax: Float!
+  totalGST: Float!
+
+  totalCGST: Float!
+  totalSGST: Float!
+}
 
   #------About pagge ___________________#
   enum CmsStatus {

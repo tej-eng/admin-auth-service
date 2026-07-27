@@ -2753,6 +2753,11 @@ export const resolvers = {
         searchInput: {
           query,
           status,
+          provider,
+          platform,
+          country,
+          minAmount,
+          maxAmount,
           filterType,
           startDate,
           endDate,
@@ -2780,16 +2785,29 @@ export const resolvers = {
         if (query) {
           whereClause.OR = [
             {
+              invoiceNo: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
               razorpayOrderId: {
                 contains: query,
                 mode: "insensitive",
               },
             },
             {
+              razorpayPaymentId: {
+                contains: query,
+                mode: "insensitive",
+              },
+            },
+            {
               user: {
-                name: {
-                  contains: query,
-                  mode: "insensitive",
+                is: {
+                  mobile: {
+                    contains: query,
+                  },
                 },
               },
             },
@@ -2822,8 +2840,9 @@ export const resolvers = {
         }
 
         if (filterType === "WEEK") {
-          const weekStart = new Date();
-          weekStart.setDate(now.getDate() - 7);
+         const weekStart = new Date(now);
+weekStart.setDate(now.getDate() - now.getDay());
+weekStart.setHours(0,0,0,0);
 
           whereClause.createdAt = {
             gte: weekStart,
@@ -2852,10 +2871,32 @@ export const resolvers = {
         }
 
         if (filterType === "CUSTOM" && startDate && endDate) {
-          whereClause.createdAt = {
-            gte: new Date(startDate),
-            lte: new Date(endDate),
-          };
+     const end = new Date(endDate);
+end.setHours(23, 59, 59, 999);
+
+whereClause.createdAt = {
+    gte: new Date(startDate),
+    lte: end,
+};
+        }
+        if (provider) {
+          whereClause.provider = provider;
+        }
+
+        if (platform) {
+          whereClause.platform = platform;
+        }
+
+        if (country) {
+          whereClause.country = country;
+        }
+
+        if (minAmount || maxAmount) {
+          whereClause.amount = {};
+
+          if (minAmount) whereClause.amount.gte = Number(minAmount);
+
+          if (maxAmount) whereClause.amount.lte = Number(maxAmount);
         }
 
         // ======================
@@ -2863,39 +2904,42 @@ export const resolvers = {
         // ======================
         const [data, totalCount, totalStats, paidStats, failedStats] =
           await Promise.all([
-            prisma.paymentOrder.findMany({
+            prisma.payment.findMany({
               where: whereClause,
-
               include: {
                 user: true,
                 rechargePack: true,
               },
-
               orderBy: {
                 createdAt: "desc",
               },
-
               skip,
               take: limit,
             }),
 
-            prisma.paymentOrder.count({
+            prisma.payment.count({
               where: whereClause,
             }),
 
-            prisma.paymentOrder.aggregate({
+            prisma.payment.aggregate({
               where: whereClause,
 
               _sum: {
                 amount: true,
                 coins: true,
+                taxableAmount: true,
+                cgst: true,
+                sgst: true,
+                igst: true,
+                totalTax: true,
+                totalAmount: true,
               },
             }),
 
-            prisma.paymentOrder.aggregate({
+            prisma.payment.aggregate({
               where: {
                 ...whereClause,
-                status: "PAID",
+                status: "SUCCESS",
               },
 
               _sum: {
@@ -2905,7 +2949,7 @@ export const resolvers = {
               _count: true,
             }),
 
-            prisma.paymentOrder.aggregate({
+            prisma.payment.aggregate({
               where: {
                 ...whereClause,
                 status: "FAILED",
@@ -2919,54 +2963,92 @@ export const resolvers = {
             }),
           ]);
 
-        // ======================
-        // FORMAT DATA
-        // ======================
         const formattedData = data.map((item) => ({
           id: item.id,
 
           userId: item.userId,
-          userName: item.user?.name || null,
-          mobile: item.user?.mobile || null,
+          userName: item.user?.name,
+          mobile: item.user?.mobile,
 
           rechargePackId: item.rechargePackId,
-          rechargePackName: item.rechargePack?.name || null,
+          rechargePackName: item.rechargePack?.name,
 
-          razorpayOrderId: item.razorpayOrderId,
+          invoiceNo: item.invoiceNo,
 
           amount: item.amount,
+          taxableAmount: item.taxableAmount,
+
+          gstRate: item.gstRate,
+
+          cgst: item.cgst,
+          sgst: item.sgst,
+          igst: item.igst,
+
+          totalTax: item.totalTax,
+          totalAmount: item.totalAmount,
+
           coins: item.coins,
+
+          country: item.country,
+          state: item.state,
+          city: item.city,
+
+          provider: item.provider,
+          platform: item.platform,
+
+          razorpayOrderId: item.razorpayOrderId,
+          razorpayPaymentId: item.razorpayPaymentId,
 
           status: item.status,
 
           createdAt: item.createdAt,
           updatedAt: item.updatedAt,
         }));
+        const totalAmount = totalStats._sum?.totalAmount || 0;
+        const totalCoins = totalStats._sum?.coins || 0;
+        const totalTax = totalStats._sum?.totalTax || 0;
 
+        const totalCGST = totalStats._sum?.cgst || 0;
+        const totalSGST = totalStats._sum?.sgst || 0;
+        const totalIGST = totalStats._sum?.igst || 0;
+
+        const totalGST = totalCGST + totalSGST + totalIGST;
+
+        const paidAmount = paidStats._sum.amount || 0;
+
+        const failedAmount = failedStats._sum.amount || 0;
+
+        const paidCount = paidStats._count._all || 0;
+
+        const failedCount = failedStats._count._all || 0;
+const totalTaxableAmount =
+    totalStats._sum?.taxableAmount || 0;
         return {
           data: formattedData,
 
           totalCount,
-
           currentPage: page,
-
           totalPages: Math.ceil(totalCount / limit),
 
-          totalAmount: totalStats._sum.amount || 0,
+          totalAmount,
+          totalCoins,
 
-          totalCoins: totalStats._sum.coins || 0,
+          paidAmount,
+          failedAmount,
 
-          paidAmount: paidStats._sum.amount || 0,
+          paidCount,
+          failedCount,
 
-          failedAmount: failedStats._sum.amount || 0,
+          totalTax,
+          totalGST,
 
-          paidCount: paidStats._count || 0,
-
-          failedCount: failedStats._count || 0,
+          totalCGST,
+          totalSGST,
         };
       } catch (err) {
-        throw new Error("Failed to fetch payment reports");
-      }
+    console.error(err);
+    throw new Error("Failed to fetch payment reports");
+}
     },
     getModulesPaginated: async (_, { page = 1, limit = 10 }) => {
       const skip = (page - 1) * limit;
