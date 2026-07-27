@@ -1433,7 +1433,7 @@ type PaymentReport {
 
   totalTax: Float!
   totalGST: Float!
-
+totalPGCharge:Float!
   totalCGST: Float!
   totalSGST: Float!
 }
