@@ -97,7 +97,7 @@ const handleUpload = async (file) => {
         if (size > MAX_SIZE) {
           stream.destroy();
           out.destroy();
-          fs.unlink(uploadPath, () => { });
+          fs.unlink(uploadPath, () => {});
           reject(new Error("File too large (max 5MB)"));
         }
       });
@@ -132,7 +132,7 @@ async function logGraphQLEvent(type, operation, userId = null, details = {}) {
       details,
       timestamp: new Date(),
     });
-  } catch (error) { }
+  } catch (error) {}
 }
 
 async function checkPermission(context, requiredPermission) {
@@ -496,42 +496,42 @@ export const resolvers = {
 
         const where = query
           ? {
-            OR: [
-              {
-                name: {
-                  contains: query,
-                  mode: "insensitive",
+              OR: [
+                {
+                  name: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
                 },
-              },
-              {
-                displayName: {
-                  contains: query,
-                  mode: "insensitive",
+                {
+                  displayName: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
                 },
-              },
-              {
-                email: {
-                  contains: query,
-                  mode: "insensitive",
+                {
+                  email: {
+                    contains: query,
+                    mode: "insensitive",
+                  },
                 },
-              },
-              {
-                contactNo: {
-                  contains: query,
+                {
+                  contactNo: {
+                    contains: query,
+                  },
                 },
-              },
-              {
-                skills: {
-                  has: query,
+                {
+                  skills: {
+                    has: query,
+                  },
                 },
-              },
-              {
-                languages: {
-                  has: query,
+                {
+                  languages: {
+                    has: query,
+                  },
                 },
-              },
-            ],
-          }
+              ],
+            }
           : {};
 
         const [astrologers, totalCount] = await Promise.all([
@@ -4236,13 +4236,9 @@ export const resolvers = {
         },
       });
     },
-     payoutReport: async (
-      _,
-      { fromDate, toDate },
-      { prisma, user }
-    ) => {
+    payoutReport: async (_, { fromDate, toDate }, { prisma, user }) => {
       // Permission check - only admins with appropriate permission
-     // await checkPermission({ user, prisma }, "payout.read");
+      // await checkPermission({ user, prisma }, "payout.read");
 
       // Get all astrologers with their relationships
       const astrologers = await prisma.astrologer.findMany({
@@ -4273,31 +4269,26 @@ export const resolvers = {
       return astrologers.map((astro) => {
         const totalRevenue = astro.sessions.reduce(
           (sum, session) => sum + (session.coinsDeducted || 0),
-          0
+          0,
         );
 
         const earning = astro.sessions.reduce(
           (sum, session) => sum + (session.coinsEarned || 0),
-          0
+          0,
         );
 
         const commission = astro.sessions.reduce(
           (sum, session) => sum + (session.commission || 0),
-          0
+          0,
         );
 
-        const commissionPercent =
-          astro.pricing[0]?.commissionPercent || 0;
+        const commissionPercent = astro.pricing[0]?.commissionPercent || 0;
 
         // ---------------- PG ----------------
 
-        const pgCharge = Number(
-          ((earning * PG_RATE) / 100).toFixed(2)
-        );
+        const pgCharge = Number(((earning * PG_RATE) / 100).toFixed(2));
 
-        const gstAmount = Number(
-          ((pgCharge * GST_RATE) / 100).toFixed(2)
-        );
+        const gstAmount = Number(((pgCharge * GST_RATE) / 100).toFixed(2));
 
         let cgst = 0;
         let sgst = 0;
@@ -4305,8 +4296,7 @@ export const resolvers = {
 
         if (
           astro.tax?.state &&
-          astro.tax.state.toLowerCase() ===
-            COMPANY_STATE.toLowerCase()
+          astro.tax.state.toLowerCase() === COMPANY_STATE.toLowerCase()
         ) {
           cgst = Number((gstAmount / 2).toFixed(2));
           sgst = Number((gstAmount / 2).toFixed(2));
@@ -4314,33 +4304,26 @@ export const resolvers = {
           igst = gstAmount;
         }
 
-        const pgTotal = Number(
-          (pgCharge + gstAmount).toFixed(2)
-        );
+        const pgTotal = Number((pgCharge + gstAmount).toFixed(2));
 
         // ---------------- Gross ----------------
 
-        const grossAmount = Number(
-          (earning - pgTotal).toFixed(2)
-        );
+        const grossAmount = Number((earning - pgTotal).toFixed(2));
 
         // ---------------- TDS ----------------
 
         const tdsPercent = astro.tax?.tdsPercent || 0;
 
-        const tdsAmount = Number(
-          ((grossAmount * tdsPercent) / 100).toFixed(2)
-        );
+        const tdsAmount = Number(((grossAmount * tdsPercent) / 100).toFixed(2));
 
         // ---------------- Already Paid ----------------
 
-        const lastPaidAmount =
-          astro.wallet?.totalPaid || 0;
+        const lastPaidAmount = astro.wallet?.totalPaid || 0;
 
         // ---------------- Final Amount ----------------
 
         const payableAmount = Number(
-          (grossAmount - tdsAmount - lastPaidAmount).toFixed(2)
+          (grossAmount - tdsAmount - lastPaidAmount).toFixed(2),
         );
 
         return {
@@ -4348,23 +4331,17 @@ export const resolvers = {
           astrologerName: astro.name,
           profilePic: astro.profilePic,
 
-          accountHolderName:
-            astro.kycDetail?.accountHolderName || null,
+          accountHolderName: astro.kycDetail?.accountHolderName || null,
 
-          accountNumber:
-            astro.kycDetail?.accountNumber || null,
+          accountNumber: astro.kycDetail?.accountNumber || null,
 
-          bankName:
-            astro.kycDetail?.bankName || null,
+          bankName: astro.kycDetail?.bankName || null,
 
-          ifsc:
-            astro.kycDetail?.ifsc || null,
+          ifsc: astro.kycDetail?.ifsc || null,
 
-          panNumber:
-            astro.tax?.panNumber || null,
+          panNumber: astro.tax?.panNumber || null,
 
-          state:
-            astro.tax?.state || null,
+          state: astro.tax?.state || null,
 
           totalSessions: astro.sessions.length,
 
@@ -4401,7 +4378,7 @@ export const resolvers = {
           payableAmount,
         };
       });
-    }
+    },
   },
 
   // **********************************************START MUTATION**********************************
@@ -4691,56 +4668,56 @@ export const resolvers = {
             // FIX: Only create documents if present
             documents: data.documents
               ? {
-                create: [
-                  ...(data.documents?.aadhaar
-                    ? [
-                      {
-                        documentType: "AADHAAR",
-                        documentUrl: data.documents.aadhaar,
-                      },
-                    ]
-                    : []),
+                  create: [
+                    ...(data.documents?.aadhaar
+                      ? [
+                          {
+                            documentType: "AADHAAR",
+                            documentUrl: data.documents.aadhaar,
+                          },
+                        ]
+                      : []),
 
-                  ...(data.documents?.panCard
-                    ? [
-                      {
-                        documentType: "PAN",
-                        documentUrl: data.documents.panCard,
-                      },
-                    ]
-                    : []),
+                    ...(data.documents?.panCard
+                      ? [
+                          {
+                            documentType: "PAN",
+                            documentUrl: data.documents.panCard,
+                          },
+                        ]
+                      : []),
 
-                  ...(data.documents?.passbook
-                    ? [
-                      {
-                        documentType: "PASSBOOK",
-                        documentUrl: data.documents.passbook,
-                      },
-                    ]
-                    : []),
-                ],
-              }
+                    ...(data.documents?.passbook
+                      ? [
+                          {
+                            documentType: "PASSBOOK",
+                            documentUrl: data.documents.passbook,
+                          },
+                        ]
+                      : []),
+                  ],
+                }
               : undefined,
 
             // FIX: Move bankDetails → KYC
             kycDetail: data.bankDetails
               ? {
-                create: {
-                  accountHolderName: data.bankDetails.accountHolderName,
-                  accountNumber: data.bankDetails.accountNumber,
-                  bankName: data.bankDetails.bankName,
-                  ifsc: data.bankDetails.ifscCode,
-                  panNumber: data.bankDetails.panCardNumber,
-                  branchName: data.bankDetails.branchName,
-                  status: data.bankDetails.status,
+                  create: {
+                    accountHolderName: data.bankDetails.accountHolderName,
+                    accountNumber: data.bankDetails.accountNumber,
+                    bankName: data.bankDetails.bankName,
+                    ifsc: data.bankDetails.ifscCode,
+                    panNumber: data.bankDetails.panCardNumber,
+                    branchName: data.bankDetails.branchName,
+                    status: data.bankDetails.status,
 
-                  ...(data.applicationId && {
-                    application: {
-                      connect: { id: data.applicationId },
-                    },
-                  }),
-                },
-              }
+                    ...(data.applicationId && {
+                      application: {
+                        connect: { id: data.applicationId },
+                      },
+                    }),
+                  },
+                }
               : undefined,
 
             // optional audit
@@ -4830,83 +4807,83 @@ export const resolvers = {
             // ADDRESS
             addresses: data.address
               ? {
-                deleteMany: {},
+                  deleteMany: {},
 
-                create: {
-                  street: data.address.street,
-                  city: data.address.city,
-                  state: data.address.state,
-                  country: data.address.country,
-                  pincode: data.address.pincode,
-                },
-              }
+                  create: {
+                    street: data.address.street,
+                    city: data.address.city,
+                    state: data.address.state,
+                    country: data.address.country,
+                    pincode: data.address.pincode,
+                  },
+                }
               : undefined,
 
             // KYC
             kycDetail:
               data.bankDetails || data.documents
                 ? {
-                  upsert: {
-                    create: {
-                      accountHolderName: data.bankDetails?.accountHolderName,
+                    upsert: {
+                      create: {
+                        accountHolderName: data.bankDetails?.accountHolderName,
 
-                      accountNumber: data.bankDetails?.accountNumber,
+                        accountNumber: data.bankDetails?.accountNumber,
 
-                      bankName: data.bankDetails?.bankName,
+                        bankName: data.bankDetails?.bankName,
 
-                      ifsc: data.bankDetails?.ifscCode,
+                        ifsc: data.bankDetails?.ifscCode,
 
-                      branchName: data.bankDetails?.branchName,
+                        branchName: data.bankDetails?.branchName,
 
-                      panNumber: data.bankDetails?.panCardNumber,
+                        panNumber: data.bankDetails?.panCardNumber,
 
-                      aadhaarImage: data.documents?.aadhaar,
+                        aadhaarImage: data.documents?.aadhaar,
 
-                      panImage: data.documents?.panCard,
+                        panImage: data.documents?.panCard,
 
-                      passbookImage: data.documents?.passbook,
+                        passbookImage: data.documents?.passbook,
+                      },
+
+                      update: {
+                        accountHolderName: data.bankDetails?.accountHolderName,
+
+                        accountNumber: data.bankDetails?.accountNumber,
+
+                        bankName: data.bankDetails?.bankName,
+
+                        ifsc: data.bankDetails?.ifscCode,
+
+                        branchName: data.bankDetails?.branchName,
+
+                        panNumber: data.bankDetails?.panCardNumber,
+
+                        aadhaarImage: data.documents?.aadhaar,
+
+                        panImage: data.documents?.panCard,
+
+                        passbookImage: data.documents?.passbook,
+                      },
                     },
-
-                    update: {
-                      accountHolderName: data.bankDetails?.accountHolderName,
-
-                      accountNumber: data.bankDetails?.accountNumber,
-
-                      bankName: data.bankDetails?.bankName,
-
-                      ifsc: data.bankDetails?.ifscCode,
-
-                      branchName: data.bankDetails?.branchName,
-
-                      panNumber: data.bankDetails?.panCardNumber,
-
-                      aadhaarImage: data.documents?.aadhaar,
-
-                      panImage: data.documents?.panCard,
-
-                      passbookImage: data.documents?.passbook,
-                    },
-                  },
-                }
+                  }
                 : undefined,
 
             // PRICING
             pricing: data.pricing?.length
               ? {
-                deleteMany: {},
+                  deleteMany: {},
 
-                create: data.pricing
-                  .filter((p) => p.isActive)
-                  .map((item) => ({
-                    type: item.type,
-                    price: Number(item.price),
-                    offerPrice: item.offerPrice
-                      ? Number(item.offerPrice)
-                      : null,
-                    commissionPercent: Number(item.commissionPercent) || 0,
-                    isActive: true,
-                  })),
-              }
+                  create: data.pricing
+                    .filter((p) => p.isActive)
+                    .map((item) => ({
+                      type: item.type,
+                      price: Number(item.price),
+                      offerPrice: item.offerPrice
+                        ? Number(item.offerPrice)
+                        : null,
+                      commissionPercent: Number(item.commissionPercent) || 0,
+                      isActive: true,
+                    })),
+                }
               : undefined,
           },
           include: {
