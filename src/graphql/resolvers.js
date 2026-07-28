@@ -4254,7 +4254,12 @@ export const resolvers = {
           },
           tax: true,
           kycDetail: true,
-         addresses: true,
+          addresses: {
+    take: 1,
+    orderBy: {
+      id: "desc",
+    },
+  },
           sessions: {
             where: {
               status: "COMPLETED",
@@ -4342,7 +4347,7 @@ export const resolvers = {
 
           panNumber: astro.kycDetail?.panNumber || null,
 
-          state: astro.addresses?.state || null,
+          state: astro.addresses[0]?.state || null,
 
           totalSessions: astro.sessions.length,
 
