@@ -2173,32 +2173,44 @@ input UpdateProblemInput {
 }
   #-----End code for send gift history-----------------#
   #-------------START CODE FOR ASTROLOGER PAYOUT--------
-  type PayoutReport {
+type PayoutReport {
   astrologerId: String!
   astrologerName: String!
   profilePic: String
+
   accountHolderName: String
   accountNumber: String
   bankName: String
   ifsc: String
   panNumber: String
   state: String
+
   totalSessions: Int!
+
   totalRevenue: Float!
+
   commissionPercent: Float!
   commission: Float!
+
   earning: Float!
+
   pgChargeRate: Float!
   pgCharge: Float!
+
   gstRate: Float!
   cgst: Float!
   sgst: Float!
   igst: Float!
+
   pgTotal: Float!
+
   grossAmount: Float!
+
   tdsPercent: Float!
   tdsAmount: Float!
+
   lastPaidAmount: Float!
+
   payableAmount: Float!
 }
 
