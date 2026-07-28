@@ -19,6 +19,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import redis from "../config/redis.js";
 
+const PG_RATE = 1.65;
+const GST_RATE = 18;
+const COMPANY_STATE = "Delhi";
+
 const getFilterDate = (filter) => {
   const now = new Date();
 
@@ -4232,6 +4236,172 @@ export const resolvers = {
         },
       });
     },
+     payoutReport: async (
+      _,
+      { fromDate, toDate },
+      { prisma, user }
+    ) => {
+      // Permission check - only admins with appropriate permission
+     // await checkPermission({ user, prisma }, "payout.read");
+
+      // Get all astrologers with their relationships
+      const astrologers = await prisma.astrologer.findMany({
+        where: {
+          isDeleted: false,
+        },
+        include: {
+          wallet: true,
+          pricing: {
+            where: {
+              isActive: true,
+            },
+          },
+          tax: true,
+          kycDetail: true,
+          sessions: {
+            where: {
+              status: "COMPLETED",
+              endedAt: {
+                gte: new Date(fromDate),
+                lte: new Date(toDate),
+              },
+            },
+          },
+        },
+      });
+
+      return astrologers.map((astro) => {
+        const totalRevenue = astro.sessions.reduce(
+          (sum, session) => sum + (session.coinsDeducted || 0),
+          0
+        );
+
+        const earning = astro.sessions.reduce(
+          (sum, session) => sum + (session.coinsEarned || 0),
+          0
+        );
+
+        const commission = astro.sessions.reduce(
+          (sum, session) => sum + (session.commission || 0),
+          0
+        );
+
+        const commissionPercent =
+          astro.pricing[0]?.commissionPercent || 0;
+
+        // ---------------- PG ----------------
+
+        const pgCharge = Number(
+          ((earning * PG_RATE) / 100).toFixed(2)
+        );
+
+        const gstAmount = Number(
+          ((pgCharge * GST_RATE) / 100).toFixed(2)
+        );
+
+        let cgst = 0;
+        let sgst = 0;
+        let igst = 0;
+
+        if (
+          astro.tax?.state &&
+          astro.tax.state.toLowerCase() ===
+            COMPANY_STATE.toLowerCase()
+        ) {
+          cgst = Number((gstAmount / 2).toFixed(2));
+          sgst = Number((gstAmount / 2).toFixed(2));
+        } else {
+          igst = gstAmount;
+        }
+
+        const pgTotal = Number(
+          (pgCharge + gstAmount).toFixed(2)
+        );
+
+        // ---------------- Gross ----------------
+
+        const grossAmount = Number(
+          (earning - pgTotal).toFixed(2)
+        );
+
+        // ---------------- TDS ----------------
+
+        const tdsPercent = astro.tax?.tdsPercent || 0;
+
+        const tdsAmount = Number(
+          ((grossAmount * tdsPercent) / 100).toFixed(2)
+        );
+
+        // ---------------- Already Paid ----------------
+
+        const lastPaidAmount =
+          astro.wallet?.totalPaid || 0;
+
+        // ---------------- Final Amount ----------------
+
+        const payableAmount = Number(
+          (grossAmount - tdsAmount - lastPaidAmount).toFixed(2)
+        );
+
+        return {
+          astrologerId: astro.id,
+          astrologerName: astro.name,
+          profilePic: astro.profilePic,
+
+          accountHolderName:
+            astro.kycDetail?.accountHolderName || null,
+
+          accountNumber:
+            astro.kycDetail?.accountNumber || null,
+
+          bankName:
+            astro.kycDetail?.bankName || null,
+
+          ifsc:
+            astro.kycDetail?.ifsc || null,
+
+          panNumber:
+            astro.tax?.panNumber || null,
+
+          state:
+            astro.tax?.state || null,
+
+          totalSessions: astro.sessions.length,
+
+          totalRevenue,
+
+          commissionPercent,
+
+          commission,
+
+          earning,
+
+          pgChargeRate: PG_RATE,
+
+          pgCharge,
+
+          gstRate: GST_RATE,
+
+          cgst,
+
+          sgst,
+
+          igst,
+
+          pgTotal,
+
+          grossAmount,
+
+          tdsPercent,
+
+          tdsAmount,
+
+          lastPaidAmount,
+
+          payableAmount,
+        };
+      });
+    }
   },
 
   // **********************************************START MUTATION**********************************
