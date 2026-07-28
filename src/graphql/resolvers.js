@@ -4254,7 +4254,7 @@ export const resolvers = {
           },
           tax: true,
           kycDetail: true,
-          address:true,
+         addresses: true,
           sessions: {
             where: {
               status: "COMPLETED",
@@ -4342,7 +4342,7 @@ export const resolvers = {
 
           panNumber: astro.kycDetail?.panNumber || null,
 
-          state: astro.address?.state || null,
+          state: astro.addresses?.state || null,
 
           totalSessions: astro.sessions.length,
 
