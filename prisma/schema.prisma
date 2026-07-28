@@ -316,6 +316,7 @@ model Astrologer {
   callRecordings CallRecording[]
   isDeleted Boolean @default(false)
   payouts AstrologerPayout[] 
+  tax AstrologerTax?
   @@index([rating])
   @@index([experience])
 }
