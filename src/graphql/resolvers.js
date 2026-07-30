@@ -4481,16 +4481,16 @@ export const resolvers = {
         // -------- Update wallet --------
 
         if (payableAmount > 0 && astro.wallet) {
-          await prisma.wallet.update({
-            where: {
-              astrologerId: astro.id,
-            },
-            data: {
-              totalPaid: {
-                increment: payableAmount,
-              },
-            },
-          });
+          await prisma.astrologerWallet.update({
+  where: {
+    astrologerId: astro.id,
+  },
+  data: {
+    totalPaid: {
+      increment: payableAmount,
+    },
+  },
+});
         }
 
         result.push({
