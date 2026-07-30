@@ -4470,13 +4470,13 @@ export const resolvers = {
         const tdsPercent = astro.tax?.tdsPercent || 0;
 
         const tdsAmount = Number(((grossAmount * tdsPercent) / 100).toFixed(2));
+const totalPaid = astro.wallet?.totalPaid || 0;
+        const lastPaidAmount = astro.wallet?.lastPaidAmount || 0;
 
-        const lastPaidAmount= astro.wallet?.lastPaidAmount || 0;
-
-        const payableAmount = Math.max(
-          0,
-          Number((grossAmount - tdsAmount - lastPaidAmount).toFixed(2)),
-        );
+     const payableAmount = Math.max(
+  0,
+  Number((grossAmount - tdsAmount - totalPaid).toFixed(2)),
+);
         // -------- Update wallet --------
         const exportLastPaid = lastPaidAmount;
         const exportPayable = payableAmount;
