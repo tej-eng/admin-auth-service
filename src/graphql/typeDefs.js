@@ -2785,6 +2785,10 @@ type PayoutReport {
     id: ID!
     status: Boolean!
   ): Problem!
+   exportPayoutReport(
+    fromDate: String!
+    toDate: String!
+  ): [PayoutReport!]!
   }
 `;
 
