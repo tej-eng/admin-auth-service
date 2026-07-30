@@ -4477,20 +4477,20 @@ export const resolvers = {
           0,
           Number((grossAmount - tdsAmount - lastPaidAmount).toFixed(2)),
         );
-
         // -------- Update wallet --------
-
+        const exportLastPaid = lastPaidAmount;
+        const exportPayable = payableAmount;
         if (payableAmount > 0 && astro.wallet) {
           await prisma.astrologerWallet.update({
-  where: {
-    astrologerId: astro.id,
-  },
-  data: {
-    totalPaid: {
-      increment: payableAmount,
-    },
-  },
-});
+            where: {
+              astrologerId: astro.id,
+            },
+            data: {
+              totalPaid: {
+                increment: payableAmount,
+              },
+            },
+          });
         }
 
         result.push({
@@ -4540,9 +4540,8 @@ export const resolvers = {
 
           tdsAmount,
 
-          lastPaidAmount: lastPaidAmount + payableAmount,
-
-          payableAmount: 0,
+          lastPaidAmount: exportLastPaid,
+          payableAmount: exportPayable,
         });
       }
 
