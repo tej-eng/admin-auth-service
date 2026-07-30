@@ -4319,12 +4319,12 @@ export const resolvers = {
         // ---------------- TDS ----------------
 
         const tdsPercent = astro.tax?.tdsPercent || 0;
- const totalPaid = astro.wallet?.totalPaid || 0;
+        const totalPaid = astro.wallet?.totalPaid || 0;
         const tdsAmount = Number(((grossAmount * tdsPercent) / 100).toFixed(2));
 
         // ---------------- Already Paid ----------------
 
-       const lastPaidAmount = astro.wallet?.lastPaidAmount || 0;
+        const lastPaidAmount = astro.wallet?.lastPaidAmount || 0;
 
         // ---------------- Final Amount ----------------
 
@@ -4381,7 +4381,7 @@ export const resolvers = {
           tdsAmount,
 
           lastPaidAmount,
-
+          totalPaid,
           payableAmount,
         };
       });
