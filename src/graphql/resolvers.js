@@ -4471,7 +4471,7 @@ export const resolvers = {
 
         const tdsAmount = Number(((grossAmount * tdsPercent) / 100).toFixed(2));
 
-        const lastPaidAmount = astro.wallet?.totalPaid || 0;
+        const lastPaidAmount= astro.wallet?.lastPaidAmount || 0;
 
         const payableAmount = Math.max(
           0,
@@ -4489,6 +4489,7 @@ export const resolvers = {
               totalPaid: {
                 increment: payableAmount,
               },
+               lastPaidAmount: payableAmount
             },
           });
         }
