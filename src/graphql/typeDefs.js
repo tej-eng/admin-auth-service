@@ -2208,7 +2208,7 @@ type PayoutReport {
 
   tdsPercent: Float!
   tdsAmount: Float!
-
+totalPaid: Float
   lastPaidAmount: Float!
 
   payableAmount: Float!
