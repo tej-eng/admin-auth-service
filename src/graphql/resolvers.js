@@ -4391,97 +4391,167 @@ export const resolvers = {
   // **********************************************START MUTATION**********************************
 
   Mutation: {
-    exportPayoutReport: async (_, { fromDate, toDate }, { prisma, user }) => {
-      // await checkPermission({ user, prisma }, "payout.update");
+     exportPayoutReport = async (
+  _,
+  { fromDate, toDate },
+  { prisma, user }
+) => {
+  // await checkPermission({ user, prisma }, "payout.update");
 
-      const astrologers = await prisma.astrologer.findMany({
+  const from = new Date(fromDate);
+  const to = new Date(toDate);
+
+  const astrologers = await prisma.astrologer.findMany({
+    where: {
+      isDeleted: false,
+    },
+    include: {
+      wallet: true,
+      pricing: {
         where: {
-          isDeleted: false,
+          isActive: true,
         },
-        include: {
-          wallet: true,
-          pricing: {
-            where: {
-              isActive: true,
-            },
-          },
-          tax: true,
-          kycDetail: true,
-          addresses: {
-            take: 1,
-            orderBy: {
-              id: "desc",
-            },
-          },
-          sessions: {
-            where: {
-              status: "COMPLETED",
-              endedAt: {
-                gte: new Date(fromDate),
-                lte: new Date(toDate),
-              },
-            },
+      },
+      tax: true,
+      kycDetail: true,
+      addresses: {
+        take: 1,
+        orderBy: {
+          id: "desc",
+        },
+      },
+      sessions: {
+        where: {
+          status: "COMPLETED",
+          endedAt: {
+            gte: from,
+            lte: to,
           },
         },
-      });
+      },
+    },
+  });
 
-      const result = [];
+  const result = [];
 
-      for (const astro of astrologers) {
-        const totalRevenue = astro.sessions.reduce(
-          (sum, s) => sum + (s.coinsDeducted || 0),
-          0,
-        );
+  for (const astro of astrologers) {
+    const totalRevenue = astro.sessions.reduce(
+      (sum, s) => sum + (s.coinsDeducted || 0),
+      0
+    );
 
-        const earning = astro.sessions.reduce(
-          (sum, s) => sum + (s.coinsEarned || 0),
-          0,
-        );
+    const earning = astro.sessions.reduce(
+      (sum, s) => sum + (s.coinsEarned || 0),
+      0
+    );
 
-        const commission = astro.sessions.reduce(
-          (sum, s) => sum + (s.commission || 0),
-          0,
-        );
+    const commission = astro.sessions.reduce(
+      (sum, s) => sum + (s.commission || 0),
+      0
+    );
 
-        const commissionPercent = astro.pricing[0]?.commissionPercent || 0;
+    const commissionPercent =
+      astro.pricing?.[0]?.commissionPercent || 0;
 
-        const pgCharge = Number(((earning * PG_RATE) / 100).toFixed(2));
+    const pgCharge = Number(
+      ((earning * PG_RATE) / 100).toFixed(2)
+    );
 
-        const gstAmount = Number(((pgCharge * GST_RATE) / 100).toFixed(2));
+    const gstAmount = Number(
+      ((pgCharge * GST_RATE) / 100).toFixed(2)
+    );
 
-        let cgst = 0;
-        let sgst = 0;
-        let igst = 0;
+    let cgst = 0;
+    let sgst = 0;
+    let igst = 0;
 
-        if (
-          astro.tax?.state &&
-          astro.tax.state.toLowerCase() === COMPANY_STATE.toLowerCase()
-        ) {
-          cgst = Number((gstAmount / 2).toFixed(2));
-          sgst = Number((gstAmount / 2).toFixed(2));
-        } else {
-          igst = gstAmount;
-        }
+    if (
+      astro.tax?.state &&
+      astro.tax.state.toLowerCase() === COMPANY_STATE.toLowerCase()
+    ) {
+      cgst = Number((gstAmount / 2).toFixed(2));
+      sgst = Number((gstAmount / 2).toFixed(2));
+    } else {
+      igst = gstAmount;
+    }
 
-        const pgTotal = Number((pgCharge + gstAmount).toFixed(2));
+    const pgTotal = Number((pgCharge + gstAmount).toFixed(2));
 
-        const grossAmount = Number((earning - pgTotal).toFixed(2));
+    const grossAmount = Number(
+      (earning - pgTotal).toFixed(2)
+    );
 
-        const tdsPercent = astro.tax?.tdsPercent || 0;
+    const tdsPercent = astro.tax?.tdsPercent || 0;
 
-        const tdsAmount = Number(((grossAmount * tdsPercent) / 100).toFixed(2));
-        const totalPaid = astro.wallet?.totalPaid || 0;
-        const lastPaidAmount = astro.wallet?.lastPaidAmount || 0;
+    const tdsAmount = Number(
+      ((grossAmount * tdsPercent) / 100).toFixed(2)
+    );
 
-        const payableAmount = Math.max(
-          0,
-          Number((grossAmount - tdsAmount - totalPaid).toFixed(2)),
-        );
-        // -------- Update wallet --------
-        const exportLastPaid = lastPaidAmount;
-        const exportPayable = payableAmount;
+    const totalPaid = astro.wallet?.totalPaid || 0;
+    const lastPaidAmount = astro.wallet?.lastPaidAmount || 0;
+
+    const payableAmount = Math.max(
+      0,
+      Number(
+        (grossAmount - tdsAmount - totalPaid).toFixed(2)
+      )
+    );
+
+    const exportLastPaid = lastPaidAmount;
+    const exportPayable = payableAmount;
+
+    await prisma.$transaction(async (tx) => {
+      // Prevent duplicate payout generation
+      const existingPayout =
+        await tx.astrologerPayout.findFirst({
+          where: {
+            astrologerId: astro.id,
+            fromDate: from,
+            toDate: to,
+          },
+        });
+
+      if (!existingPayout) {
+        await tx.astrologerPayout.create({
+          data: {
+            astrologerId: astro.id,
+
+            fromDate: from,
+            toDate: to,
+
+            totalRevenue,
+            commissionPercent,
+            commission,
+            earning,
+
+            pgChargeRate: PG_RATE,
+            pgCharge,
+
+            gstRate: GST_RATE,
+
+            igst,
+            cgst,
+            sgst,
+
+            pgTotal,
+            grossAmount,
+
+            tdsPercent,
+            tdsAmount,
+
+            lastPaidAmount: exportLastPaid,
+            payableAmount: exportPayable,
+
+            transactionRef: null,
+            paymentDate: null,
+
+            status: "PENDING",
+          },
+        });
+
+        // Update wallet only after payout record creation
         if (payableAmount > 0 && astro.wallet) {
-          await prisma.astrologerWallet.update({
+          await tx.astrologerWallet.update({
             where: {
               astrologerId: astro.id,
             },
@@ -4493,61 +4563,70 @@ export const resolvers = {
             },
           });
         }
-
-        result.push({
-          astrologerId: astro.id,
-          astrologerName: astro.name,
-          profilePic: astro.profilePic,
-
-          accountHolderName: astro.kycDetail?.accountHolderName,
-
-          accountNumber: astro.kycDetail?.accountNumber,
-
-          bankName: astro.kycDetail?.bankName,
-
-          ifsc: astro.kycDetail?.ifsc,
-
-          panNumber: astro.kycDetail?.panNumber,
-
-          state: astro.addresses[0]?.state,
-
-          totalSessions: astro.sessions.length,
-
-          totalRevenue,
-
-          commissionPercent,
-
-          commission,
-
-          earning,
-
-          pgChargeRate: PG_RATE,
-
-          pgCharge,
-
-          gstRate: GST_RATE,
-
-          cgst,
-
-          sgst,
-
-          igst,
-
-          pgTotal,
-
-          grossAmount,
-
-          tdsPercent,
-
-          tdsAmount,
-
-          lastPaidAmount: exportLastPaid,
-          payableAmount: exportPayable,
-        });
       }
+    });
 
-      return result;
-    },
+    result.push({
+      astrologerId: astro.id,
+      astrologerName: astro.name,
+      profilePic: astro.profilePic,
+
+      accountHolderName:
+        astro.kycDetail?.accountHolderName,
+
+      accountNumber:
+        astro.kycDetail?.accountNumber,
+
+      bankName:
+        astro.kycDetail?.bankName,
+
+      ifsc:
+        astro.kycDetail?.ifsc,
+
+      panNumber:
+        astro.kycDetail?.panNumber,
+
+      state:
+        astro.addresses?.[0]?.state || "",
+
+      totalSessions: astro.sessions.length,
+
+      totalRevenue,
+
+      commissionPercent,
+
+      commission,
+
+      earning,
+
+      pgChargeRate: PG_RATE,
+
+      pgCharge,
+
+      gstRate: GST_RATE,
+
+      cgst,
+
+      sgst,
+
+      igst,
+
+      pgTotal,
+
+      grossAmount,
+
+      tdsPercent,
+
+      tdsAmount,
+
+      lastPaidAmount: exportLastPaid,
+
+      payableAmount: exportPayable,
+    });
+  }
+
+  return result;
+},
     // upload image
     uploadImage: async (_, { file }, context) => {
       try {
