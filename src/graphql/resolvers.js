@@ -4391,7 +4391,7 @@ export const resolvers = {
   // **********************************************START MUTATION**********************************
 
   Mutation: {
-     exportPayoutReport = async (
+     exportPayoutReport : async (
   _,
   { fromDate, toDate },
   { prisma, user }
