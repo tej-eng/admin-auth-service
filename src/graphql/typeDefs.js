@@ -1973,10 +1973,10 @@ roomId: String
     ratePerMin: Int
     durationSec: Int
     type: SessionType
-   astrologerCommission: Int
-  dhwaniCommission: Int
+   astrologerCommission: Float
+  dhwaniCommission: Float
 hasRemedy: Boolean!
-  coinsDeducted: Int
+  coinsDeducted: Float
 astrologerId: String
     status: SessionStatus
 
