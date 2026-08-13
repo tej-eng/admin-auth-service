@@ -775,9 +775,9 @@ model Session {
   ratePerMin  Int
   durationSec Int @default(0)
 
-  coinsDeducted Int       @default(0)
-  coinsEarned   Int       @default(0)
-  commission    Int       @default(0)
+  coinsDeducted Float @default(0)
+coinsEarned   Float @default(0)
+commission    Float @default(0)
   source        String?
   by        String?
   review        Review?
