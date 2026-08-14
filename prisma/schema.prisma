@@ -692,11 +692,11 @@ model AstrologerWallet {
   astrologerId   String              @unique
   astrologer     Astrologer          @relation(fields: [astrologerId], references: [id], onDelete: Cascade)
   balanceCoins   Float               @default(0)
-  totalEarned    Int                 @default(0)
+  totalEarned    Float                 @default(0)
   totalCommission Float @default(0)
   totalPaid Float @default(0)
   pendingAmount Float @default(0)
-  totalWithdrawn Int                 @default(0)
+  totalWithdrawn Float                 @default(0)
   withdrawals    Withdrawal[]
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
