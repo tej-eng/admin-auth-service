@@ -899,7 +899,7 @@ type AstrologerWallet {
   id: ID!
   astrologerId: ID!
 
-  balanceCoins: Int
+  balanceCoins: Float
   lockedCoins: Int
 
   totalEarned: Int
@@ -1917,9 +1917,9 @@ type Session {
   ratePerMin: Int
   durationSec: Int
 
-  coinsDeducted: Int
-  coinsEarned: Int
-  commission: Int
+  coinsDeducted: Float
+  coinsEarned: Float
+  commission: Float
 
   source: String
   roomId: String
