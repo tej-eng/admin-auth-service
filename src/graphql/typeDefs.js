@@ -1935,19 +1935,19 @@ type Session {
 
     totalSessions: Int!
 
-    totalCoinsEarned: Int!
+    totalCoinsEarned: Float!
 
-    totalCoinsDeducted: Int!
+    totalCoinsDeducted: Float!
 
-    totalCommission: Int!
+    totalCommission: Float!
 
     totalDurationMinutes: Int!
 
-    walletBalance: Int!
+    walletBalance: Float!
 
-    totalEarned: Int!
+    totalEarned: Float!
 
-    totalWithdrawn: Int!
+    totalWithdrawn: Float!
 
     totalFollowers: Int!
 

@@ -1059,9 +1059,9 @@ export const resolvers = {
 
           durationSec: session.durationSec,
           by: session.by,
-          astrologerCommission: session.coinsEarned,
+          astrologerCommission: session.commission,
 
-          dhwaniCommission: session.commission,
+          dhwaniCommission: session.coinsEarned,
 
           coinsDeducted: session.coinsDeducted,
 
