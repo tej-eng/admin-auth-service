@@ -4335,7 +4335,7 @@ export const resolvers = {
 
         return {
           astrologerId: astro.id,
-          astrologerName: astro.name,
+          astrologerName: astro.displayName,
           profilePic: astro.profilePic,
 
           accountHolderName: astro.kycDetail?.accountHolderName || null,
