@@ -360,6 +360,7 @@ isEligibleAudio: Boolean!
     talktime: Int
     validityDays: Int
     isActive: Boolean
+      hideAfterFirstRecharge: Boolean
   }
 
   #-----------END OF RECHARGE PACKS-----------------#
