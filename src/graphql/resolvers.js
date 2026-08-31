@@ -357,21 +357,27 @@ export const resolvers = {
         const where = {};
 
         // ---------------- TEXT SEARCH ----------------
-        if (query) {
-          where.OR = [
-            {
-              name: {
-                contains: query,
-                mode: "insensitive",
-              },
-            },
-            {
-              mobile: {
-                contains: query,
-              },
-            },
-          ];
-        }
+     if (query) {
+  where.OR = [
+    {
+      name: {
+        contains: query,
+        mode: "insensitive",
+      },
+    },
+    {
+      id: {
+        contains: query,
+        mode: "insensitive",
+      },
+    },
+    {
+      mobile: {
+        contains: query,
+      },
+    },
+  ];
+}
 
         // ---------------- MOBILE FILTER ----------------
         if (mobile) {
