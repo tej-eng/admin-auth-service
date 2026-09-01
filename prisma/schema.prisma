@@ -158,6 +158,7 @@ model User {
   birthDate            DateTime?
   birthTime            String?
   occupation           String?
+  profileImage         String? 
   isActive             Boolean               @default(true)
   isDeleted            Boolean               @default(false)
   refreshToken         String?               @db.Text
