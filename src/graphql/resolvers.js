@@ -1249,7 +1249,7 @@ export const resolvers = {
         } = searchInput;
 
         const safePage = Math.max(page, 1);
-        const safeLimit = Math.min(limit, 50);
+        const safeLimit = Math.min(limit, 100);
 
         const skip = (safePage - 1) * safeLimit;
 
@@ -1502,7 +1502,7 @@ export const resolvers = {
         } = searchInput;
 
         const safePage = Math.max(page, 1);
-        const safeLimit = Math.min(limit, 50);
+        const safeLimit = Math.min(limit, 100);
 
         const skip = (safePage - 1) * safeLimit;
 
