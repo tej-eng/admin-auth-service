@@ -4434,32 +4434,66 @@ const totalPages = Math.ceil(totalCount / limit);
         };
       });
     },
-    getAstrologerPayoutHistory: async (_, { astrologerId }) => {
+getAstrologerPayoutHistory: async (_, { astrologerId }, { prisma }) => {
   try {
-    const payouts = await prisma.YOUR_PAYOUT_MODEL.findMany({
+    const payouts = await prisma.astrologerPayout.findMany({
       where: {
-        astrologerId,
+        astrologerId: astrologerId,
       },
+
+      include: {
+        astrologer: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+
       orderBy: {
-        paidOn: "desc",
+        paymentDate: "desc",
       },
     });
 
     return payouts.map((payout) => ({
       id: payout.id,
+
       astrologerId: payout.astrologerId,
-      astrologerName: payout.astrologerName,
-      remark: payout.remark,
+
+      astrologerName: payout.astrologer?.name || "",
+
+      remark: payout.remark || "",
+
       earning: Number(payout.earning || 0),
+
       pgCharge: Number(payout.pgCharge || 0),
-      subTotal: Number(payout.subTotal || 0),
+
+      // Tumhare Prisma model me subTotal nahi hai,
+      // isliye grossAmount use kar rahe hain
+      subTotal: Number(payout.grossAmount || 0),
+
       tdsAmount: Number(payout.tdsAmount || 0),
-      paidAmount: Number(payout.paidAmount || 0),
-      startDate: payout.startDate,
-      endDate: payout.endDate,
-      paidOn: payout.paidOn,
+
+      paidAmount: Number(payout.payableAmount || 0),
+
+      startDate: payout.fromDate
+        ? payout.fromDate.toISOString()
+        : null,
+
+      endDate: payout.toDate
+        ? payout.toDate.toISOString()
+        : null,
+
+      paidOn: payout.paymentDate
+        ? payout.paymentDate.toISOString()
+        : null,
     }));
   } catch (error) {
+    console.error(
+      "getAstrologerPayoutHistory ERROR:",
+      error
+    );
+
     throw new Error("Failed to fetch astrologer payout history");
   }
 },
