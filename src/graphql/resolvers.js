@@ -19,7 +19,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import redis from "../config/redis.js";
 
-const PG_RATE = 1.65;
+const PG_RATE = 2.118644;
 const GST_RATE = 18;
 const COMPANY_STATE = "Delhi";
 
