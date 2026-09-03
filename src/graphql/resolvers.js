@@ -4914,8 +4914,7 @@ getAstrologerPayoutHistory: async (_, { astrologerId }, { prisma }) => {
       Number(
         (
           grossAmount -
-          tdsAmount -
-          totalPaid
+          tdsAmount 
         ).toFixed(2),
       ),
     );
