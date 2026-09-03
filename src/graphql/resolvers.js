@@ -4422,7 +4422,7 @@ const totalPages = Math.ceil(totalCount / limit);
     const payableAmount = Math.max(
       0,
       Number(
-        (grossAmount - tdsAmount - totalPaid).toFixed(2),
+        (grossAmount - tdsAmount).toFixed(2),
       ),
     );
 
