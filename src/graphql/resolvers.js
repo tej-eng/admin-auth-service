@@ -4884,7 +4884,7 @@ getAstrologerPayoutHistory: async (_, { astrologerId }, { prisma }) => {
     // =====================================================
 
     const tdsPercent = Number(
-      astro.tax?.tdsPercent || 0,
+      astro.tax?.tdsPercent || 10,
     );
 
     const tdsAmount = Number(
