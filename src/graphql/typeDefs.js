@@ -949,6 +949,7 @@ type Payment {
   type AstrologerWalletTransactionList {
     data: [AstrologerWalletTransaction!]!
     totalCount: Int!
+      totalPages: Int
   }
     
   #------------------End of astrologer wallet-----------------#
