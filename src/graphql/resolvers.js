@@ -4336,11 +4336,11 @@ const totalPages = Math.ceil(totalCount / limit);
     const balanceCoins = Number(wallet?.balanceCoins || 0);
 
     // Total amount earned by astrologer
-    const earning = Number(wallet?.totalEarned || 0);
+    const earning = Number(wallet?.balanceCoins || 0);
 
     // Total revenue generated for astrologer
     // Use wallet totalEarned instead of Session.coinsDeducted
-    const totalRevenue = earning;
+    const totalRevenue = Number(wallet?.totalEarned || 0);
 
     // Total commission from wallet
     const commission = Number(wallet?.totalCommission || 0);
