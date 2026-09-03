@@ -4675,13 +4675,14 @@ getAstrologerPayoutHistory: async (_, { astrologerId }, { prisma }) => {
     });
 
     // 3️⃣ Create wallet transaction
-    await tx.walletTransaction.create({
-      data: {
-        astrologerWalletId: astro.wallet.id,
-        amount: payoutAmount,
-        type: "DEBIT",
-      },
-    });
+await tx.walletTransaction.create({
+  data: {
+    astrologerWalletId: astro.wallet.id,
+    amount: payoutAmount,
+    coins: Math.round(payoutAmount),
+    type: "DEBIT",
+  },
+});
   }
 });
 
