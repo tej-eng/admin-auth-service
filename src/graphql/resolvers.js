@@ -4596,74 +4596,94 @@ getAstrologerPayoutHistory: async (_, { astrologerId }, { prisma }) => {
         const exportLastPaid = lastPaidAmount;
         const exportPayable = payableAmount;
 
-        await prisma.$transaction(async (tx) => {
-          // Prevent duplicate payout generation
-          const existingPayout = await tx.astrologerPayout.findFirst({
-            where: {
-              astrologerId: astro.id,
-              fromDate: from,
-              toDate: to,
-            },
-          });
+    await prisma.$transaction(async (tx) => {
+  // Prevent duplicate payout generation
+  const existingPayout = await tx.astrologerPayout.findFirst({
+    where: {
+      astrologerId: astro.id,
+      fromDate: from,
+      toDate: to,
+    },
+  });
 
-          if (!existingPayout) {
-            await tx.astrologerPayout.create({
-              data: {
-                astrologerId: astro.id,
+  // Already processed -> don't deduct wallet again
+  if (existingPayout) {
+    return;
+  }
 
-                fromDate: from,
-                toDate: to,
-  
-    remark: remark?.trim() || null,
+  const payoutAmount = Number(earning.toFixed(2));
 
-   
-    paymentDate: new Date(),
-                totalRevenue,
-                commissionPercent,
-                commission,
-                earning,
+  // 1️⃣ Create payout record
+  await tx.astrologerPayout.create({
+    data: {
+      astrologerId: astro.id,
 
-                pgChargeRate: PG_RATE,
-                pgCharge,
+      fromDate: from,
+      toDate: to,
 
-                gstRate: GST_RATE,
+      remark: remark?.trim() || null,
 
-                igst,
-                cgst,
-                sgst,
+      totalRevenue,
+      commissionPercent,
+      commission,
+      earning,
 
-                pgTotal,
-                grossAmount,
+      pgChargeRate: PG_RATE,
+      pgCharge,
 
-                tdsPercent,
-                tdsAmount,
+      gstRate: GST_RATE,
 
-                lastPaidAmount: exportLastPaid,
-                payableAmount: exportPayable,
+      igst,
+      cgst,
+      sgst,
 
-                transactionRef: null,
-                paymentDate: null,
+      pgTotal,
+      grossAmount,
 
-                status: "PENDING",
-              },
-            });
+      tdsPercent,
+      tdsAmount,
 
-            // Update wallet only after payout record creation
-            if (payableAmount > 0 && astro.wallet) {
-              await tx.astrologerWallet.update({
-                where: {
-                  astrologerId: astro.id,
-                },
-                data: {
-                  totalPaid: {
-                    increment: payableAmount,
-                  },
-                  lastPaidAmount: payableAmount,
-                },
-              });
-            }
-          }
-        });
+      lastPaidAmount: exportLastPaid,
+      payableAmount: exportPayable,
+
+      transactionRef: null,
+
+      // Export submit time
+      paymentDate: new Date(),
+
+      status: "PENDING",
+    },
+  });
+
+  // 2️⃣ Deduct amount from astrologer wallet
+  if (payoutAmount > 0 && astro.wallet) {
+    await tx.astrologerWallet.update({
+      where: {
+        astrologerId: astro.id,
+      },
+      data: {
+        balanceCoins: {
+          decrement: payoutAmount,
+        },
+
+        totalPaid: {
+          increment: payoutAmount,
+        },
+
+        lastPaidAmount: payoutAmount,
+      },
+    });
+
+    // 3️⃣ Create wallet transaction
+    await tx.walletTransaction.create({
+      data: {
+        astrologerWalletId: astro.wallet.id,
+        amount: payoutAmount,
+        type: "DEBIT",
+      },
+    });
+  }
+});
 
         result.push({
           astrologerId: astro.id,
