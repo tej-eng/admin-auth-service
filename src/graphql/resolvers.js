@@ -2224,8 +2224,30 @@ export const resolvers = {
           }),
         ]);
 
+        // Current balance
+        let runningBalance = data[0]?.astrologerWallet?.balanceCoins ?? 0;
+
+        const updatedData = data.map((transaction) => {
+          const transactionAmount = Number(transaction.amount || 0);
+
+          // Balance AFTER this transaction
+          const balanceAfterTransaction = runningBalance;
+
+          // Calculate balance BEFORE this transaction
+          if (transaction.type === "CREDIT") {
+            runningBalance -= transactionAmount;
+          } else if (transaction.type === "DEBIT") {
+            runningBalance += transactionAmount;
+          }
+
+          return {
+            ...transaction,
+            updatedBalance: balanceAfterTransaction,
+          };
+        });
+
         return {
-          data,
+          data: updatedData,
           totalCount,
         };
       } catch (err) {
