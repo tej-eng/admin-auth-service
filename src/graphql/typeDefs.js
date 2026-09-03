@@ -2216,9 +2216,25 @@ totalPaid: Float
   payableAmount: Float!
 }
 
+type AstrologerPayoutHistory {
+  id: ID!
+  astrologerId: ID!
+  astrologerName: String
+  remark: String
+  earning: Float
+  pgCharge: Float
+  subTotal: Float
+  tdsAmount: Float
+  paidAmount: Float
+  startDate: String
+  endDate: String
+  paidOn: String
+}
+
   #-------------END CODE FOR ASTROLOGER PAYOUT--------
 
   type Query {
+  getAstrologerPayoutHistory(astrologerId: ID!): [AstrologerPayoutHistory]
     getSkills: [Skill!]!
 
   getSkill(id: ID!): Skill
@@ -2790,6 +2806,7 @@ totalPaid: Float
    exportPayoutReport(
     fromDate: String!
     toDate: String!
+     remark: String
   ): [PayoutReport!]!
   }
 `;

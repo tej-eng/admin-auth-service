@@ -4434,12 +4434,41 @@ const totalPages = Math.ceil(totalCount / limit);
         };
       });
     },
+    getAstrologerPayoutHistory: async (_, { astrologerId }) => {
+  try {
+    const payouts = await prisma.YOUR_PAYOUT_MODEL.findMany({
+      where: {
+        astrologerId,
+      },
+      orderBy: {
+        paidOn: "desc",
+      },
+    });
+
+    return payouts.map((payout) => ({
+      id: payout.id,
+      astrologerId: payout.astrologerId,
+      astrologerName: payout.astrologerName,
+      remark: payout.remark,
+      earning: Number(payout.earning || 0),
+      pgCharge: Number(payout.pgCharge || 0),
+      subTotal: Number(payout.subTotal || 0),
+      tdsAmount: Number(payout.tdsAmount || 0),
+      paidAmount: Number(payout.paidAmount || 0),
+      startDate: payout.startDate,
+      endDate: payout.endDate,
+      paidOn: payout.paidOn,
+    }));
+  } catch (error) {
+    throw new Error("Failed to fetch astrologer payout history");
+  }
+},
   },
 
   // **********************************************START MUTATION**********************************
 
   Mutation: {
-    exportPayoutReport: async (_, { fromDate, toDate }, { prisma, user }) => {
+    exportPayoutReport: async (_, { fromDate, toDate,remark  }, { prisma, user }) => {
       // await checkPermission({ user, prisma }, "payout.update");
 
       const from = new Date(fromDate);
@@ -4550,7 +4579,11 @@ const totalPages = Math.ceil(totalCount / limit);
 
                 fromDate: from,
                 toDate: to,
+  
+    remark: remark?.trim() || null,
 
+   
+    paymentDate: new Date(),
                 totalRevenue,
                 commissionPercent,
                 commission,
