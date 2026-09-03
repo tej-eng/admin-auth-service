@@ -1688,7 +1688,7 @@ model AstrologerPayout {
 
   astrologerId String
   astrologer Astrologer @relation(fields:[astrologerId],references:[id])
-
+remark          String?
   fromDate DateTime
   toDate DateTime
 
