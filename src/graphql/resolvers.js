@@ -4811,12 +4811,14 @@ getAstrologerPayoutHistory: async (_, { astrologerId }, { prisma }) => {
 
     // Total earning from astrologer wallet
     const earning = Number(
-      wallet?.totalEarned || 0,
+      wallet?.balanceCoins || 0,
     );
 
     // Revenue should now come from wallet
     // instead of Session.coinsDeducted
-    const totalRevenue = earning;
+    const totalRevenue = Number(
+      wallet?.totalEarned || 0,
+    );
 
     // Total commission from wallet
     const commission = Number(
