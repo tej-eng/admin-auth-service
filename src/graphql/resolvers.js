@@ -2245,10 +2245,11 @@ export const resolvers = {
             updatedBalance: balanceAfterTransaction,
           };
         });
-
+const totalPages = Math.ceil(totalCount / limit);
         return {
           data: updatedData,
           totalCount,
+          totalPages,
         };
       } catch (err) {
         throw new Error("Failed to fetch astrologer wallet transactions");
