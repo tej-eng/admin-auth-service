@@ -1948,140 +1948,299 @@ export const resolvers = {
         orderBy: { createdAt: "desc" },
       });
     },
-    getUserWalletTransactions: async (
-      _,
-      {
-        page = 1,
-        limit = 20,
-        type,
-        amount,
-        mobile,
-        userId,
-        filterType,
-        startDate,
-        endDate,
-        onlyRecharge = false,
-      },
-    ) => {
-      try {
-        const skip = (page - 1) * limit;
+ getUserWalletTransactions: async (
+  _,
+  {
+    page = 1,
+    limit = 20,
+    type,
+    amount,
+    mobile,
+    userId,
+    filterType,
+    startDate,
+    endDate,
+    onlyRecharge = false,
+  },
+) => {
+  try {
+    const skip = (page - 1) * limit;
 
-        const whereClause = {
-          userWalletId: {
-            not: null,
+    const whereClause = {
+      userWalletId: {
+        not: null,
+      },
+    };
+
+    if (onlyRecharge) {
+      whereClause.rechargePackId = {
+        not: null,
+      };
+    }
+
+    if (type) {
+      whereClause.type = type.toUpperCase();
+    }
+
+    if (amount) {
+      whereClause.amount = Number(amount);
+    }
+
+    if (userId || mobile) {
+      whereClause.userWallet = {};
+
+      if (userId) {
+        whereClause.userWallet.userId = userId;
+      }
+
+      if (mobile) {
+        whereClause.userWallet.user = {
+          mobile: {
+            contains: mobile,
           },
         };
-        if (onlyRecharge) {
-          whereClause.rechargePackId = {
-            not: null,
-          };
-        }
-        if (type) {
-          whereClause.type = type.toUpperCase();
-        }
-        if (amount) {
-          whereClause.amount = Number(amount);
-        }
-        if (userId || mobile) {
-          whereClause.userWallet = {};
+      }
+    }
 
-          if (userId) {
-            whereClause.userWallet.userId = userId;
-          }
+    const now = new Date();
 
-          if (mobile) {
-            whereClause.userWallet.user = {
-              mobile: {
-                contains: mobile,
-              },
-            };
-          }
-        }
-        const now = new Date();
+    if (filterType === "WEEK") {
+      const weekStart = new Date();
+      weekStart.setDate(now.getDate() - 7);
 
-        if (filterType === "WEEK") {
-          const weekStart = new Date();
-          weekStart.setDate(now.getDate() - 7);
+      whereClause.createdAt = {
+        gte: weekStart,
+        lte: now,
+      };
+    }
 
-          whereClause.createdAt = {
-            gte: weekStart,
-            lte: now,
-          };
-        }
+    if (filterType === "MONTH") {
+      const monthStart = new Date();
+      monthStart.setMonth(now.getMonth() - 1);
 
-        if (filterType === "MONTH") {
-          const monthStart = new Date();
-          monthStart.setMonth(now.getMonth() - 1);
+      whereClause.createdAt = {
+        gte: monthStart,
+        lte: now,
+      };
+    }
 
-          whereClause.createdAt = {
-            gte: monthStart,
-            lte: now,
-          };
-        }
+    if (filterType === "YEAR") {
+      const yearStart = new Date();
+      yearStart.setFullYear(now.getFullYear() - 1);
 
-        if (filterType === "YEAR") {
-          const yearStart = new Date();
-          yearStart.setFullYear(now.getFullYear() - 1);
+      whereClause.createdAt = {
+        gte: yearStart,
+        lte: now,
+      };
+    }
 
-          whereClause.createdAt = {
-            gte: yearStart,
-            lte: now,
-          };
-        }
+    if (filterType === "CUSTOM" && startDate && endDate) {
+      whereClause.createdAt = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    }
 
-        if (filterType === "CUSTOM" && startDate && endDate) {
-          whereClause.createdAt = {
-            gte: new Date(startDate),
-            lte: new Date(endDate),
-          };
-        }
+    // ---------------------------------------------------------
+    // 1. GET PAGINATED TRANSACTIONS
+    // ---------------------------------------------------------
 
-        const [data, totalCount] = await Promise.all([
-          prisma.walletTransaction.findMany({
-            where: whereClause,
+    const [data, totalCount] = await Promise.all([
+      prisma.walletTransaction.findMany({
+        where: whereClause,
+        include: {
+          userWallet: {
             include: {
-              userWallet: {
-                include: {
-                  user: {
-                    select: {
-                      id: true,
-                      name: true,
-                      mobile: true,
-                    },
-                  },
-                },
-              },
-              rechargePack: true,
-              payment: true,
-              session: {
+              user: {
                 select: {
                   id: true,
+                  name: true,
+                  mobile: true,
                 },
               },
             },
-            orderBy: {
-              createdAt: "desc",
+          },
+          rechargePack: true,
+          payment: true,
+          session: {
+            select: {
+              id: true,
             },
-            skip,
-            take: limit,
-          }),
+          },
+        },
+        orderBy: [
+          {
+            createdAt: "desc",
+          },
+          {
+            id: "desc",
+          },
+        ],
+        skip,
+        take: limit,
+      }),
 
-          prisma.walletTransaction.count({
-            where: whereClause,
-          }),
-        ]);
+      prisma.walletTransaction.count({
+        where: whereClause,
+      }),
+    ]);
 
-        return {
-          data,
-          totalCount,
+    // ---------------------------------------------------------
+    // 2. GET ALL TRANSACTIONS FOR THESE WALLETS
+    // ---------------------------------------------------------
 
-          currentPage: page,
-          totalPages: Math.ceil(totalCount / limit),
-        };
-      } catch (err) {
-        throw new Error(err.message || "Failed to fetch transactions");
+    const walletIds = [
+      ...new Set(
+        data
+          .map((transaction) => transaction.userWalletId)
+          .filter(Boolean),
+      ),
+    ];
+
+    const allWalletTransactions =
+      walletIds.length > 0
+        ? await prisma.walletTransaction.findMany({
+            where: {
+              userWalletId: {
+                in: walletIds,
+              },
+            },
+            select: {
+              id: true,
+              userWalletId: true,
+              type: true,
+              coins: true,
+              createdAt: true,
+            },
+            orderBy: [
+              {
+                createdAt: "desc",
+              },
+              {
+                id: "desc",
+              },
+            ],
+          })
+        : [];
+
+    // ---------------------------------------------------------
+    // 3. GET CURRENT WALLET BALANCES
+    // ---------------------------------------------------------
+
+    const wallets = walletIds.length
+      ? await prisma.userWallet.findMany({
+          where: {
+            id: {
+              in: walletIds,
+            },
+          },
+          select: {
+            id: true,
+            balanceCoins: true,
+          },
+        })
+      : [];
+
+    const currentBalanceMap = new Map();
+
+    wallets.forEach((wallet) => {
+      currentBalanceMap.set(
+        wallet.id,
+        Number(wallet.balanceCoins || 0),
+      );
+    });
+
+    // ---------------------------------------------------------
+    // 4. CALCULATE HISTORICAL UPDATED BALANCE
+    // ---------------------------------------------------------
+
+    const updatedBalanceMap = new Map();
+
+    // Group transactions wallet-wise
+    const transactionsByWallet = new Map();
+
+    allWalletTransactions.forEach((transaction) => {
+      if (!transactionsByWallet.has(transaction.userWalletId)) {
+        transactionsByWallet.set(transaction.userWalletId, []);
       }
-    },
+
+      transactionsByWallet
+        .get(transaction.userWalletId)
+        .push(transaction);
+    });
+
+    transactionsByWallet.forEach((transactions, walletId) => {
+      let runningBalance =
+        currentBalanceMap.get(walletId) || 0;
+
+      // Transactions are DESC:
+      // latest -> oldest
+      transactions.forEach((transaction) => {
+        // Balance AFTER this transaction
+        updatedBalanceMap.set(
+          transaction.id,
+          runningBalance,
+        );
+
+        const coins = Number(transaction.coins || 0);
+
+        // ---------------------------------------------------
+        // IMPORTANT:
+        // Change these transaction types according to your
+        // actual TransactionType enum.
+        // ---------------------------------------------------
+
+        const type = String(transaction.type || "").toUpperCase();
+
+        const isCredit =
+          type === "RECHARGE" ||
+          type === "CREDIT" ||
+          type === "REFUND";
+
+        const isDebit =
+          type === "DEBIT" ||
+          type === "CHAT" ||
+          type === "CALL" ||
+          type === "SESSION";
+
+        if (isCredit) {
+          runningBalance -= coins;
+        } else if (isDebit) {
+          runningBalance += coins;
+        }
+      });
+    });
+
+    // ---------------------------------------------------------
+    // 5. ADD updatedBalance TO RESPONSE
+    // ---------------------------------------------------------
+
+    const finalData = data.map((transaction) => ({
+      ...transaction,
+
+      updatedBalance:
+        updatedBalanceMap.get(transaction.id) ??
+        Number(transaction.userWallet?.balanceCoins || 0),
+    }));
+
+    // ---------------------------------------------------------
+    // 6. RETURN
+    // ---------------------------------------------------------
+
+    return {
+      data: finalData,
+      totalCount,
+      currentPage: page,
+      totalPages: Math.ceil(totalCount / limit),
+    };
+  } catch (err) {
+    console.error("getUserWalletTransactions error:", err);
+
+    throw new Error(
+      err.message || "Failed to fetch transactions",
+    );
+  }
+},
 
     // getAstrologerWalletTransactions: async (
     //   _,
