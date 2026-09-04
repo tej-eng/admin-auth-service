@@ -2267,7 +2267,7 @@ input CreateRefundRequestInput {
 
   sessionDuration: Int!
   ratePerMin: Int!
-
+sessionDate: DateTime!
   refundDuration: Int!
   refundAmount: Float!
 

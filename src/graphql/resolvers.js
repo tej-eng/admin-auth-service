@@ -4988,7 +4988,8 @@ if (duration > maxRefundMinutes) {
             // directly, so leave these null
             transactionId: null,
             orderId: null,
-
+            createdAt,
+sessionDate: session.createdAt,
             sessionDuration: sessionDurationSec,
 
             ratePerMin,
