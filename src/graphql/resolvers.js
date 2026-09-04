@@ -4738,11 +4738,730 @@ getAstrologerPayoutHistory: async (_, { astrologerId }, { prisma }) => {
     throw new Error("Failed to fetch astrologer payout history");
   }
 },
+getRefundRequests: async (
+  _,
+  { searchInput = {} },
+  context
+) => {
+  try {
+    const { prisma, user } = context;
+
+    // -----------------------------
+    // AUTH
+    // -----------------------------
+
+    if (!user?.id) {
+      throw new Error("Unauthorized");
+    }
+
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      search,
+    } = searchInput;
+
+    const safePage = Math.max(Number(page), 1);
+    const safeLimit = Math.min(
+      Math.max(Number(limit), 1),
+      50
+    );
+
+    const skip = (safePage - 1) * safeLimit;
+
+    // -----------------------------
+    // WHERE
+    // -----------------------------
+
+    const where = {};
+
+    if (status) {
+      where.status = status;
+    }
+
+    if (search) {
+      where.OR = [
+        {
+          userName: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          astrologerName: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          transactionId: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          orderId: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+        {
+          requestedByStaffName: {
+            contains: search,
+            mode: "insensitive",
+          },
+        },
+      ];
+    }
+
+    // -----------------------------
+    // FETCH
+    // -----------------------------
+
+    const [requests, totalCount] =
+      await Promise.all([
+        prisma.refundRequest.findMany({
+          where,
+
+          orderBy: {
+            createdAt: "desc",
+          },
+
+          skip,
+          take: safeLimit,
+        }),
+
+        prisma.refundRequest.count({
+          where,
+        }),
+      ]);
+
+    return {
+      data: requests,
+
+      totalCount,
+
+      currentPage: safePage,
+
+      totalPages: Math.ceil(
+        totalCount / safeLimit
+      ),
+    };
+  } catch (error) {
+    console.error(
+      "getRefundRequests error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to fetch refund requests"
+    );
+  }
+},
   },
 
   // **********************************************START MUTATION**********************************
 
   Mutation: {
+    createRefundRequest: async (
+  _,
+  { input },
+  context
+) => {
+  try {
+    const { prisma, user } = context;
+
+    // -----------------------------
+    // AUTH
+    // -----------------------------
+
+    if (!user?.id) {
+      throw new Error("Unauthorized");
+    }
+
+    const {
+      sessionId,
+      refundDuration,
+      refundReason,
+      refundType = "Partial",
+      mode = "Chat",
+    } = input;
+
+    // -----------------------------
+    // VALIDATION
+    // -----------------------------
+
+    if (!sessionId) {
+      throw new Error("Session ID is required");
+    }
+
+    if (!refundReason?.trim()) {
+      throw new Error(
+        "Refund reason is required"
+      );
+    }
+
+    const duration = Number(
+      refundDuration
+    );
+
+    if (
+      !Number.isInteger(duration) ||
+      duration < 1
+    ) {
+      throw new Error(
+        "Refund duration must be at least 1 minute"
+      );
+    }
+
+    // -----------------------------
+    // GET SESSION
+    // -----------------------------
+
+    const session =
+      await prisma.session.findUnique({
+        where: {
+          id: sessionId,
+        },
+
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              mobile: true,
+            },
+          },
+
+          astrologer: {
+            select: {
+              id: true,
+              name: true,
+              displayName: true,
+            },
+          },
+        },
+      });
+
+    if (!session) {
+      throw new Error("Session not found");
+    }
+
+    // -----------------------------
+    // ONLY CHAT
+    // -----------------------------
+
+    if (session.type !== "CHAT") {
+      throw new Error(
+        "Refund request is only allowed for chat sessions"
+      );
+    }
+
+    // -----------------------------
+    // SESSION DURATION
+    // -----------------------------
+
+    const sessionDurationSec =
+      Number(session.durationSec || 0);
+
+    const maxRefundMinutes =
+      Math.floor(
+        sessionDurationSec / 60
+      );
+
+    if (maxRefundMinutes < 1) {
+      throw new Error(
+        "Session does not have enough duration for refund"
+      );
+    }
+
+    // -----------------------------
+    // MAX DURATION VALIDATION
+    // -----------------------------
+
+    if (
+      duration > maxRefundMinutes
+    ) {
+      throw new Error(
+        `Refund duration cannot exceed ${maxRefundMinutes} minutes`
+      );
+    }
+
+    // -----------------------------
+    // CHECK EXISTING REQUEST
+    // -----------------------------
+
+    const existingRequest =
+      await prisma.refundRequest.findFirst({
+        where: {
+          sessionId,
+
+          status: {
+            in: [
+              "PENDING",
+              "APPROVED",
+            ],
+          },
+        },
+      });
+
+    if (existingRequest) {
+      throw new Error(
+        "Refund request already exists for this session"
+      );
+    }
+
+    // -----------------------------
+    // RATE
+    // -----------------------------
+
+    const ratePerMin =
+      Number(session.ratePerMin || 0);
+
+    if (ratePerMin <= 0) {
+      throw new Error(
+        "Invalid session rate"
+      );
+    }
+
+    // -----------------------------
+    // REFUND AMOUNT
+    // -----------------------------
+
+    const refundAmount =
+      ratePerMin * duration;
+
+    // -----------------------------
+    // ADMIN / STAFF
+    // -----------------------------
+
+    const staff =
+      await prisma.staff.findUnique({
+        where: {
+          id: user.id,
+        },
+
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
+          isDeleted: true,
+        },
+      });
+
+    if (
+      !staff ||
+      !staff.isActive ||
+      staff.isDeleted
+    ) {
+      throw new Error(
+        "Staff account is not active"
+      );
+    }
+
+    // -----------------------------
+    // CREATE REQUEST
+    // -----------------------------
+
+    const refundRequest =
+      await prisma.refundRequest.create({
+        data: {
+          sessionId,
+
+          userId: session.userId,
+          userName:
+            session.user?.name || null,
+          userMobile:
+            session.user?.mobile || null,
+
+          astrologerId:
+            session.astrologerId,
+
+          astrologerName:
+            session.astrologer?.displayName ||
+            session.astrologer?.name ||
+            null,
+
+          // Your session model does not
+          // currently have transactionId/orderId
+          // directly, so leave these null
+          transactionId: null,
+          orderId: null,
+
+          sessionDuration:
+            sessionDurationSec,
+
+          ratePerMin,
+
+          refundDuration: duration,
+
+          refundAmount,
+
+          refundType,
+
+          mode,
+
+          refundReason:
+            refundReason.trim(),
+
+          requestedByStaffId:
+            staff.id,
+
+          requestedByStaffName:
+            staff.name,
+
+          status: "PENDING",
+        },
+      });
+
+    return refundRequest;
+  } catch (error) {
+    console.error(
+      "createRefundRequest error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to create refund request"
+    );
+  }
+},
+approveRefundRequest: async (
+  _,
+  { id },
+  context
+) => {
+  try {
+    const { prisma, user } = context;
+
+    // -----------------------------
+    // AUTH
+    // -----------------------------
+
+    if (!user?.id) {
+      throw new Error("Unauthorized");
+    }
+
+    // -----------------------------
+    // STAFF
+    // -----------------------------
+
+    const staff =
+      await prisma.staff.findUnique({
+        where: {
+          id: user.id,
+        },
+
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
+          isDeleted: true,
+        },
+      });
+
+    if (
+      !staff ||
+      !staff.isActive ||
+      staff.isDeleted
+    ) {
+      throw new Error(
+        "Staff account is not active"
+      );
+    }
+
+    // -----------------------------
+    // REFUND REQUEST
+    // -----------------------------
+
+    const request =
+      await prisma.refundRequest.findUnique({
+        where: {
+          id,
+        },
+      });
+
+    if (!request) {
+      throw new Error(
+        "Refund request not found"
+      );
+    }
+
+    // -----------------------------
+    // STATUS CHECK
+    // -----------------------------
+
+    if (request.status !== "PENDING") {
+      throw new Error(
+        `Refund request is already ${request.status.toLowerCase()}`
+      );
+    }
+
+    // -----------------------------
+    // USER WALLET
+    // -----------------------------
+
+    const userWallet =
+      await prisma.userWallet.findUnique({
+        where: {
+          userId: request.userId,
+        },
+      });
+
+    if (!userWallet) {
+      throw new Error(
+        "User wallet not found"
+      );
+    }
+
+    const refundCoins = Math.round(
+      Number(request.refundAmount)
+    );
+
+    if (refundCoins <= 0) {
+      throw new Error(
+        "Invalid refund amount"
+      );
+    }
+
+    // -----------------------------
+    // ATOMIC TRANSACTION
+    // -----------------------------
+
+    const result =
+      await prisma.$transaction(
+        async (tx) => {
+          // --------------------------------
+          // Re-check request inside transaction
+          // --------------------------------
+
+          const currentRequest =
+            await tx.refundRequest.findUnique({
+              where: {
+                id,
+              },
+            });
+
+          if (!currentRequest) {
+            throw new Error(
+              "Refund request not found"
+            );
+          }
+
+          if (
+            currentRequest.status !== "PENDING"
+          ) {
+            throw new Error(
+              "Refund request has already been processed"
+            );
+          }
+
+          // --------------------------------
+          // Credit user wallet
+          // --------------------------------
+
+          const updatedWallet =
+            await tx.userWallet.update({
+              where: {
+                id: userWallet.id,
+              },
+
+              data: {
+                balanceCoins: {
+                  increment: refundCoins,
+                },
+              },
+            });
+
+          // --------------------------------
+          // Wallet transaction
+          // --------------------------------
+
+          await tx.walletTransaction.create({
+            data: {
+              userWalletId:
+                userWallet.id,
+
+              sessionId:
+                currentRequest.sessionId,
+
+              type: "REFUND",
+
+              coins: refundCoins,
+
+              amount:
+                Number(
+                  currentRequest.refundAmount
+                ),
+
+              description:
+                `Refund approved - ${currentRequest.refundDuration} min`,
+            },
+          });
+
+          // --------------------------------
+          // Update request
+          // --------------------------------
+
+          const updatedRequest =
+            await tx.refundRequest.update({
+              where: {
+                id,
+              },
+
+              data: {
+                status: "APPROVED",
+
+                approvedByStaffId:
+                  staff.id,
+
+                approvedByStaffName:
+                  staff.name,
+
+                approvedAt:
+                  new Date(),
+              },
+            });
+
+          return {
+            updatedWallet,
+            updatedRequest,
+          };
+        }
+      );
+
+    return result.updatedRequest;
+  } catch (error) {
+    console.error(
+      "approveRefundRequest error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to approve refund"
+    );
+  }
+},
+rejectRefundRequest: async (
+  _,
+  { id, reason },
+  context
+) => {
+  try {
+    const { prisma, user } = context;
+
+    // -----------------------------
+    // AUTH
+    // -----------------------------
+
+    if (!user?.id) {
+      throw new Error("Unauthorized");
+    }
+
+    if (!reason?.trim()) {
+      throw new Error(
+        "Rejection reason is required"
+      );
+    }
+
+    // -----------------------------
+    // STAFF
+    // -----------------------------
+
+    const staff =
+      await prisma.staff.findUnique({
+        where: {
+          id: user.id,
+        },
+
+        select: {
+          id: true,
+          name: true,
+          isActive: true,
+          isDeleted: true,
+        },
+      });
+
+    if (
+      !staff ||
+      !staff.isActive ||
+      staff.isDeleted
+    ) {
+      throw new Error(
+        "Staff account is not active"
+      );
+    }
+
+    // -----------------------------
+    // REQUEST
+    // -----------------------------
+
+    const request =
+      await prisma.refundRequest.findUnique({
+        where: {
+          id,
+        },
+      });
+
+    if (!request) {
+      throw new Error(
+        "Refund request not found"
+      );
+    }
+
+    // -----------------------------
+    // STATUS
+    // -----------------------------
+
+    if (request.status !== "PENDING") {
+      throw new Error(
+        `Refund request is already ${request.status.toLowerCase()}`
+      );
+    }
+
+    // -----------------------------
+    // REJECT
+    // -----------------------------
+
+    const rejectedRequest =
+      await prisma.refundRequest.update({
+        where: {
+          id,
+        },
+
+        data: {
+          status: "REJECTED",
+
+          rejectedByStaffId:
+            staff.id,
+
+          rejectedByStaffName:
+            staff.name,
+
+          rejectedAt:
+            new Date(),
+
+          rejectionReason:
+            reason.trim(),
+        },
+      });
+
+    return rejectedRequest;
+  } catch (error) {
+    console.error(
+      "rejectRefundRequest error:",
+      error
+    );
+
+    throw new Error(
+      error.message ||
+        "Failed to reject refund"
+    );
+  }
+},
     exportPayoutReport: async (
   _,
   { fromDate, toDate, remark },

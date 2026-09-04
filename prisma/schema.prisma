@@ -797,7 +797,7 @@ commission    Float @default(0)
   callRecordings CallRecording[]
   payoutSessions AstrologerPayoutSession[]
 
-
+ refundRequests RefundRequest[]
   createdAt DateTime @default(now())
 
   @@index([userId])
@@ -1756,4 +1756,72 @@ model AstrologerPayoutSession {
   session Session @relation(fields:[sessionId],references:[id])
 
   @@unique([payoutId, sessionId])
+}
+
+enum RefundRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model RefundRequest {
+  id String @id @default(uuid())
+
+  // Original session
+  sessionId String
+  session   Session @relation(fields: [sessionId], references: [id])
+
+  // User snapshot
+  userId String
+  userName String?
+  userMobile String?
+
+  // Astrologer snapshot
+  astrologerId String
+  astrologerName String?
+
+  // Transaction details
+  transactionId String?
+  orderId String?
+
+  // Original session details
+  sessionDuration Int
+  ratePerMin Int
+
+  // Refund details
+  refundDuration Int
+  refundAmount Float
+
+  // Request details
+  refundType String?
+  mode String?
+  refundReason String
+
+  // Admin who created request
+  requestedByStaffId String
+  requestedByStaffName String
+
+  // Status
+  status RefundRequestStatus @default(PENDING)
+
+  // Approval details
+  approvedByStaffId String?
+  approvedByStaffName String?
+  approvedAt DateTime?
+
+  // Rejection details
+  rejectedByStaffId String?
+  rejectedByStaffName String?
+  rejectedAt DateTime?
+  rejectionReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([astrologerId])
+  @@index([status])
+  @@index([requestedByStaffId])
+  @@index([createdAt])
 }

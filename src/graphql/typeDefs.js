@@ -2230,10 +2230,86 @@ type AstrologerPayoutHistory {
   endDate: String
   paidOn: String
 }
+input RefundRequestSearchInput {
+  page: Int
+  limit: Int
+
+  status: RefundRequestStatus
+
+  search: String
+}
+input CreateRefundRequestInput {
+  sessionId: ID!
+
+  refundDuration: Int!
+  refundAmount: Float!
+  refundReason: String!
+
+  mode: String
+  refundType: String
+}
+  enum RefundRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+  type RefundRequest {
+  id: ID!
+
+  sessionId: ID!
+
+  userId: ID!
+  userName: String
+  userMobile: String
+
+  astrologerId: ID!
+  astrologerName: String
+
+  transactionId: String
+  orderId: String
+
+  sessionDuration: Int!
+  ratePerMin: Int!
+
+  refundDuration: Int!
+  refundAmount: Float!
+
+  refundType: String
+  mode: String
+  refundReason: String!
+
+  requestedByStaffId: ID!
+  requestedByStaffName: String!
+
+  status: RefundRequestStatus!
+
+  approvedByStaffId: ID
+  approvedByStaffName: String
+  approvedAt: DateTime
+
+  rejectedByStaffId: ID
+  rejectedByStaffName: String
+  rejectedAt: DateTime
+
+  rejectionReason: String
+
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+  type RefundRequestList {
+  data: [RefundRequest!]!
+
+  totalCount: Int!
+  currentPage: Int!
+  totalPages: Int!
+}
 
   #-------------END CODE FOR ASTROLOGER PAYOUT--------
 
   type Query {
+     getRefundRequests(
+    searchInput: RefundRequestSearchInput
+  ): RefundRequestList!
   getAstrologerPayoutHistory(astrologerId: ID!): [AstrologerPayoutHistory]
     getSkills: [Skill!]!
 
@@ -2808,6 +2884,18 @@ type AstrologerPayoutHistory {
     toDate: String!
      remark: String
   ): [PayoutReport!]!
+   createRefundRequest(
+    input: CreateRefundRequestInput!
+  ): RefundRequest!
+
+  approveRefundRequest(
+    id: ID!
+  ): RefundRequest!
+
+  rejectRefundRequest(
+    id: ID!
+    reason: String!
+  ): RefundRequest!
   }
 `;
 
