@@ -2245,7 +2245,7 @@ export const resolvers = {
             updatedBalance: balanceAfterTransaction,
           };
         });
-const totalPages = Math.ceil(totalCount / limit);
+        const totalPages = Math.ceil(totalCount / limit);
         return {
           data: updatedData,
           totalCount,
@@ -4285,245 +4285,225 @@ const totalPages = Math.ceil(totalCount / limit);
       });
     },
     payoutReport: async (_, { fromDate, toDate }, { prisma, user }) => {
-  // Permission check
-  // await checkPermission({ user, prisma }, "payout.read");
+      // Permission check
+      // await checkPermission({ user, prisma }, "payout.read");
 
-  // Get all astrologers with their relationships
-  const astrologers = await prisma.astrologer.findMany({
-    where: {
-      isDeleted: false,
-    },
-    include: {
-      wallet: true,
-
-      pricing: {
+      // Get all astrologers with their relationships
+      const astrologers = await prisma.astrologer.findMany({
         where: {
-          isActive: true,
+          isDeleted: false,
         },
-      },
+        include: {
+          wallet: true,
 
-      tax: true,
+          pricing: {
+            where: {
+              isActive: true,
+            },
+          },
 
-      kycDetail: true,
+          tax: true,
 
-      addresses: {
-        take: 1,
-        orderBy: {
-          id: "desc",
-        },
-      },
+          kycDetail: true,
 
-      sessions: {
-        where: {
-          status: "COMPLETED",
-          endedAt: {
-            gte: new Date(fromDate),
-            lte: new Date(toDate),
+          addresses: {
+            take: 1,
+            orderBy: {
+              id: "desc",
+            },
+          },
+
+          sessions: {
+            where: {
+              status: "COMPLETED",
+              endedAt: {
+                gte: new Date(fromDate),
+                lte: new Date(toDate),
+              },
+            },
           },
         },
-      },
+      });
+
+      return astrologers.map((astro) => {
+        // =====================================================
+        // ASTROLOGER WALLET
+        // =====================================================
+
+        const wallet = astro.wallet;
+
+        // Current wallet balance
+        const balanceCoins = Number(wallet?.balanceCoins || 0);
+
+        // Total amount earned by astrologer
+        const earning = Number(wallet?.balanceCoins || 0);
+
+        // Total revenue generated for astrologer
+        // Use wallet totalEarned instead of Session.coinsDeducted
+        const totalRevenue = Number(wallet?.totalEarned || 0);
+
+        // Total commission from wallet
+        const commission = Number(wallet?.totalCommission || 0);
+
+        // Amount already paid
+        const totalPaid = Number(wallet?.totalPaid || 0);
+
+        // Last payment made
+        const lastPaidAmount = Number(wallet?.lastPaidAmount || 0);
+
+        // Pending payout amount
+        const pendingAmount = Number(wallet?.pendingAmount || 0);
+
+        // Total withdrawn
+        const totalWithdrawn = Number(wallet?.totalWithdrawn || 0);
+
+        // =====================================================
+        // COMMISSION
+        // =====================================================
+
+        const commissionPercent = Number(
+          astro.pricing[0]?.commissionPercent || 0,
+        );
+
+        // =====================================================
+        // PG CHARGES
+        // =====================================================
+
+        const pgCharge = Number(((earning * PG_RATE) / 100).toFixed(2));
+
+        const gstAmount = Number(((pgCharge * GST_RATE) / 100).toFixed(2));
+
+        let cgst = 0;
+        let sgst = 0;
+        let igst = 0;
+
+        if (
+          astro.tax?.state &&
+          astro.tax.state.toLowerCase() === COMPANY_STATE.toLowerCase()
+        ) {
+          cgst = Number((gstAmount / 2).toFixed(2));
+          sgst = Number((gstAmount / 2).toFixed(2));
+        } else {
+          igst = gstAmount;
+        }
+
+        const pgTotal = Number((pgCharge + gstAmount).toFixed(2));
+
+        // =====================================================
+        // GROSS
+        // =====================================================
+
+        const grossAmount = Number((earning - pgTotal).toFixed(2));
+
+        // =====================================================
+        // TDS
+        // =====================================================
+
+        const tdsPercent = Number(astro.tax?.tdsPercent || 10);
+
+        const tdsAmount = Number(((grossAmount * tdsPercent) / 100).toFixed(2));
+
+        // =====================================================
+        // PAYABLE
+        // =====================================================
+
+        const payableAmount = Math.max(
+          0,
+          Number((grossAmount - tdsAmount).toFixed(2)),
+        );
+
+        // =====================================================
+        // RESPONSE
+        // =====================================================
+
+        return {
+          astrologerId: astro.id,
+          astrologerName: astro.displayName,
+          profilePic: astro.profilePic,
+
+          accountHolderName: astro.kycDetail?.accountHolderName || null,
+
+          accountNumber: astro.kycDetail?.accountNumber || null,
+
+          bankName: astro.kycDetail?.bankName || null,
+
+          ifsc: astro.kycDetail?.ifsc || null,
+
+          panNumber: astro.kycDetail?.panNumber || null,
+
+          state: astro.addresses[0]?.state || null,
+
+          // Session information is still useful
+          totalSessions: astro.sessions.length,
+
+          // ===================================================
+          // WALLET VALUES
+          // ===================================================
+
+          balanceCoins,
+
+          totalRevenue,
+
+          earning,
+
+          commission,
+
+          totalCommission: commission,
+
+          pendingAmount,
+
+          totalWithdrawn,
+
+          totalPaid,
+
+          lastPaidAmount,
+
+          // ===================================================
+          // COMMISSION %
+          // ===================================================
+
+          commissionPercent,
+
+          // ===================================================
+          // PG
+          // ===================================================
+
+          pgChargeRate: PG_RATE,
+
+          pgCharge,
+
+          gstRate: GST_RATE,
+
+          cgst,
+
+          sgst,
+
+          igst,
+
+          pgTotal,
+
+          // ===================================================
+          // GROSS
+          // ===================================================
+
+          grossAmount,
+
+          // ===================================================
+          // TDS
+          // ===================================================
+
+          tdsPercent,
+
+          tdsAmount,
+
+          // ===================================================
+          // FINAL PAYABLE
+          // ===================================================
+
+          payableAmount,
+        };
+      });
     },
-  });
-
-  return astrologers.map((astro) => {
-    // =====================================================
-    // ASTROLOGER WALLET
-    // =====================================================
-
-    const wallet = astro.wallet;
-
-    // Current wallet balance
-    const balanceCoins = Number(wallet?.balanceCoins || 0);
-
-    // Total amount earned by astrologer
-    const earning = Number(wallet?.balanceCoins || 0);
-
-    // Total revenue generated for astrologer
-    // Use wallet totalEarned instead of Session.coinsDeducted
-    const totalRevenue = Number(wallet?.totalEarned || 0);
-
-    // Total commission from wallet
-    const commission = Number(wallet?.totalCommission || 0);
-
-    // Amount already paid
-    const totalPaid = Number(wallet?.totalPaid || 0);
-
-    // Last payment made
-    const lastPaidAmount = Number(wallet?.lastPaidAmount || 0);
-
-    // Pending payout amount
-    const pendingAmount = Number(wallet?.pendingAmount || 0);
-
-    // Total withdrawn
-    const totalWithdrawn = Number(wallet?.totalWithdrawn || 0);
-
-    // =====================================================
-    // COMMISSION
-    // =====================================================
-
-    const commissionPercent =
-      Number(astro.pricing[0]?.commissionPercent || 0);
-
-    // =====================================================
-    // PG CHARGES
-    // =====================================================
-
-    const pgCharge = Number(
-      ((earning * PG_RATE) / 100).toFixed(2),
-    );
-
-    const gstAmount = Number(
-      ((pgCharge * GST_RATE) / 100).toFixed(2),
-    );
-
-    let cgst = 0;
-    let sgst = 0;
-    let igst = 0;
-
-    if (
-      astro.tax?.state &&
-      astro.tax.state.toLowerCase() ===
-        COMPANY_STATE.toLowerCase()
-    ) {
-      cgst = Number((gstAmount / 2).toFixed(2));
-      sgst = Number((gstAmount / 2).toFixed(2));
-    } else {
-      igst = gstAmount;
-    }
-
-    const pgTotal = Number(
-      (pgCharge + gstAmount).toFixed(2),
-    );
-
-    // =====================================================
-    // GROSS
-    // =====================================================
-
-    const grossAmount = Number(
-      (earning - pgTotal).toFixed(2),
-    );
-
-    // =====================================================
-    // TDS
-    // =====================================================
-
-    const tdsPercent = Number(
-      astro.tax?.tdsPercent || 10,
-    );
-
-    const tdsAmount = Number(
-      ((grossAmount * tdsPercent) / 100).toFixed(2),
-    );
-
-    // =====================================================
-    // PAYABLE
-    // =====================================================
-
-    const payableAmount = Math.max(
-      0,
-      Number(
-        (grossAmount - tdsAmount).toFixed(2),
-      ),
-    );
-
-    // =====================================================
-    // RESPONSE
-    // =====================================================
-
-    return {
-      astrologerId: astro.id,
-      astrologerName: astro.displayName,
-      profilePic: astro.profilePic,
-
-      accountHolderName:
-        astro.kycDetail?.accountHolderName || null,
-
-      accountNumber:
-        astro.kycDetail?.accountNumber || null,
-
-      bankName:
-        astro.kycDetail?.bankName || null,
-
-      ifsc:
-        astro.kycDetail?.ifsc || null,
-
-      panNumber:
-        astro.kycDetail?.panNumber || null,
-
-      state:
-        astro.addresses[0]?.state || null,
-
-      // Session information is still useful
-      totalSessions: astro.sessions.length,
-
-      // ===================================================
-      // WALLET VALUES
-      // ===================================================
-
-      balanceCoins,
-
-      totalRevenue,
-
-      earning,
-
-      commission,
-
-      totalCommission: commission,
-
-      pendingAmount,
-
-      totalWithdrawn,
-
-      totalPaid,
-
-      lastPaidAmount,
-
-      // ===================================================
-      // COMMISSION %
-      // ===================================================
-
-      commissionPercent,
-
-      // ===================================================
-      // PG
-      // ===================================================
-
-      pgChargeRate: PG_RATE,
-
-      pgCharge,
-
-      gstRate: GST_RATE,
-
-      cgst,
-
-      sgst,
-
-      igst,
-
-      pgTotal,
-
-      // ===================================================
-      // GROSS
-      // ===================================================
-
-      grossAmount,
-
-      // ===================================================
-      // TDS
-      // ===================================================
-
-      tdsPercent,
-
-      tdsAmount,
-
-      // ===================================================
-      // FINAL PAYABLE
-      // ===================================================
-
-      payableAmount,
-    };
-  });
-},
     // payoutReport: async (_, { fromDate, toDate }, { prisma, user }) => {
     //   // Permission check - only admins with appropriate permission
     //   // await checkPermission({ user, prisma }, "payout.read");
@@ -4674,606 +4654,485 @@ const totalPages = Math.ceil(totalCount / limit);
     //     };
     //   });
     // },
-getAstrologerPayoutHistory: async (_, { astrologerId }, { prisma }) => {
-
-  try {
-    const payouts = await prisma.astrologerPayout.findMany({
-      where: {
-        astrologerId: astrologerId,
-      },
-
-      include: {
-        astrologer: {
-          select: {
-            id: true,
-            name: true,
+    getAstrologerPayoutHistory: async (_, { astrologerId }, { prisma }) => {
+      try {
+        const payouts = await prisma.astrologerPayout.findMany({
+          where: {
+            astrologerId: astrologerId,
           },
-        },
-      },
 
-      orderBy: {
-        paymentDate: "desc",
-      },
-    });
-
-    return payouts.map((payout) => ({
-      id: payout.id,
-
-      astrologerId: payout.astrologerId,
-
-      astrologerName: payout.astrologer?.name || "",
-
-      remark: payout.remark || "",
-
-      earning: Number(payout.earning || 0),
-
-      pgCharge: Number(payout.pgCharge || 0),
-
-      // Tumhare Prisma model me subTotal nahi hai,
-      // isliye grossAmount use kar rahe hain
-      subTotal: Number(payout.grossAmount || 0),
-
-      tdsAmount: Number(payout.tdsAmount || 0),
-
-      paidAmount: Number(payout.payableAmount || 0),
-
-      startDate: payout.fromDate
-        ? payout.fromDate.toISOString()
-        : null,
-
-      endDate: payout.toDate
-        ? payout.toDate.toISOString()
-        : null,
-
-      paidOn: payout.paymentDate
-        ? payout.paymentDate.toISOString()
-        : null,
-    }));
-  } catch (error) {
-    console.error(
-      "getAstrologerPayoutHistory ERROR:",
-      error
-    );
-
-    throw new Error("Failed to fetch astrologer payout history");
-  }
-},
-getRefundRequests: async (
-  _,
-  { searchInput = {} },
-  context
-) => {
-  try {
-    const { prisma, user } = context;
-
-    // -----------------------------
-    // AUTH
-    // -----------------------------
-
-    if (!user?.id) {
-      throw new Error("Unauthorized");
-    }
-
-    const {
-      page = 1,
-      limit = 10,
-      status,
-      search,
-    } = searchInput;
-
-    const safePage = Math.max(Number(page), 1);
-    const safeLimit = Math.min(
-      Math.max(Number(limit), 1),
-      50
-    );
-
-    const skip = (safePage - 1) * safeLimit;
-
-    // -----------------------------
-    // WHERE
-    // -----------------------------
-
-    const where = {};
-
-    if (status) {
-      where.status = status;
-    }
-
-    if (search) {
-      where.OR = [
-        {
-          userName: {
-            contains: search,
-            mode: "insensitive",
+          include: {
+            astrologer: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
           },
-        },
-        {
-          astrologerName: {
-            contains: search,
-            mode: "insensitive",
-          },
-        },
-        {
-          transactionId: {
-            contains: search,
-            mode: "insensitive",
-          },
-        },
-        {
-          orderId: {
-            contains: search,
-            mode: "insensitive",
-          },
-        },
-        {
-          requestedByStaffName: {
-            contains: search,
-            mode: "insensitive",
-          },
-        },
-      ];
-    }
-
-    // -----------------------------
-    // FETCH
-    // -----------------------------
-
-    const [requests, totalCount] =
-      await Promise.all([
-        prisma.refundRequest.findMany({
-          where,
 
           orderBy: {
-            createdAt: "desc",
+            paymentDate: "desc",
           },
+        });
 
-          skip,
-          take: safeLimit,
-        }),
+        return payouts.map((payout) => ({
+          id: payout.id,
 
-        prisma.refundRequest.count({
-          where,
-        }),
-      ]);
+          astrologerId: payout.astrologerId,
 
-    return {
-      data: requests,
+          astrologerName: payout.astrologer?.name || "",
 
-      totalCount,
+          remark: payout.remark || "",
 
-      currentPage: safePage,
+          earning: Number(payout.earning || 0),
 
-      totalPages: Math.ceil(
-        totalCount / safeLimit
-      ),
-    };
-  } catch (error) {
-    console.error(
-      "getRefundRequests error:",
-      error
-    );
+          pgCharge: Number(payout.pgCharge || 0),
 
-    throw new Error(
-      error.message ||
-        "Failed to fetch refund requests"
-    );
-  }
-},
+          // Tumhare Prisma model me subTotal nahi hai,
+          // isliye grossAmount use kar rahe hain
+          subTotal: Number(payout.grossAmount || 0),
+
+          tdsAmount: Number(payout.tdsAmount || 0),
+
+          paidAmount: Number(payout.payableAmount || 0),
+
+          startDate: payout.fromDate ? payout.fromDate.toISOString() : null,
+
+          endDate: payout.toDate ? payout.toDate.toISOString() : null,
+
+          paidOn: payout.paymentDate ? payout.paymentDate.toISOString() : null,
+        }));
+      } catch (error) {
+        console.error("getAstrologerPayoutHistory ERROR:", error);
+
+        throw new Error("Failed to fetch astrologer payout history");
+      }
+    },
+    getRefundRequests: async (_, { searchInput = {} }, context) => {
+      try {
+        const { prisma, user } = context;
+
+        // -----------------------------
+        // AUTH
+        // -----------------------------
+
+        if (!user?.id) {
+          throw new Error("Unauthorized");
+        }
+
+        const { page = 1, limit = 10, status, search } = searchInput;
+
+        const safePage = Math.max(Number(page), 1);
+        const safeLimit = Math.min(Math.max(Number(limit), 1), 50);
+
+        const skip = (safePage - 1) * safeLimit;
+
+        // -----------------------------
+        // WHERE
+        // -----------------------------
+
+        const where = {};
+
+        if (status) {
+          where.status = status;
+        }
+
+        if (search) {
+          where.OR = [
+            {
+              userName: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+            {
+              astrologerName: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+            {
+              transactionId: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+            {
+              orderId: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+            {
+              requestedByStaffName: {
+                contains: search,
+                mode: "insensitive",
+              },
+            },
+          ];
+        }
+
+        // -----------------------------
+        // FETCH
+        // -----------------------------
+
+        const [requests, totalCount] = await Promise.all([
+          prisma.refundRequest.findMany({
+            where,
+
+            orderBy: {
+              createdAt: "desc",
+            },
+
+            skip,
+            take: safeLimit,
+          }),
+
+          prisma.refundRequest.count({
+            where,
+          }),
+        ]);
+
+        return {
+          data: requests,
+
+          totalCount,
+
+          currentPage: safePage,
+
+          totalPages: Math.ceil(totalCount / safeLimit),
+        };
+      } catch (error) {
+        console.error("getRefundRequests error:", error);
+
+        throw new Error(error.message || "Failed to fetch refund requests");
+      }
+    },
   },
 
   // **********************************************START MUTATION**********************************
 
   Mutation: {
-    createRefundRequest: async (
-  _,
-  { input },
-  context
-) => {
-  try {
-    const { prisma, user } = context;
+    createRefundRequest: async (_, { input }, context) => {
+      try {
+        const { prisma, user } = context;
 
-    // -----------------------------
-    // AUTH
-    // -----------------------------
+        // -----------------------------
+        // AUTH
+        // -----------------------------
 
-    if (!user?.id) {
-      throw new Error("Unauthorized");
-    }
+        if (!user?.id) {
+          throw new Error("Unauthorized");
+        }
 
-    const {
-      sessionId,
-      refundDuration,
-      refundReason,
-      refundType = "Partial",
-      mode = "Chat",
-    } = input;
+        const {
+          sessionId,
+          refundDuration,
+          refundReason,
+          refundType = "Partial",
+          mode = "Chat",
+        } = input;
 
-    // -----------------------------
-    // VALIDATION
-    // -----------------------------
+        // -----------------------------
+        // VALIDATION
+        // -----------------------------
 
-    if (!sessionId) {
-      throw new Error("Session ID is required");
-    }
+        if (!sessionId) {
+          throw new Error("Session ID is required");
+        }
 
-    if (!refundReason?.trim()) {
-      throw new Error(
-        "Refund reason is required"
-      );
-    }
+        if (!refundReason?.trim()) {
+          throw new Error("Refund reason is required");
+        }
 
-    const duration = Number(
-      refundDuration
-    );
+        const duration = Number(refundDuration);
 
-    if (
-      !Number.isInteger(duration) ||
-      duration < 1
-    ) {
-      throw new Error(
-        "Refund duration must be at least 1 minute"
-      );
-    }
+        if (!Number.isInteger(duration) || duration < 1) {
+          throw new Error("Refund duration must be at least 1 minute");
+        }
 
-    // -----------------------------
-    // GET SESSION
-    // -----------------------------
+        // -----------------------------
+        // GET SESSION
+        // -----------------------------
 
-    const session =
-      await prisma.session.findUnique({
-        where: {
-          id: sessionId,
-        },
+        const session = await prisma.session.findUnique({
+          where: {
+            id: sessionId,
+          },
 
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              mobile: true,
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                mobile: true,
+              },
+            },
+
+            astrologer: {
+              select: {
+                id: true,
+                name: true,
+                displayName: true,
+              },
             },
           },
+        });
 
-          astrologer: {
-            select: {
-              id: true,
-              name: true,
-              displayName: true,
+        if (!session) {
+          throw new Error("Session not found");
+        }
+
+        // -----------------------------
+        // ONLY CHAT
+        // -----------------------------
+
+        if (session.type !== "CHAT") {
+          throw new Error("Refund request is only allowed for chat sessions");
+        }
+
+        // -----------------------------
+        // SESSION DURATION
+        // -----------------------------
+
+    const sessionDurationSec = Number(session.durationSec || 0);
+
+if (sessionDurationSec < 30) {
+  throw new Error("Session does not have enough duration for refund");
+}
+
+const maxRefundMinutes = Math.max(
+  1,
+  Math.ceil((sessionDurationSec - 30) / 60),
+);
+
+if (duration > maxRefundMinutes) {
+  throw new Error(
+    `Refund duration cannot exceed ${maxRefundMinutes} minutes`,
+  );
+}
+
+
+        const existingRequest = await prisma.refundRequest.findFirst({
+          where: {
+            sessionId,
+
+            status: {
+              in: ["PENDING", "APPROVED"],
             },
           },
-        },
-      });
+        });
 
-    if (!session) {
-      throw new Error("Session not found");
-    }
+        if (existingRequest) {
+          throw new Error("Refund request already exists for this session");
+        }
 
-    // -----------------------------
-    // ONLY CHAT
-    // -----------------------------
+        // -----------------------------
+        // RATE
+        // -----------------------------
 
-    if (session.type !== "CHAT") {
-      throw new Error(
-        "Refund request is only allowed for chat sessions"
-      );
-    }
+        const ratePerMin = Number(session.ratePerMin || 0);
 
-    // -----------------------------
-    // SESSION DURATION
-    // -----------------------------
+        if (ratePerMin <= 0) {
+          throw new Error("Invalid session rate");
+        }
 
-    const sessionDurationSec =
-      Number(session.durationSec || 0);
+        // -----------------------------
+        // REFUND AMOUNT
+        // -----------------------------
 
-    const maxRefundMinutes =
-      Math.floor(
-        sessionDurationSec / 60
-      );
+        const refundAmount = ratePerMin * duration;
 
-    if (maxRefundMinutes < 1) {
-      throw new Error(
-        "Session does not have enough duration for refund"
-      );
-    }
+        // -----------------------------
+        // ADMIN / STAFF
+        // -----------------------------
 
-    // -----------------------------
-    // MAX DURATION VALIDATION
-    // -----------------------------
-
-    if (
-      duration > maxRefundMinutes
-    ) {
-      throw new Error(
-        `Refund duration cannot exceed ${maxRefundMinutes} minutes`
-      );
-    }
-
-    // -----------------------------
-    // CHECK EXISTING REQUEST
-    // -----------------------------
-
-    const existingRequest =
-      await prisma.refundRequest.findFirst({
-        where: {
-          sessionId,
-
-          status: {
-            in: [
-              "PENDING",
-              "APPROVED",
-            ],
+        const staff = await prisma.staff.findUnique({
+          where: {
+            id: user.id,
           },
-        },
-      });
 
-    if (existingRequest) {
-      throw new Error(
-        "Refund request already exists for this session"
-      );
-    }
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+            isDeleted: true,
+          },
+        });
 
-    // -----------------------------
-    // RATE
-    // -----------------------------
+        if (!staff || !staff.isActive || staff.isDeleted) {
+          throw new Error("Staff account is not active");
+        }
 
-    const ratePerMin =
-      Number(session.ratePerMin || 0);
+        // -----------------------------
+        // CREATE REQUEST
+        // -----------------------------
 
-    if (ratePerMin <= 0) {
-      throw new Error(
-        "Invalid session rate"
-      );
-    }
+        const refundRequest = await prisma.refundRequest.create({
+          data: {
+            sessionId,
 
-    // -----------------------------
-    // REFUND AMOUNT
-    // -----------------------------
+            userId: session.userId,
+            userName: session.user?.name || null,
+            userMobile: session.user?.mobile || null,
 
-    const refundAmount =
-      ratePerMin * duration;
+            astrologerId: session.astrologerId,
 
-    // -----------------------------
-    // ADMIN / STAFF
-    // -----------------------------
+            astrologerName:
+              session.astrologer?.displayName ||
+              session.astrologer?.name ||
+              null,
 
-    const staff =
-      await prisma.staff.findUnique({
-        where: {
-          id: user.id,
-        },
+            // Your session model does not
+            // currently have transactionId/orderId
+            // directly, so leave these null
+            transactionId: null,
+            orderId: null,
 
-        select: {
-          id: true,
-          name: true,
-          isActive: true,
-          isDeleted: true,
-        },
-      });
+            sessionDuration: sessionDurationSec,
 
-    if (
-      !staff ||
-      !staff.isActive ||
-      staff.isDeleted
-    ) {
-      throw new Error(
-        "Staff account is not active"
-      );
-    }
+            ratePerMin,
 
-    // -----------------------------
-    // CREATE REQUEST
-    // -----------------------------
+            refundDuration: duration,
 
-    const refundRequest =
-      await prisma.refundRequest.create({
-        data: {
-          sessionId,
+            refundAmount,
 
-          userId: session.userId,
-          userName:
-            session.user?.name || null,
-          userMobile:
-            session.user?.mobile || null,
+            refundType,
 
-          astrologerId:
-            session.astrologerId,
+            mode,
 
-          astrologerName:
-            session.astrologer?.displayName ||
-            session.astrologer?.name ||
-            null,
+            refundReason: refundReason.trim(),
 
-          // Your session model does not
-          // currently have transactionId/orderId
-          // directly, so leave these null
-          transactionId: null,
-          orderId: null,
+            requestedByStaffId: staff.id,
 
-          sessionDuration:
-            sessionDurationSec,
+            requestedByStaffName: staff.name,
 
-          ratePerMin,
+            status: "PENDING",
+          },
+        });
 
-          refundDuration: duration,
+        return refundRequest;
+      } catch (error) {
+        console.error("createRefundRequest error:", error);
 
-          refundAmount,
+        throw new Error(error.message || "Failed to create refund request");
+      }
+    },
+    approveRefundRequest: async (_, { id }, context) => {
+      try {
+        const { prisma, user } = context;
 
-          refundType,
+        // -----------------------------
+        // AUTH
+        // -----------------------------
 
-          mode,
+        if (!user?.id) {
+          throw new Error("Unauthorized");
+        }
 
-          refundReason:
-            refundReason.trim(),
+        // -----------------------------
+        // STAFF
+        // -----------------------------
 
-          requestedByStaffId:
-            staff.id,
+        const staff = await prisma.staff.findUnique({
+          where: {
+            id: user.id,
+          },
 
-          requestedByStaffName:
-            staff.name,
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+            isDeleted: true,
+          },
+        });
 
-          status: "PENDING",
-        },
-      });
+        if (!staff || !staff.isActive || staff.isDeleted) {
+          throw new Error("Staff account is not active");
+        }
 
-    return refundRequest;
-  } catch (error) {
-    console.error(
-      "createRefundRequest error:",
-      error
-    );
+        // -----------------------------
+        // REFUND REQUEST
+        // -----------------------------
 
-    throw new Error(
-      error.message ||
-        "Failed to create refund request"
-    );
-  }
-},
-approveRefundRequest: async (
-  _,
-  { id },
-  context
-) => {
-  try {
-    const { prisma, user } = context;
+        const request = await prisma.refundRequest.findUnique({
+          where: {
+            id,
+          },
+        });
 
-    // -----------------------------
-    // AUTH
-    // -----------------------------
+        if (!request) {
+          throw new Error("Refund request not found");
+        }
 
-    if (!user?.id) {
-      throw new Error("Unauthorized");
-    }
+        // -----------------------------
+        // STATUS CHECK
+        // -----------------------------
 
-    // -----------------------------
-    // STAFF
-    // -----------------------------
+        if (request.status !== "PENDING") {
+          throw new Error(
+            `Refund request is already ${request.status.toLowerCase()}`,
+          );
+        }
 
-    const staff =
-      await prisma.staff.findUnique({
-        where: {
-          id: user.id,
-        },
+        // -----------------------------
+        // USER WALLET
+        // -----------------------------
 
-        select: {
-          id: true,
-          name: true,
-          isActive: true,
-          isDeleted: true,
-        },
-      });
+        const userWallet = await prisma.userWallet.findUnique({
+          where: {
+            userId: request.userId,
+          },
+        });
 
-    if (
-      !staff ||
-      !staff.isActive ||
-      staff.isDeleted
-    ) {
-      throw new Error(
-        "Staff account is not active"
-      );
-    }
+        if (!userWallet) {
+          throw new Error("User wallet not found");
+        }
 
-    // -----------------------------
-    // REFUND REQUEST
-    // -----------------------------
+        const refundCoins = Math.round(Number(request.refundAmount));
 
-    const request =
-      await prisma.refundRequest.findUnique({
-        where: {
-          id,
-        },
-      });
+        if (refundCoins <= 0) {
+          throw new Error("Invalid refund amount");
+        }
 
-    if (!request) {
-      throw new Error(
-        "Refund request not found"
-      );
-    }
+        // -----------------------------
+        // ATOMIC TRANSACTION
+        // -----------------------------
 
-    // -----------------------------
-    // STATUS CHECK
-    // -----------------------------
-
-    if (request.status !== "PENDING") {
-      throw new Error(
-        `Refund request is already ${request.status.toLowerCase()}`
-      );
-    }
-
-    // -----------------------------
-    // USER WALLET
-    // -----------------------------
-
-    const userWallet =
-      await prisma.userWallet.findUnique({
-        where: {
-          userId: request.userId,
-        },
-      });
-
-    if (!userWallet) {
-      throw new Error(
-        "User wallet not found"
-      );
-    }
-
-    const refundCoins = Math.round(
-      Number(request.refundAmount)
-    );
-
-    if (refundCoins <= 0) {
-      throw new Error(
-        "Invalid refund amount"
-      );
-    }
-
-    // -----------------------------
-    // ATOMIC TRANSACTION
-    // -----------------------------
-
-    const result =
-      await prisma.$transaction(
-        async (tx) => {
+        const result = await prisma.$transaction(async (tx) => {
           // --------------------------------
           // Re-check request inside transaction
           // --------------------------------
 
-          const currentRequest =
-            await tx.refundRequest.findUnique({
-              where: {
-                id,
-              },
-            });
+          const currentRequest = await tx.refundRequest.findUnique({
+            where: {
+              id,
+            },
+          });
 
           if (!currentRequest) {
-            throw new Error(
-              "Refund request not found"
-            );
+            throw new Error("Refund request not found");
           }
 
-          if (
-            currentRequest.status !== "PENDING"
-          ) {
-            throw new Error(
-              "Refund request has already been processed"
-            );
+          if (currentRequest.status !== "PENDING") {
+            throw new Error("Refund request has already been processed");
           }
 
           // --------------------------------
           // Credit user wallet
           // --------------------------------
 
-          const updatedWallet =
-            await tx.userWallet.update({
-              where: {
-                id: userWallet.id,
-              },
+          const updatedWallet = await tx.userWallet.update({
+            where: {
+              id: userWallet.id,
+            },
 
-              data: {
-                balanceCoins: {
-                  increment: refundCoins,
-                },
+            data: {
+              balanceCoins: {
+                increment: refundCoins,
               },
-            });
+            },
+          });
 
           // --------------------------------
           // Wallet transaction
@@ -5281,23 +5140,17 @@ approveRefundRequest: async (
 
           await tx.walletTransaction.create({
             data: {
-              userWalletId:
-                userWallet.id,
+              userWalletId: userWallet.id,
 
-              sessionId:
-                currentRequest.sessionId,
+              sessionId: currentRequest.sessionId,
 
               type: "REFUND",
 
               coins: refundCoins,
 
-              amount:
-                Number(
-                  currentRequest.refundAmount
-                ),
+              amount: Number(currentRequest.refundAmount),
 
-              description:
-                `Refund approved - ${currentRequest.refundDuration} min`,
+              description: `Refund approved - ${currentRequest.refundDuration} min`,
             },
           });
 
@@ -5305,806 +5158,716 @@ approveRefundRequest: async (
           // Update request
           // --------------------------------
 
-          const updatedRequest =
-            await tx.refundRequest.update({
-              where: {
-                id,
-              },
+          const updatedRequest = await tx.refundRequest.update({
+            where: {
+              id,
+            },
 
-              data: {
-                status: "APPROVED",
+            data: {
+              status: "APPROVED",
 
-                approvedByStaffId:
-                  staff.id,
+              approvedByStaffId: staff.id,
 
-                approvedByStaffName:
-                  staff.name,
+              approvedByStaffName: staff.name,
 
-                approvedAt:
-                  new Date(),
-              },
-            });
+              approvedAt: new Date(),
+            },
+          });
 
           return {
             updatedWallet,
             updatedRequest,
           };
+        });
+
+        return result.updatedRequest;
+      } catch (error) {
+        console.error("approveRefundRequest error:", error);
+
+        throw new Error(error.message || "Failed to approve refund");
+      }
+    },
+    rejectRefundRequest: async (_, { id, reason }, context) => {
+      try {
+        const { prisma, user } = context;
+
+        // -----------------------------
+        // AUTH
+        // -----------------------------
+
+        if (!user?.id) {
+          throw new Error("Unauthorized");
         }
-      );
 
-    return result.updatedRequest;
-  } catch (error) {
-    console.error(
-      "approveRefundRequest error:",
-      error
-    );
+        if (!reason?.trim()) {
+          throw new Error("Rejection reason is required");
+        }
 
-    throw new Error(
-      error.message ||
-        "Failed to approve refund"
-    );
-  }
-},
-rejectRefundRequest: async (
-  _,
-  { id, reason },
-  context
-) => {
-  try {
-    const { prisma, user } = context;
+        // -----------------------------
+        // STAFF
+        // -----------------------------
 
-    // -----------------------------
-    // AUTH
-    // -----------------------------
-
-    if (!user?.id) {
-      throw new Error("Unauthorized");
-    }
-
-    if (!reason?.trim()) {
-      throw new Error(
-        "Rejection reason is required"
-      );
-    }
-
-    // -----------------------------
-    // STAFF
-    // -----------------------------
-
-    const staff =
-      await prisma.staff.findUnique({
-        where: {
-          id: user.id,
-        },
-
-        select: {
-          id: true,
-          name: true,
-          isActive: true,
-          isDeleted: true,
-        },
-      });
-
-    if (
-      !staff ||
-      !staff.isActive ||
-      staff.isDeleted
-    ) {
-      throw new Error(
-        "Staff account is not active"
-      );
-    }
-
-    // -----------------------------
-    // REQUEST
-    // -----------------------------
-
-    const request =
-      await prisma.refundRequest.findUnique({
-        where: {
-          id,
-        },
-      });
-
-    if (!request) {
-      throw new Error(
-        "Refund request not found"
-      );
-    }
-
-    // -----------------------------
-    // STATUS
-    // -----------------------------
-
-    if (request.status !== "PENDING") {
-      throw new Error(
-        `Refund request is already ${request.status.toLowerCase()}`
-      );
-    }
-
-    // -----------------------------
-    // REJECT
-    // -----------------------------
-
-    const rejectedRequest =
-      await prisma.refundRequest.update({
-        where: {
-          id,
-        },
-
-        data: {
-          status: "REJECTED",
-
-          rejectedByStaffId:
-            staff.id,
-
-          rejectedByStaffName:
-            staff.name,
-
-          rejectedAt:
-            new Date(),
-
-          rejectionReason:
-            reason.trim(),
-        },
-      });
-
-    return rejectedRequest;
-  } catch (error) {
-    console.error(
-      "rejectRefundRequest error:",
-      error
-    );
-
-    throw new Error(
-      error.message ||
-        "Failed to reject refund"
-    );
-  }
-},
-    exportPayoutReport: async (
-  _,
-  { fromDate, toDate, remark },
-  { prisma, user },
-) => {
-  // await checkPermission({ user, prisma }, "payout.update");
-
-  const from = new Date(fromDate);
-  const to = new Date(toDate);
-
-  const astrologers = await prisma.astrologer.findMany({
-    where: {
-      isDeleted: false,
-    },
-
-    include: {
-      // ==============================
-      // ASTROLOGER WALLET
-      // ==============================
-      wallet: true,
-
-      pricing: {
-        where: {
-          isActive: true,
-        },
-      },
-
-      tax: true,
-
-      kycDetail: true,
-
-      addresses: {
-        take: 1,
-        orderBy: {
-          id: "desc",
-        },
-      },
-
-      // Sessions are still used ONLY
-      // for totalSessions in the export
-      sessions: {
-        where: {
-          status: "COMPLETED",
-          endedAt: {
-            gte: from,
-            lte: to,
-          },
-        },
-      },
-    },
-  });
-
-  const result = [];
-
-  for (const astro of astrologers) {
-    // =====================================================
-    // WALLET
-    // =====================================================
-
-    const wallet = astro.wallet;
-
-    // Current wallet balance
-    const balanceCoins = Number(
-      wallet?.balanceCoins || 0,
-    );
-
-    // Total earning from astrologer wallet
-    const earning = Number(
-      wallet?.balanceCoins || 0,
-    );
-
-    // Revenue should now come from wallet
-    // instead of Session.coinsDeducted
-    const totalRevenue = Number(
-      wallet?.totalEarned || 0,
-    );
-
-    // Total commission from wallet
-    const commission = Number(
-      wallet?.totalCommission || 0,
-    );
-
-    // =====================================================
-    // COMMISSION %
-    // =====================================================
-
-    const commissionPercent = Number(
-      astro.pricing?.[0]?.commissionPercent || 0,
-    );
-
-    // =====================================================
-    // PG CHARGE
-    // =====================================================
-
-    const pgCharge = Number(
-      ((earning * PG_RATE) / 100).toFixed(2),
-    );
-
-    // =====================================================
-    // GST ON PG CHARGE
-    // =====================================================
-
-    const gstAmount = Number(
-      ((pgCharge * GST_RATE) / 100).toFixed(2),
-    );
-
-    let cgst = 0;
-    let sgst = 0;
-    let igst = 0;
-
-    if (
-      astro.tax?.state &&
-      astro.tax.state.toLowerCase() ===
-        COMPANY_STATE.toLowerCase()
-    ) {
-      cgst = Number(
-        (gstAmount / 2).toFixed(2),
-      );
-
-      sgst = Number(
-        (gstAmount / 2).toFixed(2),
-      );
-    } else {
-      igst = gstAmount;
-    }
-
-    const pgTotal = Number(
-      (pgCharge + gstAmount).toFixed(2),
-    );
-
-    // =====================================================
-    // GROSS AMOUNT
-    // =====================================================
-
-    const grossAmount = Number(
-      (earning - pgTotal).toFixed(2),
-    );
-
-    // =====================================================
-    // TDS
-    // =====================================================
-
-    const tdsPercent = Number(
-      astro.tax?.tdsPercent || 10,
-    );
-
-    const tdsAmount = Number(
-      ((grossAmount * tdsPercent) / 100).toFixed(2),
-    );
-
-    // =====================================================
-    // WALLET PAYMENT INFORMATION
-    // =====================================================
-
-    const totalPaid = Number(
-      wallet?.totalPaid || 0,
-    );
-
-    const lastPaidAmount = Number(
-      wallet?.lastPaidAmount || 0,
-    );
-
-    // =====================================================
-    // PAYABLE AMOUNT
-    // =====================================================
-
-    const payableAmount = Math.max(
-      0,
-      Number(
-        (
-          grossAmount -
-          tdsAmount 
-        ).toFixed(2),
-      ),
-    );
-
-    const exportLastPaid = lastPaidAmount;
-    const exportPayable = payableAmount;
-
-    // =====================================================
-    // PAYOUT TRANSACTION
-    // =====================================================
-
-    await prisma.$transaction(async (tx) => {
-      // -----------------------------------------------
-      // Prevent duplicate payout generation
-      // -----------------------------------------------
-
-      const existingPayout =
-        await tx.astrologerPayout.findFirst({
+        const staff = await prisma.staff.findUnique({
           where: {
-            astrologerId: astro.id,
-            fromDate: from,
-            toDate: to,
+            id: user.id,
+          },
+
+          select: {
+            id: true,
+            name: true,
+            isActive: true,
+            isDeleted: true,
           },
         });
 
-      // Already processed
-      // Do not deduct wallet again
-      if (existingPayout) {
-        return;
+        if (!staff || !staff.isActive || staff.isDeleted) {
+          throw new Error("Staff account is not active");
+        }
+
+        // -----------------------------
+        // REQUEST
+        // -----------------------------
+
+        const request = await prisma.refundRequest.findUnique({
+          where: {
+            id,
+          },
+        });
+
+        if (!request) {
+          throw new Error("Refund request not found");
+        }
+
+        // -----------------------------
+        // STATUS
+        // -----------------------------
+
+        if (request.status !== "PENDING") {
+          throw new Error(
+            `Refund request is already ${request.status.toLowerCase()}`,
+          );
+        }
+
+        // -----------------------------
+        // REJECT
+        // -----------------------------
+
+        const rejectedRequest = await prisma.refundRequest.update({
+          where: {
+            id,
+          },
+
+          data: {
+            status: "REJECTED",
+
+            rejectedByStaffId: staff.id,
+
+            rejectedByStaffName: staff.name,
+
+            rejectedAt: new Date(),
+
+            rejectionReason: reason.trim(),
+          },
+        });
+
+        return rejectedRequest;
+      } catch (error) {
+        console.error("rejectRefundRequest error:", error);
+
+        throw new Error(error.message || "Failed to reject refund");
       }
+    },
+    exportPayoutReport: async (
+      _,
+      { fromDate, toDate, remark },
+      { prisma, user },
+    ) => {
+      // await checkPermission({ user, prisma }, "payout.update");
 
-      // =================================================
-      // PAYOUT AMOUNT
-      // =================================================
+      const from = new Date(fromDate);
+      const to = new Date(toDate);
 
-      const payoutAmount = Number(
-        earning.toFixed(2),
-      );
+      const astrologers = await prisma.astrologer.findMany({
+        where: {
+          isDeleted: false,
+        },
 
-      // =================================================
-      // CREATE PAYOUT RECORD
-      // =================================================
+        include: {
+          // ==============================
+          // ASTROLOGER WALLET
+          // ==============================
+          wallet: true,
 
-      await tx.astrologerPayout.create({
-        data: {
+          pricing: {
+            where: {
+              isActive: true,
+            },
+          },
+
+          tax: true,
+
+          kycDetail: true,
+
+          addresses: {
+            take: 1,
+            orderBy: {
+              id: "desc",
+            },
+          },
+
+          // Sessions are still used ONLY
+          // for totalSessions in the export
+          sessions: {
+            where: {
+              status: "COMPLETED",
+              endedAt: {
+                gte: from,
+                lte: to,
+              },
+            },
+          },
+        },
+      });
+
+      const result = [];
+
+      for (const astro of astrologers) {
+        // =====================================================
+        // WALLET
+        // =====================================================
+
+        const wallet = astro.wallet;
+
+        // Current wallet balance
+        const balanceCoins = Number(wallet?.balanceCoins || 0);
+
+        // Total earning from astrologer wallet
+        const earning = Number(wallet?.balanceCoins || 0);
+
+        // Revenue should now come from wallet
+        // instead of Session.coinsDeducted
+        const totalRevenue = Number(wallet?.totalEarned || 0);
+
+        // Total commission from wallet
+        const commission = Number(wallet?.totalCommission || 0);
+
+        // =====================================================
+        // COMMISSION %
+        // =====================================================
+
+        const commissionPercent = Number(
+          astro.pricing?.[0]?.commissionPercent || 0,
+        );
+
+        // =====================================================
+        // PG CHARGE
+        // =====================================================
+
+        const pgCharge = Number(((earning * PG_RATE) / 100).toFixed(2));
+
+        // =====================================================
+        // GST ON PG CHARGE
+        // =====================================================
+
+        const gstAmount = Number(((pgCharge * GST_RATE) / 100).toFixed(2));
+
+        let cgst = 0;
+        let sgst = 0;
+        let igst = 0;
+
+        if (
+          astro.tax?.state &&
+          astro.tax.state.toLowerCase() === COMPANY_STATE.toLowerCase()
+        ) {
+          cgst = Number((gstAmount / 2).toFixed(2));
+
+          sgst = Number((gstAmount / 2).toFixed(2));
+        } else {
+          igst = gstAmount;
+        }
+
+        const pgTotal = Number((pgCharge + gstAmount).toFixed(2));
+
+        // =====================================================
+        // GROSS AMOUNT
+        // =====================================================
+
+        const grossAmount = Number((earning - pgTotal).toFixed(2));
+
+        // =====================================================
+        // TDS
+        // =====================================================
+
+        const tdsPercent = Number(astro.tax?.tdsPercent || 10);
+
+        const tdsAmount = Number(((grossAmount * tdsPercent) / 100).toFixed(2));
+
+        // =====================================================
+        // WALLET PAYMENT INFORMATION
+        // =====================================================
+
+        const totalPaid = Number(wallet?.totalPaid || 0);
+
+        const lastPaidAmount = Number(wallet?.lastPaidAmount || 0);
+
+        // =====================================================
+        // PAYABLE AMOUNT
+        // =====================================================
+
+        const payableAmount = Math.max(
+          0,
+          Number((grossAmount - tdsAmount).toFixed(2)),
+        );
+
+        const exportLastPaid = lastPaidAmount;
+        const exportPayable = payableAmount;
+
+        // =====================================================
+        // PAYOUT TRANSACTION
+        // =====================================================
+
+        await prisma.$transaction(async (tx) => {
+          // -----------------------------------------------
+          // Prevent duplicate payout generation
+          // -----------------------------------------------
+
+          const existingPayout = await tx.astrologerPayout.findFirst({
+            where: {
+              astrologerId: astro.id,
+              fromDate: from,
+              toDate: to,
+            },
+          });
+
+          // Already processed
+          // Do not deduct wallet again
+          if (existingPayout) {
+            return;
+          }
+
+          // =================================================
+          // PAYOUT AMOUNT
+          // =================================================
+
+          const payoutAmount = Number(earning.toFixed(2));
+
+          // =================================================
+          // CREATE PAYOUT RECORD
+          // =================================================
+
+          await tx.astrologerPayout.create({
+            data: {
+              astrologerId: astro.id,
+
+              fromDate: from,
+              toDate: to,
+
+              remark: remark?.trim() || null,
+
+              // Wallet based values
+              totalRevenue,
+              commissionPercent,
+              commission,
+              earning,
+
+              pgChargeRate: PG_RATE,
+              pgCharge,
+
+              gstRate: GST_RATE,
+
+              igst,
+              cgst,
+              sgst,
+
+              pgTotal,
+              grossAmount,
+
+              tdsPercent,
+              tdsAmount,
+
+              lastPaidAmount: exportLastPaid,
+              payableAmount: exportPayable,
+
+              transactionRef: null,
+
+              paymentDate: new Date(),
+
+              status: "PENDING",
+            },
+          });
+
+          // =================================================
+          // DEDUCT FROM ASTROLOGER WALLET
+          // =================================================
+
+          if (payoutAmount > 0 && astro.wallet) {
+            await tx.astrologerWallet.update({
+              where: {
+                astrologerId: astro.id,
+              },
+
+              data: {
+                balanceCoins: {
+                  decrement: payoutAmount,
+                },
+
+                totalPaid: {
+                  increment: payoutAmount,
+                },
+
+                lastPaidAmount: payoutAmount,
+              },
+            });
+
+            // =================================================
+            // WALLET TRANSACTION
+            // =================================================
+
+            await tx.walletTransaction.create({
+              data: {
+                astrologerWalletId: astro.wallet.id,
+
+                amount: payoutAmount,
+
+                coins: Math.round(payoutAmount),
+
+                type: "DEBIT",
+              },
+            });
+          }
+        });
+
+        // =====================================================
+        // EXPORT RESULT
+        // =====================================================
+
+        result.push({
           astrologerId: astro.id,
 
-          fromDate: from,
-          toDate: to,
+          astrologerName: astro.name,
 
-          remark: remark?.trim() || null,
+          profilePic: astro.profilePic,
 
-          // Wallet based values
+          accountHolderName: astro.kycDetail?.accountHolderName || null,
+
+          accountNumber: astro.kycDetail?.accountNumber || null,
+
+          bankName: astro.kycDetail?.bankName || null,
+
+          ifsc: astro.kycDetail?.ifsc || null,
+
+          panNumber: astro.kycDetail?.panNumber || null,
+
+          state: astro.addresses?.[0]?.state || "",
+
+          // Session count is still date-wise
+          totalSessions: astro.sessions.length,
+
+          // =================================================
+          // WALLET VALUES
+          // =================================================
+
+          balanceCoins,
+
           totalRevenue,
-          commissionPercent,
-          commission,
+
           earning,
 
+          commission,
+
+          // =================================================
+          // COMMISSION
+          // =================================================
+
+          commissionPercent,
+
+          // =================================================
+          // PG
+          // =================================================
+
           pgChargeRate: PG_RATE,
+
           pgCharge,
+
+          // =================================================
+          // GST
+          // =================================================
 
           gstRate: GST_RATE,
 
-          igst,
           cgst,
+
           sgst,
 
+          igst,
+
           pgTotal,
+
+          // =================================================
+          // GROSS
+          // =================================================
+
           grossAmount,
 
+          // =================================================
+          // TDS
+          // =================================================
+
           tdsPercent,
+
           tdsAmount,
 
+          // =================================================
+          // PAYMENT
+          // =================================================
+
           lastPaidAmount: exportLastPaid,
+
           payableAmount: exportPayable,
-
-          transactionRef: null,
-
-          paymentDate: new Date(),
-
-          status: "PENDING",
-        },
-      });
-
-      // =================================================
-      // DEDUCT FROM ASTROLOGER WALLET
-      // =================================================
-
-      if (
-        payoutAmount > 0 &&
-        astro.wallet
-      ) {
-        await tx.astrologerWallet.update({
-          where: {
-            astrologerId: astro.id,
-          },
-
-          data: {
-            balanceCoins: {
-              decrement: payoutAmount,
-            },
-
-            totalPaid: {
-              increment: payoutAmount,
-            },
-
-            lastPaidAmount: payoutAmount,
-          },
-        });
-
-        // =================================================
-        // WALLET TRANSACTION
-        // =================================================
-
-        await tx.walletTransaction.create({
-          data: {
-            astrologerWalletId:
-              astro.wallet.id,
-
-            amount: payoutAmount,
-
-            coins: Math.round(
-              payoutAmount,
-            ),
-
-            type: "DEBIT",
-          },
         });
       }
-    });
 
-    // =====================================================
-    // EXPORT RESULT
-    // =====================================================
+      return result;
+    },
+    //     exportPayoutReport: async (_, { fromDate, toDate,remark  }, { prisma, user }) => {
+    //       // await checkPermission({ user, prisma }, "payout.update");
+
+    //       const from = new Date(fromDate);
+    //       const to = new Date(toDate);
+
+    //       const astrologers = await prisma.astrologer.findMany({
+    //         where: {
+    //           isDeleted: false,
+    //         },
+    //         include: {
+    //           wallet: true,
+    //           pricing: {
+    //             where: {
+    //               isActive: true,
+    //             },
+    //           },
+    //           tax: true,
+    //           kycDetail: true,
+    //           addresses: {
+    //             take: 1,
+    //             orderBy: {
+    //               id: "desc",
+    //             },
+    //           },
+    //           sessions: {
+    //             where: {
+    //               status: "COMPLETED",
+    //               endedAt: {
+    //                 gte: from,
+    //                 lte: to,
+    //               },
+    //             },
+    //           },
+    //         },
+    //       });
+
+    //       const result = [];
+
+    //       for (const astro of astrologers) {
+    //         const totalRevenue = astro.sessions.reduce(
+    //           (sum, s) => sum + (s.coinsDeducted || 0),
+    //           0,
+    //         );
+
+    //         const earning = astro.sessions.reduce(
+    //           (sum, s) => sum + (s.coinsEarned || 0),
+    //           0,
+    //         );
+
+    //         const commission = astro.sessions.reduce(
+    //           (sum, s) => sum + (s.commission || 0),
+    //           0,
+    //         );
+
+    //         const commissionPercent = astro.pricing?.[0]?.commissionPercent || 0;
+
+    //         const pgCharge = Number(((earning * PG_RATE) / 100).toFixed(2));
+
+    //         const gstAmount = Number(((pgCharge * GST_RATE) / 100).toFixed(2));
+
+    //         let cgst = 0;
+    //         let sgst = 0;
+    //         let igst = 0;
+
+    //         if (
+    //           astro.tax?.state &&
+    //           astro.tax.state.toLowerCase() === COMPANY_STATE.toLowerCase()
+    //         ) {
+    //           cgst = Number((gstAmount / 2).toFixed(2));
+    //           sgst = Number((gstAmount / 2).toFixed(2));
+    //         } else {
+    //           igst = gstAmount;
+    //         }
+
+    //         const pgTotal = Number((pgCharge + gstAmount).toFixed(2));
+
+    //         const grossAmount = Number((earning - pgTotal).toFixed(2));
+
+    //         const tdsPercent = astro.tax?.tdsPercent || 0;
+
+    //         const tdsAmount = Number(((grossAmount * tdsPercent) / 100).toFixed(2));
+
+    //         const totalPaid = astro.wallet?.totalPaid || 0;
+    //         const lastPaidAmount = astro.wallet?.lastPaidAmount || 0;
+
+    //         const payableAmount = Math.max(
+    //           0,
+    //           Number((grossAmount - tdsAmount - totalPaid).toFixed(2)),
+    //         );
+
+    //         const exportLastPaid = lastPaidAmount;
+    //         const exportPayable = payableAmount;
+
+    //     await prisma.$transaction(async (tx) => {
+    //   // Prevent duplicate payout generation
+    //   const existingPayout = await tx.astrologerPayout.findFirst({
+    //     where: {
+    //       astrologerId: astro.id,
+    //       fromDate: from,
+    //       toDate: to,
+    //     },
+    //   });
 
-    result.push({
-      astrologerId: astro.id,
+    //   // Already processed -> don't deduct wallet again
+    //   if (existingPayout) {
+    //     return;
+    //   }
 
-      astrologerName: astro.name,
+    //   const payoutAmount = Number(earning.toFixed(2));
 
-      profilePic: astro.profilePic,
+    //   // 1️⃣ Create payout record
+    //   await tx.astrologerPayout.create({
+    //     data: {
+    //       astrologerId: astro.id,
 
-      accountHolderName:
-        astro.kycDetail?.accountHolderName || null,
+    //       fromDate: from,
+    //       toDate: to,
 
-      accountNumber:
-        astro.kycDetail?.accountNumber || null,
+    //       remark: remark?.trim() || null,
 
-      bankName:
-        astro.kycDetail?.bankName || null,
+    //       totalRevenue,
+    //       commissionPercent,
+    //       commission,
+    //       earning,
 
-      ifsc:
-        astro.kycDetail?.ifsc || null,
+    //       pgChargeRate: PG_RATE,
+    //       pgCharge,
 
-      panNumber:
-        astro.kycDetail?.panNumber || null,
+    //       gstRate: GST_RATE,
 
-      state:
-        astro.addresses?.[0]?.state || "",
+    //       igst,
+    //       cgst,
+    //       sgst,
 
-      // Session count is still date-wise
-      totalSessions:
-        astro.sessions.length,
+    //       pgTotal,
+    //       grossAmount,
 
-      // =================================================
-      // WALLET VALUES
-      // =================================================
+    //       tdsPercent,
+    //       tdsAmount,
 
-      balanceCoins,
+    //       lastPaidAmount: exportLastPaid,
+    //       payableAmount: exportPayable,
 
-      totalRevenue,
+    //       transactionRef: null,
 
-      earning,
+    //       // Export submit time
+    //       paymentDate: new Date(),
 
-      commission,
+    //       status: "PENDING",
+    //     },
+    //   });
 
-      // =================================================
-      // COMMISSION
-      // =================================================
+    //   // 2️⃣ Deduct amount from astrologer wallet
+    //   if (payoutAmount > 0 && astro.wallet) {
+    //     await tx.astrologerWallet.update({
+    //       where: {
+    //         astrologerId: astro.id,
+    //       },
+    //       data: {
+    //         balanceCoins: {
+    //           decrement: payoutAmount,
+    //         },
 
-      commissionPercent,
+    //         totalPaid: {
+    //           increment: payoutAmount,
+    //         },
 
-      // =================================================
-      // PG
-      // =================================================
+    //         lastPaidAmount: payoutAmount,
+    //       },
+    //     });
 
-      pgChargeRate: PG_RATE,
+    //     // 3️⃣ Create wallet transaction
+    // await tx.walletTransaction.create({
+    //   data: {
+    //     astrologerWalletId: astro.wallet.id,
+    //     amount: payoutAmount,
+    //     coins: Math.round(payoutAmount),
+    //     type: "DEBIT",
+    //   },
+    // });
+    //   }
+    // });
 
-      pgCharge,
+    //         result.push({
+    //           astrologerId: astro.id,
+    //           astrologerName: astro.name,
+    //           profilePic: astro.profilePic,
 
-      // =================================================
-      // GST
-      // =================================================
+    //           accountHolderName: astro.kycDetail?.accountHolderName,
 
-      gstRate: GST_RATE,
+    //           accountNumber: astro.kycDetail?.accountNumber,
 
-      cgst,
+    //           bankName: astro.kycDetail?.bankName,
 
-      sgst,
+    //           ifsc: astro.kycDetail?.ifsc,
 
-      igst,
+    //           panNumber: astro.kycDetail?.panNumber,
 
-      pgTotal,
+    //           state: astro.addresses?.[0]?.state || "",
 
-      // =================================================
-      // GROSS
-      // =================================================
+    //           totalSessions: astro.sessions.length,
 
-      grossAmount,
+    //           totalRevenue,
 
-      // =================================================
-      // TDS
-      // =================================================
+    //           commissionPercent,
 
-      tdsPercent,
+    //           commission,
 
-      tdsAmount,
+    //           earning,
 
-      // =================================================
-      // PAYMENT
-      // =================================================
+    //           pgChargeRate: PG_RATE,
 
-      lastPaidAmount:
-        exportLastPaid,
+    //           pgCharge,
 
-      payableAmount:
-        exportPayable,
-    });
-  }
+    //           gstRate: GST_RATE,
 
-  return result;
-},
-//     exportPayoutReport: async (_, { fromDate, toDate,remark  }, { prisma, user }) => {
-//       // await checkPermission({ user, prisma }, "payout.update");
-
-//       const from = new Date(fromDate);
-//       const to = new Date(toDate);
-
-//       const astrologers = await prisma.astrologer.findMany({
-//         where: {
-//           isDeleted: false,
-//         },
-//         include: {
-//           wallet: true,
-//           pricing: {
-//             where: {
-//               isActive: true,
-//             },
-//           },
-//           tax: true,
-//           kycDetail: true,
-//           addresses: {
-//             take: 1,
-//             orderBy: {
-//               id: "desc",
-//             },
-//           },
-//           sessions: {
-//             where: {
-//               status: "COMPLETED",
-//               endedAt: {
-//                 gte: from,
-//                 lte: to,
-//               },
-//             },
-//           },
-//         },
-//       });
-
-//       const result = [];
-
-//       for (const astro of astrologers) {
-//         const totalRevenue = astro.sessions.reduce(
-//           (sum, s) => sum + (s.coinsDeducted || 0),
-//           0,
-//         );
-
-//         const earning = astro.sessions.reduce(
-//           (sum, s) => sum + (s.coinsEarned || 0),
-//           0,
-//         );
-
-//         const commission = astro.sessions.reduce(
-//           (sum, s) => sum + (s.commission || 0),
-//           0,
-//         );
-
-//         const commissionPercent = astro.pricing?.[0]?.commissionPercent || 0;
-
-//         const pgCharge = Number(((earning * PG_RATE) / 100).toFixed(2));
-
-//         const gstAmount = Number(((pgCharge * GST_RATE) / 100).toFixed(2));
-
-//         let cgst = 0;
-//         let sgst = 0;
-//         let igst = 0;
-
-//         if (
-//           astro.tax?.state &&
-//           astro.tax.state.toLowerCase() === COMPANY_STATE.toLowerCase()
-//         ) {
-//           cgst = Number((gstAmount / 2).toFixed(2));
-//           sgst = Number((gstAmount / 2).toFixed(2));
-//         } else {
-//           igst = gstAmount;
-//         }
-
-//         const pgTotal = Number((pgCharge + gstAmount).toFixed(2));
-
-//         const grossAmount = Number((earning - pgTotal).toFixed(2));
-
-//         const tdsPercent = astro.tax?.tdsPercent || 0;
-
-//         const tdsAmount = Number(((grossAmount * tdsPercent) / 100).toFixed(2));
-
-//         const totalPaid = astro.wallet?.totalPaid || 0;
-//         const lastPaidAmount = astro.wallet?.lastPaidAmount || 0;
-
-//         const payableAmount = Math.max(
-//           0,
-//           Number((grossAmount - tdsAmount - totalPaid).toFixed(2)),
-//         );
-
-//         const exportLastPaid = lastPaidAmount;
-//         const exportPayable = payableAmount;
-
-//     await prisma.$transaction(async (tx) => {
-//   // Prevent duplicate payout generation
-//   const existingPayout = await tx.astrologerPayout.findFirst({
-//     where: {
-//       astrologerId: astro.id,
-//       fromDate: from,
-//       toDate: to,
-//     },
-//   });
-
-//   // Already processed -> don't deduct wallet again
-//   if (existingPayout) {
-//     return;
-//   }
-
-//   const payoutAmount = Number(earning.toFixed(2));
-
-//   // 1️⃣ Create payout record
-//   await tx.astrologerPayout.create({
-//     data: {
-//       astrologerId: astro.id,
-
-//       fromDate: from,
-//       toDate: to,
-
-//       remark: remark?.trim() || null,
+    //           cgst,
 
-//       totalRevenue,
-//       commissionPercent,
-//       commission,
-//       earning,
+    //           sgst,
 
-//       pgChargeRate: PG_RATE,
-//       pgCharge,
+    //           igst,
 
-//       gstRate: GST_RATE,
+    //           pgTotal,
 
-//       igst,
-//       cgst,
-//       sgst,
+    //           grossAmount,
 
-//       pgTotal,
-//       grossAmount,
+    //           tdsPercent,
 
-//       tdsPercent,
-//       tdsAmount,
+    //           tdsAmount,
 
-//       lastPaidAmount: exportLastPaid,
-//       payableAmount: exportPayable,
+    //           lastPaidAmount: exportLastPaid,
 
-//       transactionRef: null,
+    //           payableAmount: exportPayable,
+    //         });
+    //       }
 
-//       // Export submit time
-//       paymentDate: new Date(),
-
-//       status: "PENDING",
-//     },
-//   });
-
-//   // 2️⃣ Deduct amount from astrologer wallet
-//   if (payoutAmount > 0 && astro.wallet) {
-//     await tx.astrologerWallet.update({
-//       where: {
-//         astrologerId: astro.id,
-//       },
-//       data: {
-//         balanceCoins: {
-//           decrement: payoutAmount,
-//         },
-
-//         totalPaid: {
-//           increment: payoutAmount,
-//         },
-
-//         lastPaidAmount: payoutAmount,
-//       },
-//     });
-
-//     // 3️⃣ Create wallet transaction
-// await tx.walletTransaction.create({
-//   data: {
-//     astrologerWalletId: astro.wallet.id,
-//     amount: payoutAmount,
-//     coins: Math.round(payoutAmount),
-//     type: "DEBIT",
-//   },
-// });
-//   }
-// });
-
-//         result.push({
-//           astrologerId: astro.id,
-//           astrologerName: astro.name,
-//           profilePic: astro.profilePic,
-
-//           accountHolderName: astro.kycDetail?.accountHolderName,
-
-//           accountNumber: astro.kycDetail?.accountNumber,
-
-//           bankName: astro.kycDetail?.bankName,
-
-//           ifsc: astro.kycDetail?.ifsc,
-
-//           panNumber: astro.kycDetail?.panNumber,
-
-//           state: astro.addresses?.[0]?.state || "",
-
-//           totalSessions: astro.sessions.length,
-
-//           totalRevenue,
-
-//           commissionPercent,
-
-//           commission,
-
-//           earning,
-
-//           pgChargeRate: PG_RATE,
-
-//           pgCharge,
-
-//           gstRate: GST_RATE,
-
-//           cgst,
-
-//           sgst,
-
-//           igst,
-
-//           pgTotal,
-
-//           grossAmount,
-
-//           tdsPercent,
-
-//           tdsAmount,
-
-//           lastPaidAmount: exportLastPaid,
-
-//           payableAmount: exportPayable,
-//         });
-//       }
-
-//       return result;
-//     },
+    //       return result;
+    //     },
     // upload image
     uploadImage: async (_, { file }, context) => {
       try {
