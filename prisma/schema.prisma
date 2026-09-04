@@ -1800,7 +1800,7 @@ model RefundRequest {
   // Admin who created request
   requestedByStaffId String
   requestedByStaffName String
-
+sessionDate DateTime
   // Status
   status RefundRequestStatus @default(PENDING)
 
