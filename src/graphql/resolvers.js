@@ -5350,17 +5350,6 @@ getAstrologerWalletTransactions: async (
           throw new Error("Session not found");
         }
 
-        // -----------------------------
-        // ONLY CHAT
-        // -----------------------------
-
-        if (session.type !== "CHAT") {
-          throw new Error("Refund request is only allowed for chat sessions");
-        }
-
-        // -----------------------------
-        // SESSION DURATION
-        // -----------------------------
 
     const sessionDurationSec = Number(session.durationSec || 0);
 
