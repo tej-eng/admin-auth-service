@@ -5019,175 +5019,352 @@ sessionDate: session.createdAt,
         throw new Error(error.message || "Failed to create refund request");
       }
     },
-    approveRefundRequest: async (_, { id }, context) => {
-      try {
-        const { prisma, user } = context;
 
-        // -----------------------------
-        // AUTH
-        // -----------------------------
+  approveRefundRequest: async (_, { id }, context) => {
+  try {
+    const { prisma, user } = context;
 
-        if (!user?.id) {
-          throw new Error("Unauthorized");
-        }
+    // -----------------------------
+    // AUTH
+    // -----------------------------
 
-        // -----------------------------
-        // STAFF
-        // -----------------------------
+    if (!user?.id) {
+      throw new Error("Unauthorized");
+    }
 
-        const staff = await prisma.staff.findUnique({
-          where: {
-            id: user.id,
-          },
+    // -----------------------------
+    // STAFF
+    // -----------------------------
 
-          select: {
-            id: true,
-            name: true,
-            isActive: true,
-            isDeleted: true,
-          },
-        });
+    const staff = await prisma.staff.findUnique({
+      where: {
+        id: user.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        isActive: true,
+        isDeleted: true,
+      },
+    });
 
-        if (!staff || !staff.isActive || staff.isDeleted) {
-          throw new Error("Staff account is not active");
-        }
+    if (!staff || !staff.isActive || staff.isDeleted) {
+      throw new Error("Staff account is not active");
+    }
 
-        // -----------------------------
-        // REFUND REQUEST
-        // -----------------------------
+    // -----------------------------
+    // REFUND REQUEST
+    // -----------------------------
 
-        const request = await prisma.refundRequest.findUnique({
-          where: {
-            id,
-          },
-        });
+    const request = await prisma.refundRequest.findUnique({
+      where: {
+        id,
+      },
+    });
 
-        if (!request) {
-          throw new Error("Refund request not found");
-        }
+    if (!request) {
+      throw new Error("Refund request not found");
+    }
 
-        // -----------------------------
-        // STATUS CHECK
-        // -----------------------------
+    // -----------------------------
+    // STATUS CHECK
+    // -----------------------------
 
-        if (request.status !== "PENDING") {
-          throw new Error(
-            `Refund request is already ${request.status.toLowerCase()}`,
-          );
-        }
+    if (request.status !== "PENDING") {
+      throw new Error(
+        `Refund request is already ${request.status.toLowerCase()}`
+      );
+    }
 
-        // -----------------------------
-        // USER WALLET
-        // -----------------------------
+    // -----------------------------
+    // VALIDATE REFUND
+    // -----------------------------
 
-        const userWallet = await prisma.userWallet.findUnique({
-          where: {
-            userId: request.userId,
-          },
-        });
+    const refundCoins = Number(request.refundAmount);
 
-        if (!userWallet) {
-          throw new Error("User wallet not found");
-        }
+    if (!Number.isFinite(refundCoins) || refundCoins <= 0) {
+      throw new Error("Invalid refund amount");
+    }
 
-        const refundCoins = Math.round(Number(request.refundAmount));
+    // -----------------------------
+    // ATOMIC TRANSACTION
+    // -----------------------------
 
-        if (refundCoins <= 0) {
-          throw new Error("Invalid refund amount");
-        }
+    const result = await prisma.$transaction(async (tx) => {
+      // --------------------------------
+      // Re-check request
+      // --------------------------------
 
-        // -----------------------------
-        // ATOMIC TRANSACTION
-        // -----------------------------
+      const currentRequest = await tx.refundRequest.findUnique({
+        where: {
+          id,
+        },
+      });
 
-        const result = await prisma.$transaction(async (tx) => {
-          // --------------------------------
-          // Re-check request inside transaction
-          // --------------------------------
-
-          const currentRequest = await tx.refundRequest.findUnique({
-            where: {
-              id,
-            },
-          });
-
-          if (!currentRequest) {
-            throw new Error("Refund request not found");
-          }
-
-          if (currentRequest.status !== "PENDING") {
-            throw new Error("Refund request has already been processed");
-          }
-
-          // --------------------------------
-          // Credit user wallet
-          // --------------------------------
-
-          const updatedWallet = await tx.userWallet.update({
-            where: {
-              id: userWallet.id,
-            },
-
-            data: {
-              balanceCoins: {
-                increment: refundCoins,
-              },
-            },
-          });
-
-          // --------------------------------
-          // Wallet transaction
-          // --------------------------------
-
-          await tx.walletTransaction.create({
-            data: {
-              userWalletId: userWallet.id,
-
-              sessionId: currentRequest.sessionId,
-
-              type: "REFUND",
-
-              coins: refundCoins,
-
-              amount: Number(currentRequest.refundAmount),
-
-              description: `Refund approved - ${currentRequest.refundDuration} min`,
-            },
-          });
-
-          // --------------------------------
-          // Update request
-          // --------------------------------
-
-          const updatedRequest = await tx.refundRequest.update({
-            where: {
-              id,
-            },
-
-            data: {
-              status: "APPROVED",
-
-              approvedByStaffId: staff.id,
-
-              approvedByStaffName: staff.name,
-
-              approvedAt: new Date(),
-            },
-          });
-
-          return {
-            updatedWallet,
-            updatedRequest,
-          };
-        });
-
-        return result.updatedRequest;
-      } catch (error) {
-        console.error("approveRefundRequest error:", error);
-
-        throw new Error(error.message || "Failed to approve refund");
+      if (!currentRequest) {
+        throw new Error("Refund request not found");
       }
-    },
+
+      if (currentRequest.status !== "PENDING") {
+        throw new Error("Refund request has already been processed");
+      }
+
+      // --------------------------------
+      // GET SESSION
+      // --------------------------------
+
+      const session = await tx.session.findUnique({
+        where: {
+          id: currentRequest.sessionId,
+        },
+        select: {
+          id: true,
+          astrologerId: true,
+          type: true,
+        },
+      });
+
+      if (!session) {
+        throw new Error("Session not found");
+      }
+
+      if (!session.astrologerId) {
+        throw new Error("Astrologer not found for this session");
+      }
+
+      // --------------------------------
+      // USER WALLET
+      // --------------------------------
+
+      const userWallet = await tx.userWallet.findUnique({
+        where: {
+          userId: currentRequest.userId,
+        },
+      });
+
+      if (!userWallet) {
+        throw new Error("User wallet not found");
+      }
+
+      // --------------------------------
+      // ASTROLOGER WALLET
+      // --------------------------------
+
+      const astrologerWallet = await tx.astrologerWallet.findUnique({
+        where: {
+          astrologerId: session.astrologerId,
+        },
+      });
+
+      if (!astrologerWallet) {
+        throw new Error("Astrologer wallet not found");
+      }
+
+      // --------------------------------
+      // GET ASTROLOGER PRICING
+      // --------------------------------
+
+      const pricing = await tx.astrologerPricing.findUnique({
+        where: {
+          astrologerId_type: {
+            astrologerId: session.astrologerId,
+            type: session.type,
+          },
+        },
+        select: {
+          id: true,
+          type: true,
+          price: true,
+          offerPrice: true,
+          commissionPercent: true,
+          isActive: true,
+        },
+      });
+
+      if (!pricing) {
+        throw new Error(
+          `Astrologer pricing not found for ${session.type}`
+        );
+      }
+
+      if (!pricing.isActive) {
+        throw new Error(
+          `Astrologer pricing for ${session.type} is inactive`
+        );
+      }
+
+      // --------------------------------
+      // COMMISSION %
+      // --------------------------------
+
+      const commissionPercent = Number(pricing.commissionPercent ?? 45);
+
+      if (
+        !Number.isFinite(commissionPercent) ||
+        commissionPercent < 0 ||
+        commissionPercent > 100
+      ) {
+        throw new Error(
+          `Invalid commission percentage: ${commissionPercent}`
+        );
+      }
+
+      // --------------------------------
+      // CALCULATE ASTROLOGER REFUND
+      // --------------------------------
+      //
+      // Example:
+      //
+      // refundCoins       = 100
+      // commissionPercent = 70%
+      //
+      // astrologerRefund = 100 * 70 / 100
+      //                   = 70 coins
+      //
+      // --------------------------------
+
+      const astrologerRefundCoins = Number(
+        ((refundCoins * commissionPercent) / 100).toFixed(2)
+      );
+
+      if (astrologerRefundCoins <= 0) {
+        throw new Error(
+          "Calculated astrologer refund amount is zero"
+        );
+      }
+
+      // --------------------------------
+      // CHECK ASTROLOGER BALANCE
+      // --------------------------------
+
+      if (
+        Number(astrologerWallet.balanceCoins) <
+        astrologerRefundCoins
+      ) {
+        throw new Error(
+          `Insufficient astrologer wallet balance. Available: ${astrologerWallet.balanceCoins}, Required: ${astrologerRefundCoins}`
+        );
+      }
+
+      // --------------------------------
+      // CREDIT USER WALLET
+      // --------------------------------
+
+      const updatedUserWallet = await tx.userWallet.update({
+        where: {
+          id: userWallet.id,
+        },
+        data: {
+          balanceCoins: {
+            increment: refundCoins,
+          },
+        },
+      });
+
+      // --------------------------------
+      // DEBIT ASTROLOGER WALLET
+      // --------------------------------
+
+      const updatedAstrologerWallet =
+        await tx.astrologerWallet.update({
+          where: {
+            id: astrologerWallet.id,
+          },
+          data: {
+            balanceCoins: {
+              decrement: astrologerRefundCoins,
+            },
+          },
+        });
+
+      // --------------------------------
+      // USER WALLET TRANSACTION
+      // --------------------------------
+
+      await tx.walletTransaction.create({
+        data: {
+          userWalletId: userWallet.id,
+
+          sessionId: currentRequest.sessionId,
+
+          type: "REFUND",
+
+          coins: refundCoins,
+
+          amount: Number(currentRequest.refundAmount),
+
+          description:
+            `Refund approved - ${currentRequest.refundDuration} min`,
+        },
+      });
+
+      // --------------------------------
+      // ASTROLOGER WALLET TRANSACTION
+      // --------------------------------
+
+      await tx.walletTransaction.create({
+        data: {
+          astrologerWalletId: astrologerWallet.id,
+
+          sessionId: currentRequest.sessionId,
+
+          type: "REFUND",
+
+          coins: astrologerRefundCoins,
+
+          amount: astrologerRefundCoins,
+
+          description:
+            `Refund deducted - ${currentRequest.refundDuration} min ` +
+            `(${session.type}, commission ${commissionPercent}%)`,
+        },
+      });
+
+      // --------------------------------
+      // UPDATE REFUND REQUEST
+      // --------------------------------
+
+      const updatedRequest = await tx.refundRequest.update({
+        where: {
+          id,
+        },
+        data: {
+          status: "APPROVED",
+
+          approvedByStaffId: staff.id,
+
+          approvedByStaffName: staff.name,
+
+          approvedAt: new Date(),
+        },
+      });
+
+      return {
+        updatedUserWallet,
+        updatedAstrologerWallet,
+        updatedRequest,
+        refundCoins,
+        astrologerRefundCoins,
+        commissionPercent,
+      };
+    });
+
+    console.log("Refund approved:", {
+      refundRequestId: id,
+      sessionId: result.updatedRequest.sessionId,
+      refundCoins: result.refundCoins,
+      astrologerRefundCoins: result.astrologerRefundCoins,
+      commissionPercent: result.commissionPercent,
+    });
+
+    return result.updatedRequest;
+  } catch (error) {
+    console.error("approveRefundRequest error:", error);
+
+    throw new Error(error.message || "Failed to approve refund");
+  }
+},
+
     rejectRefundRequest: async (_, { id, reason }, context) => {
       try {
         const { prisma, user } = context;
