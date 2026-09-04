@@ -2240,13 +2240,10 @@ input RefundRequestSearchInput {
 }
 input CreateRefundRequestInput {
   sessionId: ID!
-
   refundDuration: Int!
-  refundAmount: Float!
   refundReason: String!
-
-  mode: String
   refundType: String
+  mode: String
 }
   enum RefundRequestStatus {
   PENDING
