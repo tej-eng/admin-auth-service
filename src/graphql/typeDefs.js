@@ -2024,7 +2024,7 @@ astrologerId: String
     totalAstrologers: Int!
     totalUsers: Int!
     totalStaff: Int!
-
+  totalRechargeAmount: Float
     totalCalls: Int!
     totalChats: Int!
 
