@@ -4595,9 +4595,6 @@ getDashboardCounts: async (_, __, { prisma }) => {
       prisma.payment.aggregate({
         where: {
           status: "SUCCESS",
-          rechargePackId: {
-            not: null,
-          },
         },
         _sum: {
           amount: true,
@@ -4616,9 +4613,7 @@ getDashboardCounts: async (_, __, { prisma }) => {
       totalRevenue: revenueResult?._sum?.coinsDeducted ?? 0,
     };
   } catch (error) {
-    console.error("❌ getDashboardCounts ERROR:", error);
-    console.error("❌ Message:", error?.message);
-    console.error("❌ Stack:", error?.stack);
+    console.error("getDashboardCounts ERROR:", error);
 
     throw new Error(error?.message || "Failed to fetch dashboard counts");
   }
