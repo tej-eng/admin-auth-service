@@ -4554,72 +4554,75 @@ getAstrologerWalletTransactions: async (
       }
     },
 
-    getDashboardCounts: async (_, __, { prisma }) => {
-      try {
-        const [
-          totalAstrologers,
-          totalUsers,
-          totalStaff,
-          totalCalls,
-          totalChats,
-          totalApplications,
-          revenueResult,
-          rechargeResult,
-        ] = await Promise.all([
-          prisma.astrologer.count(),
+getDashboardCounts: async (_, __, { prisma }) => {
+  try {
+    const [
+      totalAstrologers,
+      totalUsers,
+      totalStaff,
+      totalCalls,
+      totalChats,
+      totalApplications,
+      revenueResult,
+      rechargeResult,
+    ] = await Promise.all([
+      prisma.astrologer.count(),
 
-          prisma.user.count(),
+      prisma.user.count(),
 
-          prisma.staff.count(),
+      prisma.staff.count(),
 
-          prisma.session.count({
-            where: {
-              type: "CALL",
-            },
-          }),
+      prisma.session.count({
+        where: {
+          type: "CALL",
+        },
+      }),
 
-          prisma.session.count({
-            where: {
-              type: "CHAT",
-            },
-          }),
+      prisma.session.count({
+        where: {
+          type: "CHAT",
+        },
+      }),
 
-          prisma.astrologerApplication.count(),
+      prisma.astrologerApplication.count(),
 
-          prisma.session.aggregate({
-            _sum: {
-              coinsDeducted: true,
-            },
-          }),
-          prisma.payment.aggregate({
-            where: {
-              status: "SUCCESS",
-              rechargePackId: {
-                not: null,
-              },
-            },
-            _sum: {
-              amount: true,
-            },
-          }),
-        ]);
+      prisma.session.aggregate({
+        _sum: {
+          coinsDeducted: true,
+        },
+      }),
 
-        return {
-          totalAstrologers,
-          totalUsers,
-          totalStaff,
+      prisma.payment.aggregate({
+        where: {
+          status: "SUCCESS",
+          rechargePackId: {
+            not: null,
+          },
+        },
+        _sum: {
+          amount: true,
+        },
+      }),
+    ]);
 
-          totalCalls,
-          totalChats,
+    return {
+      totalAstrologers,
+      totalUsers,
+      totalStaff,
+      totalCalls,
+      totalChats,
+      totalApplications,
+      totalRechargeAmount: rechargeResult?._sum?.amount ?? 0,
+      totalRevenue: revenueResult?._sum?.coinsDeducted ?? 0,
+    };
+  } catch (error) {
+    console.error("❌ getDashboardCounts ERROR:", error);
+    console.error("❌ Message:", error?.message);
+    console.error("❌ Stack:", error?.stack);
 
-          totalApplications,
-          totalRechargeAmount: rechargeResult?._sum?.amount ?? 0,
-          totalRevenue: revenueResult?._sum?.coinsDeducted ?? 0,
-        };
-      } catch (error) {
-        throw new Error("Failed to fetch dashboard counts");
-      }
-    },
+    throw new Error(error?.message || "Failed to fetch dashboard counts");
+  }
+},
 
     getUserProfile: async (_, { userId }, { prisma }) => {
       try {
